@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Modulus Team",
+  "classifications": ["Modulus", "Avalonia", "MVVM", ".NET 8"],
+  "identity": "Modulus.Templates.App",
+  "name": "Modulus App template",
+  "shortName": "modulus-app",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "Modulus.App.Template",
+  "preferNameDirectory": true,
+  "primaryOutputs": [
+    { "path": "Modulus.App.Desktop/Modulus.App.Desktop.csproj" },
+    { "path": "Modulus.App/Modulus.App.csproj" }
+  ]
+}
