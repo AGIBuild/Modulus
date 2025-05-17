@@ -1,0 +1,11 @@
+{
+  "ContractVersion": "1.0.0",
+  "NavigationSetting": {
+    "DefaultView": "MainView",
+    "EnableAnimations": true
+  },
+  "Theme": {
+    "UseSystemTheme": true,
+    "DarkModeEnabled": false
+  }
+}

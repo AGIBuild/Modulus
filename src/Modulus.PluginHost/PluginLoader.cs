@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Loader;
+using Modulus.Plugin.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace Modulus.PluginHost
 {
@@ -14,7 +18,7 @@ namespace Modulus.PluginHost
             return pluginDir;
         }
 
-        public event EventHandler PluginReloaded;
+        public event EventHandler? PluginReloaded;
 
         private readonly Dictionary<string, (AssemblyLoadContext Context, WeakReference Ref)> _loadedPlugins = new();
 
@@ -140,6 +144,67 @@ namespace Modulus.PluginHost
             }
             return true;
         }
+
+        public object? RunPluginWithContractCheck(string pluginPath)
+        {
+            var meta = ReadMeta(pluginPath);
+            if (meta == null)
+                throw new InvalidOperationException("Plugin metadata not found.");
+
+            const string HostContractVersion = "2.0.0";
+            const string HostMinSupportedVersion = "1.0.0";
+            Version pluginVer = new Version(meta.ContractVersion);
+            Version hostVer = new Version(HostContractVersion);
+            Version hostMin = new Version(HostMinSupportedVersion);
+
+            if (pluginVer < hostMin)
+                throw new InvalidOperationException($"The plugin '{meta.Name}' is too old and not compatible with this version of Modulus. Please contact the plugin developer to update the plugin.");
+            if (pluginVer > hostVer)
+                throw new InvalidOperationException($"The plugin '{meta.Name}' requires a newer version of Modulus. Please update the application to use this plugin.");
+
+            var context = LoadPlugin(pluginPath);
+            var asm = context.LoadFromAssemblyPath(pluginPath);
+            var pluginType = asm.GetTypes().FirstOrDefault(t => t.GetInterface("Modulus.Plugin.Abstractions.IPlugin") != null && !t.IsAbstract);
+            if (pluginType == null)
+                throw new InvalidOperationException("No valid IPlugin implementation found.");
+            var instance = Activator.CreateInstance(pluginType);
+            _loadedPlugins[pluginPath] = (context, new WeakReference(context));
+            return instance;
+        }
+
+        // Dependency Injection, Configuration, and Logging support for plugin instantiation
+        public object? RunPluginWithDI(string pluginPath, IServiceCollection services, IConfiguration configuration, IServiceProvider? appProvider = null)
+        {
+            var meta = ReadMeta(pluginPath);
+            if (meta == null)
+                throw new InvalidOperationException("Plugin metadata not found.");
+
+            const string HostContractVersion = "2.0.0";
+            const string HostMinSupportedVersion = "1.0.0";
+            Version pluginVer = new Version(meta.ContractVersion);
+            Version hostVer = new Version(HostContractVersion);
+            Version hostMin = new Version(HostMinSupportedVersion);
+
+            if (pluginVer < hostMin)
+                throw new InvalidOperationException($"The plugin '{meta.Name}' is too old and not compatible with this version of Modulus. Please contact the plugin developer to update the plugin.");
+            if (pluginVer > hostVer)
+                throw new InvalidOperationException($"The plugin '{meta.Name}' requires a newer version of Modulus. Please update the application to use this plugin.");
+
+            var context = LoadPlugin(pluginPath);
+            var asm = context.LoadFromAssemblyPath(pluginPath);
+            var pluginType = asm.GetTypes().FirstOrDefault(t => t.GetInterface("Modulus.Plugin.Abstractions.IPlugin") != null && !t.IsAbstract);
+            if (pluginType == null)
+                throw new InvalidOperationException("No valid IPlugin implementation found.");
+            var instance = Activator.CreateInstance(pluginType);
+            // Use reflection to call ConfigureServices/Initialize for cross-assembly plugin
+            var configureServices = pluginType.GetMethod("ConfigureServices");
+            var initialize = pluginType.GetMethod("Initialize");
+            configureServices?.Invoke(instance, new object[] { services, configuration });
+            var provider = Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(services, false);
+            initialize?.Invoke(instance, new object[] { provider });
+            _loadedPlugins[pluginPath] = (context, new WeakReference(context));
+            return instance;
+        }
     }
 
     public class PluginMeta
@@ -150,5 +215,6 @@ namespace Modulus.PluginHost
         public string? Author { get; set; }
         public string? EntryPoint { get; set; }
         public string[]? Dependencies { get; set; }
+        public string ContractVersion { get; set; } = "1.0.0";
     }
 }

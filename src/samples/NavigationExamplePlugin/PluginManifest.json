@@ -1,0 +1,12 @@
+{
+  "Name": "Navigation Example",
+  "Version": "1.0.0",
+  "Description": "Demonstrates navigation integration with Modulus UI",
+  "Author": "Modulus Team",
+  "EntryPoint": "NavigationExamplePlugin.PluginEntry",
+  "Dependencies": [],
+  "ContractVersion": "1.0.0",
+  "NavigationIcon": "\uE8A5",
+  "NavigationSection": "body",
+  "NavigationOrder": 50
+}

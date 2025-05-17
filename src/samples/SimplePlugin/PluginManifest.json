@@ -1,0 +1,9 @@
+{
+  "Name": "SimplePlugin",
+  "Version": "1.0.0",
+  "Description": "A simple test plugin",
+  "Author": "Modulus Team",
+  "EntryPoint": "SimplePlugin.PluginEntry",
+  "Dependencies": [],
+  "ContractVersion": "2.0.0"
+}

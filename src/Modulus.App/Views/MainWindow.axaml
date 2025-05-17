@@ -1,12 +1,33 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Modulus.App.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:views="clr-namespace:Modulus.App.Views"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:controls="clr-namespace:Modulus.App.Controls"
+        xmlns:converters="clr-namespace:Modulus.App.Converters"
+        xmlns:vm="clr-namespace:Modulus.App.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="Modulus.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Modulus.App">
-        <views:MainView />
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+    <Window.Resources>
+        <converters:NavHighlightConverter x:Key="NavHighlightConverter" />
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <!-- Left Sidebar (Navigation Panel) -->
+        <Border Grid.Column="0" Background="#1E1E2E">
+            <controls:NavigationBar DataContext="{Binding NavigationBar}" Grid.Column="0"/>
+        </Border>
+        <!-- Main Content Area -->
+        <Border Grid.Column="1" Background="#F7F9FB">
+            <ContentControl Content="{Binding CurrentView}"/>
+        </Border>
+    </Grid>
 </Window>

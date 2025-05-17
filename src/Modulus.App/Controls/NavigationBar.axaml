@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Modulus.App.Controls.ViewModels"
+			 xmlns:cv="clr-namespace:Modulus.App.Converters"
+             mc:Ignorable="d" d:DesignWidth="80" d:DesignHeight="800"
+			 x:DataType="vm:NavigationBarViewModel"
+             x:Class="Modulus.App.Controls.NavigationBar">
+	<Design.DataContext>
+		<vm:NavigationBarViewModel />
+	</Design.DataContext>
+	<UserControl.Resources>
+		<cv:NavHighlightConverter x:Key="NavHighlightConverter" />
+	</UserControl.Resources>
+	<DockPanel VerticalAlignment="Stretch" HorizontalAlignment="Center" Width="80">
+		<!-- Header -->
+		<StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,16,0,0" HorizontalAlignment="Center">
+			<Image Source="avares://Modulus.App/Assets/avalonia-logo.ico" Width="32" Height="32" Stretch="Uniform"/>
+			<TextBlock Text="Modulus" FontSize="16" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center"/>
+			<TextBlock Text="v1.0.0" FontSize="11" Foreground="#888" HorizontalAlignment="Center"/>
+			<!-- Header Items -->
+			<ItemsControl ItemsSource="{Binding HeaderItems}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:NavigationMenuItemViewModel">
+						<Button Background="{Binding IsActive, Converter={StaticResource NavHighlightConverter}}"
+								Foreground="White"
+								ToolTip.Tip="{Binding Tooltip}"
+								Width="{Binding Width}"
+								Height="{Binding Height}"
+								CornerRadius="{Binding CornerRadius}"
+								Command="{Binding Command}"
+								Margin="0,4,0,4">
+							<StackPanel>
+								<TextBlock Text="{Binding Icon}"
+										   FontFamily="Segoe MDL2 Assets"
+										   FontSize="{Binding FontSize}"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</StackPanel>
+
+		<!-- Body: Main Menu Items -->
+		<StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,32,0,0" HorizontalAlignment="Center">
+			<ItemsControl ItemsSource="{Binding BodyItems}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:NavigationMenuItemViewModel">
+						<Button Background="{Binding IsActive, Converter={StaticResource NavHighlightConverter}}"
+								Foreground="White"
+								ToolTip.Tip="{Binding Tooltip}"
+								Width="{Binding Width}"
+								Height="{Binding Height}"
+								CornerRadius="{Binding CornerRadius}"
+								Command="{Binding Command}"
+								Margin="0,0,0,4">
+							<StackPanel>
+								<TextBlock Text="{Binding Icon}"
+										   FontFamily="Segoe MDL2 Assets"
+										   FontSize="{Binding FontSize}"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</StackPanel>
+
+		<!-- Footer: Settings/User/Feedback etc. -->
+		<StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,0,0,24" HorizontalAlignment="Center">
+			<ItemsControl ItemsSource="{Binding FooterItems}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:NavigationMenuItemViewModel">
+						<Button Background="{Binding IsActive, Converter={StaticResource NavHighlightConverter}}"
+								Foreground="White"
+								ToolTip.Tip="{Binding Tooltip}"
+								Width="{Binding Width}"
+								Height="{Binding Height}"
+								CornerRadius="{Binding CornerRadius}"
+								Command="{Binding Command}"
+								Margin="0,0,0,4">
+							<StackPanel>
+								<TextBlock Text="{Binding Icon}"
+										   FontFamily="Segoe MDL2 Assets"
+										   FontSize="{Binding FontSize}"
+										   HorizontalAlignment="Center"/>
+							</StackPanel>
+						</Button>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</StackPanel>
+	</DockPanel>
+</UserControl>

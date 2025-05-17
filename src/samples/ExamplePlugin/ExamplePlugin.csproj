@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ExamplePlugin</AssemblyName>
+    <RootNamespace>ExamplePlugin</RootNamespace>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Remove="pluginsettings.json" />
+    <None Remove="PluginManifest.json" />
+    <None Remove="Resources\Strings.en.json" />
+    <None Remove="Resources\Strings.zh.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="pluginsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PluginManifest.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Strings.en.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Strings.zh.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modulus.Plugin.Abstractions\Modulus.Plugin.Abstractions.csproj" />
+    <PackageReference Include="Avalonia" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+</Project>

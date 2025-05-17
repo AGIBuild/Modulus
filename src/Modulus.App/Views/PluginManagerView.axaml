@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Modulus.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+             x:Class="Modulus.App.Views.PluginManagerView"
+             x:DataType="vm:PluginManagerViewModel">
+  <Design.DataContext>
+    <vm:PluginManagerViewModel />
+  </Design.DataContext>
+  <!-- 响应式布局：使用AdaptiveGrid和ColumnDefinitions绑定宽度 -->
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" MinWidth="220" MaxWidth="340"/>
+      <ColumnDefinition Width="*" MinWidth="320"/>
+      <ColumnDefinition Width="Auto" MinWidth="260" MaxWidth="400"/>
+    </Grid.ColumnDefinitions>
+    <!-- 左侧插件列表 -->
+    <Border Grid.Column="0" Background="#F7F9FB" CornerRadius="0,12,12,0" Margin="0,0,8,0" >
+      <!-- ...插件列表内容... -->
+    </Border>
+    <!-- 中间详情卡片 -->
+    <Border Grid.Column="1" Background="White" CornerRadius="12" Margin="0,0,8,0" Padding="32" Effect="{DynamicResource CardShadow}">
+      <!-- ...插件详情内容... -->
+    </Border>
+    <!-- 右侧操作区 -->
+    <Border Grid.Column="2" Background="#F7F9FB" CornerRadius="12,0,0,12" Padding="24">
+      <!-- ...操作区内容... -->
+    </Border>
+  </Grid>
+</UserControl>
