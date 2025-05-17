@@ -18,36 +18,37 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool isNotificationsActive;
     [ObservableProperty] private bool isSettingsActive;
     [ObservableProperty] private bool isProfileActive;
-    
-    [ObservableProperty] private NavigationBarViewModel navigationBar;    public MainViewModel()
+
+    [ObservableProperty] private NavigationBarViewModel navigationBar;
+    public MainViewModel()
     {
         navigationBar = new NavigationBarViewModel();
-        
+
         // Create the navigation service and connect it to this view model
         var navigationService = new NavigationPluginService(navigationBar);
         navigationService.SetMainViewModel(this);
-        
+
         // Create the plugin manager with the navigation service
         _pluginManager = new PluginManager(navigationBar, navigationService);
-        
+
         InitializeNavigationMenus();
         ShowDashboard();
-        
+
         // Auto-load plugins in background
         Task.Run(async () => await LoadPluginsAsync());
     }    /// <summary>
-    /// Loads plugins from the default plugins directory.
-    /// </summary>
+         /// Loads plugins from the default plugins directory.
+         /// </summary>
     private async Task LoadPluginsAsync()
     {
         try
         {
             // In a real implementation, this would use a configuration setting
             const string pluginsPath = @"c:\FileStorage\Projects\Modulus\tools\modulus-plugin";
-            
+
             // Load the simple plugin example for testing
             await _pluginManager.LoadPluginsAsync(pluginsPath);
-            
+
             // For testing, manually add our SimplePluginExample
             _pluginManager.AddTestPlugins();
         }
@@ -63,33 +64,33 @@ public partial class MainViewModel : ObservableObject
     private void InitializeNavigationMenus()
     {
         // Initialize body menu items
-        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE80F", 
-            Tooltip = "Dashboard", 
+        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE80F",
+            Tooltip = "Dashboard",
             Command = ShowDashboardCommand,
-            IsActive = true 
+            IsActive = true
         });
-        
-        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE721", 
-            Tooltip = "Plugin Manager", 
-            Command = ShowPluginManagerCommand 
+
+        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE721",
+            Tooltip = "Plugin Manager",
+            Command = ShowPluginManagerCommand
         });
-        
-        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE7E7", 
-            Tooltip = "Notifications", 
-            Command = ShowNotificationsCommand 
+
+        NavigationBar.BodyItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE7E7",
+            Tooltip = "Notifications",
+            Command = ShowNotificationsCommand
         });
 
         // Initialize footer menu items
-        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE713", 
-            Tooltip = "Settings", 
+        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE713",
+            Tooltip = "Settings",
             Command = ShowSettingsCommand,
             Width = 48,
             Height = 48,
@@ -97,10 +98,10 @@ public partial class MainViewModel : ObservableObject
             FontSize = 22
         });
 
-        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE939", 
-            Tooltip = "Feedback", 
+        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE939",
+            Tooltip = "Feedback",
             Command = new RelayCommand(ShowFeedback),
             Width = 48,
             Height = 48,
@@ -108,10 +109,10 @@ public partial class MainViewModel : ObservableObject
             FontSize = 22
         });
 
-        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel 
-        { 
-            Icon = "\uE77B", 
-            Tooltip = "Profile", 
+        NavigationBar.FooterItems.Add(new NavigationMenuItemViewModel
+        {
+            Icon = "\uE77B",
+            Tooltip = "Profile",
             Command = ShowProfileCommand,
             Width = 48,
             Height = 48,
@@ -129,7 +130,7 @@ public partial class MainViewModel : ObservableObject
         {
             item.IsActive = false;
         }
-        
+
         foreach (var item in NavigationBar.BodyItems)
         {
             if (item.Tooltip == "Dashboard") item.IsActive = IsDashboardActive;
@@ -153,7 +154,7 @@ public partial class MainViewModel : ObservableObject
         CurrentView = new DashboardPlaceholderViewModel();
         UpdateNavigationMenuActiveState();
     }
-    
+
     [RelayCommand]
     private void ShowPluginManager()
     {
@@ -161,7 +162,7 @@ public partial class MainViewModel : ObservableObject
         CurrentView = new PluginManagerViewModel(_pluginManager);
         UpdateNavigationMenuActiveState();
     }
-    
+
     [RelayCommand]
     private void ShowNotifications()
     {
@@ -169,7 +170,7 @@ public partial class MainViewModel : ObservableObject
         CurrentView = new NotificationsPlaceholderViewModel();
         UpdateNavigationMenuActiveState();
     }
-    
+
     [RelayCommand]
     private void ShowSettings()
     {
@@ -177,14 +178,15 @@ public partial class MainViewModel : ObservableObject
         CurrentView = new SettingsPlaceholderViewModel();
         UpdateNavigationMenuActiveState();
     }
-    
+
     [RelayCommand]
     private void ShowProfile()
     {
         SetActive("profile");
         CurrentView = new ProfilePlaceholderViewModel();
         UpdateNavigationMenuActiveState();
-    }    private void ShowFeedback()
+    }
+    private void ShowFeedback()
     {
         // TODO: Implement feedback functionality
     }
@@ -204,7 +206,7 @@ public partial class MainViewModel : ObservableObject
 }
 
 // 占位 ViewModel
-public class DashboardPlaceholderViewModel {}
-public class NotificationsPlaceholderViewModel {}
-public class SettingsPlaceholderViewModel {}
-public class ProfilePlaceholderViewModel {}
+public class DashboardPlaceholderViewModel { }
+public class NotificationsPlaceholderViewModel { }
+public class SettingsPlaceholderViewModel { }
+public class ProfilePlaceholderViewModel { }
