@@ -82,7 +82,7 @@ class BuildTasks : NukeBuild
         {
             var desktopProject = Solution.AllProjects.FirstOrDefault(p => p.Name == "Modulus.App.Desktop");
             if (desktopProject == null)
-                throw new Exception("Modulus.App.Desktop project cannot find");
+                throw new Exception("Modulus.App.Desktop project not found");
             DotNetTasks.DotNetRun(s => s
                 .SetProjectFile(desktopProject)
                 .SetConfiguration(Configuration));

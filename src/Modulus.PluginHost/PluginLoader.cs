@@ -82,7 +82,7 @@ namespace Modulus.PluginHost
             return instance;
         }
 
-        // 沙箱化：仅加载实现 IPlugin 的插件，限制反射和主程序集访问
+        // Sandbox: Only load plugins implementing IPlugin, restrict reflection and main assembly access
         public object? RunPluginSandboxed(string pluginPath, Type pluginInterface)
         {
             var meta = ReadMeta(pluginPath);
@@ -100,7 +100,7 @@ namespace Modulus.PluginHost
             return instance;
         }
 
-        // 插件异常隔离：运行插件时捕获异常，防止主程序崩溃
+        // Exception isolation: Catch plugin exceptions to prevent main application crash
         public object? SafeRunPlugin(string pluginPath, Type pluginInterface)
         {
             try
@@ -109,7 +109,7 @@ namespace Modulus.PluginHost
             }
             catch (Exception)
             {
-                // TODO: 日志记录异常
+                // TODO: Log exception
                 return null;
             }
         }

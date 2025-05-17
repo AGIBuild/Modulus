@@ -14,8 +14,8 @@ namespace Modulus.PluginHost.Tests
             var pluginDir = PluginHost.PluginLoader.GetUserPluginDirectory();
             Directory.CreateDirectory(pluginDir);
             var fakeDll = Path.Combine(pluginDir, "FakeNotAPlugin.dll");
-            File.WriteAllBytes(fakeDll, new byte[] { 0 }); // 占位符
-            // 这里用 typeof(IDisposable) 代替 IPlugin，实际应为 IPlugin
+            File.WriteAllBytes(fakeDll, new byte[] { 0 }); // placeholder
+            // Here we use typeof(IDisposable) instead of IPlugin, in real case use IPlugin
             Assert.Throws<InvalidOperationException>(() => loader.RunPluginSandboxed(fakeDll, typeof(IDisposable)));
         }
 
@@ -26,7 +26,7 @@ namespace Modulus.PluginHost.Tests
             var pluginDir = PluginHost.PluginLoader.GetUserPluginDirectory();
             Directory.CreateDirectory(pluginDir);
             var fakeDll = Path.Combine(pluginDir, "FakeNotAPlugin.dll");
-            File.WriteAllBytes(fakeDll, new byte[] { 0 }); // 占位符
+            File.WriteAllBytes(fakeDll, new byte[] { 0 }); // placeholder
             var result = loader.SafeRunPlugin(fakeDll, typeof(IDisposable));
             Assert.Null(result);
         }

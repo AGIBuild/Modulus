@@ -19,11 +19,11 @@ namespace Modulus.PluginHost.Tests
         [Fact]
         public void Should_Load_And_Unload_Plugin_Assembly()
         {
-            // Arrange: 假设有一个测试插件dll放在插件目录
+            // Arrange: create a test plugin dll in the plugin directory
             var pluginDir = PluginLoader.GetUserPluginDirectory();
             Directory.CreateDirectory(pluginDir);
             var testDll = Path.Combine(pluginDir, "TestPlugin.dll");
-            File.WriteAllBytes(testDll, new byte[] { 0 }); // 占位符，实际测试应为有效dll
+            File.WriteAllBytes(testDll, new byte[] { 0 }); // placeholder, should be a valid dll in real test
 
             // Act
             var loader = new PluginLoader();
@@ -32,7 +32,7 @@ namespace Modulus.PluginHost.Tests
             Assert.IsType<AssemblyLoadContext>(context);
 
             loader.UnloadPlugin(context);
-            // 卸载后 context.IsAlive 应为 false（需弱引用追踪）
+            // After unloading, context.IsAlive should be false (requires WeakReference tracking)
         }
 
         [Fact]
@@ -43,13 +43,13 @@ namespace Modulus.PluginHost.Tests
             var pluginDir = PluginLoader.GetUserPluginDirectory();
             Directory.CreateDirectory(pluginDir);
             var testDll = Path.Combine(pluginDir, "TestPlugin.dll");
-            File.WriteAllBytes(testDll, new byte[] { 0 }); // 占位符
+            File.WriteAllBytes(testDll, new byte[] { 0 }); // placeholder
             bool reloaded = false;
             loader.PluginReloaded += (s, e) => reloaded = true;
             loader.WatchPlugins();
-            // Act: 模拟dll变化
+            // Act: simulate dll change
             File.SetLastWriteTimeUtc(testDll, DateTime.UtcNow);
-            System.Threading.Thread.Sleep(300); // 等待事件触发
+            System.Threading.Thread.Sleep(300); // wait for event
             // Assert
             Assert.True(reloaded);
         }
