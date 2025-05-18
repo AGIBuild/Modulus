@@ -1,0 +1,188 @@
+##################################
+# Modulus AI Context Manifest
+# This file provides context for AI tools (GitHub Copilot)
+##################################
+
+projectInfo:
+  name: "Modulus"
+  vision: "A modern, cross-platform, plugin-based application template to help developers quickly build extensible applications."
+  description: "Modulus is designed to provide a robust foundation for building extensible, maintainable, and AI-ready desktop tools with a plugin architecture."
+  repository: "https://github.com/your-organization/modulus"
+  languages:
+    - "C#"
+    - "XAML"
+  frameworks:
+    - ".NET 8"
+    - "Avalonia UI"
+    - "Nuke Build"
+  mainBranch: "main"
+
+architecture:
+  overview: >
+    Modulus is built on a core-plugins architecture, where the main application
+    provides a hosting environment for dynamically loadable plugins. Each plugin
+    is isolated with its own dependency injection container while still having
+    access to core services.
+  
+  modules:
+    core:
+      description: "The core application framework that hosts plugins"
+      path: "src/Modulus.Core"
+      responsibilities:
+        - "Plugin loading and lifecycle management"
+        - "Dependency injection"
+        - "Configuration management"
+        - "Logging"
+    
+    desktop:
+      description: "The desktop UI application"
+      path: "src/Modulus.App.Desktop"
+      responsibilities:
+        - "User interface (Avalonia UI)"
+        - "Main application window"
+        - "Plugin UI integration"
+    
+    pluginSystem:
+      description: "The plugin system that supports dynamic loading/unloading of plugins"
+      path: "src/Modulus.Plugins"
+      responsibilities:
+        - "Plugin discovery and verification"
+        - "Plugin loading context isolation"
+        - "Hot reloading of plugins"
+    
+    sdk:
+      description: "The SDK for plugin development"
+      path: "src/Modulus.Plugins.SDK"
+      responsibilities:
+        - "Plugin interfaces and base classes"
+        - "Plugin development utilities"
+  
+  dataFlow:
+    description: >
+      Data flows from plugins through the core services using a combination of 
+      dependency injection and event-based communication. The core application 
+      orchestrates data flow between plugins while ensuring isolation.
+  
+  pluginSystem:
+    description: >
+      Plugins are loaded using AssemblyLoadContext for isolation. Each plugin has
+      its own DI container that is connected to the core container through 
+      specific service interfaces. Plugins can be hot-reloaded without restarting
+      the application.
+    
+    pluginLifecycle:
+      - "Discovery: Scan plugin directories for valid plugin assemblies"
+      - "Verification: Check plugin signature and compatibility"
+      - "Loading: Create isolated AssemblyLoadContext for the plugin"
+      - "Initialization: Setup DI container and initialize plugin"
+      - "Activation: Activate plugin functionality"
+      - "Deactivation: Gracefully shutdown plugin"
+      - "Unloading: Release resources and unload from memory"
+
+directoryStructure:
+  root:
+    build: "Build scripts and Nuke build tasks"
+    docs: "Documentation in multiple languages"
+    src: "Source code for application and plugins"
+    artifacts: "Build outputs and packaged plugins"
+  
+  srcStructure:
+    "Modulus.Core": "Core application framework"
+    "Modulus.App.Desktop": "Desktop UI application"
+    "Modulus.Plugins": "Plugin system implementation"
+    "Modulus.Plugins.SDK": "SDK for plugin development"
+    "samples": "Sample plugins demonstrating functionality"
+
+namingConventions:
+  general:
+    - "Use PascalCase for class names and public members"
+    - "Use camelCase for local variables and parameters"
+    - "Prefix private fields with _underscore"
+    - "Use descriptive, full names instead of abbreviations"
+  
+  files:
+    - "Use PascalCase for file names"
+    - "Name files after the primary class they contain"
+    - "Test files should be named [Class]Tests.cs"
+  
+  plugins:
+    - "Plugin projects should be named [PluginName].Plugin"
+    - "Plugin main class should implement IPlugin interface"
+    - "Plugin configuration classes should be named [PluginName]Config"
+  
+  stories:
+    - "Story files are named S-XXXX-Title.md"
+    - "All stories must have both English and Chinese versions"
+    - "Story documents should include priority and status metadata"
+
+roadmap:
+  current:
+    - "Implement core plugin loading framework"
+    - "Create basic Avalonia UI shell application"
+    - "Develop plugin SDK and documentation"
+    - "Implement hot-reload capability for plugins"
+  
+  upcoming:
+    - "Add plugin marketplace support"
+    - "Improve plugin security and isolation"
+    - "Add telemetry and diagnostics"
+    - "Develop AI agent framework for plugins"
+  
+  future:
+    - "Web-based plugin hosting"
+    - "Cloud synchronization for plugin data"
+    - "Mobile application support"
+
+glossary:
+  plugin: "A dynamically loadable module that extends application functionality"
+  AssemblyLoadContext: ".NET mechanism for loading assemblies in isolation"
+  hot-reload: "Ability to update plugins without restarting the application"
+  ALC: "Short for AssemblyLoadContext"
+  DI: "Dependency Injection - design pattern for managing object dependencies"
+  SDK: "Software Development Kit - tools for plugin developers"
+  Nuke: "Build automation system used for this project"
+
+faq:
+  - question: "How do I create a new plugin?"
+    answer: "Use the template command: dotnet new modulus-plugin -n MyPlugin"
+  
+  - question: "How are plugins isolated from each other?"
+    answer: "Each plugin runs in its own AssemblyLoadContext with a separate DI container"
+  
+  - question: "Can plugins communicate with each other?"
+    answer: "Yes, through the core message bus service or shared service interfaces"
+  
+  - question: "How do I contribute to the project?"
+    answer: "See the contributing guide and run 'nuke StartAI' for project context"
+
+teamCulture:
+  codingPractices:
+    - "Write self-documenting code with clear naming"
+    - "Include XML documentation for public APIs"
+    - "Follow SOLID principles"
+    - "Write unit tests for all new functionality"
+  
+  communicationChannels:
+    - "GitHub Issues for bug reports and feature requests"
+    - "Pull Requests for code contributions"
+    - "Project Wiki for documentation"
+  
+  reviewProcess:
+    - "All code changes require PR review"
+    - "Automated tests must pass before merge"
+    - "Documentation must be updated with code changes"
+
+aiContextNotes:
+  tools:
+    - "GitHub Copilot for code assistance"
+    - "Nuke StartAI command for project context injection"
+  
+  instructions:
+    - "Run 'nuke StartAI' before starting AI-assisted development"
+    - "Use role filtering for specific context (e.g., 'nuke StartAI --role Backend')"
+    - "Use Copilot Chat commands like /sync, /roadmap, /why for specific context"
+  
+  bestPractices:
+    - "Update AI context when adding significant new functionality"
+    - "Include bilingual documentation for all stories"
+    - "Reference architecture patterns in code comments"

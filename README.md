@@ -24,6 +24,21 @@ dotnet new --install Modulus.Templates
 dotnet new modulus-plugin -n MyPlugin
 ```
 
+## 🤖 AI-Assisted Development
+Modulus includes a built-in system to bootstrap AI context for tools like GitHub Copilot:
+
+```powershell
+# Bootstrap AI context (for GitHub Copilot)
+nuke StartAI
+
+# Role-specific context
+nuke StartAI --role Backend
+nuke StartAI --role Frontend
+nuke StartAI --role Plugin
+```
+
+For more information, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## 📚 Documentation
 - [English Documentation](./docs/en-US/README.md)
 - [中文文档 Chinese Documentation](./docs/zh-CN/README.md)

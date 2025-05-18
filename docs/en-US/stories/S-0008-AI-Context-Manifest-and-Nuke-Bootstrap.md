@@ -1,5 +1,5 @@
 <!-- Priority: P0 -->
-<!-- Status: Not Started -->
+<!-- Status: Completed -->
 # S-0008-AI-Context-Manifest-and-Nuke-StartAI
 
 **User Story**
@@ -15,19 +15,19 @@ As a developer using GitHub Copilot (or any AI agent), I want a single source of
 - Every new Story must be provided in both English and Chinese versions, as part of the AI context documentation standard.
 
 **Technical Tasks**
-- [ ] Draft and maintain `ai-manifest.yaml` in the root directory, including:
+- [x] Draft and maintain `ai-manifest.yaml` in the root directory, including:
     - Project Overview (vision, features, tech stack)
     - Architecture (modules, DI, plugin system, data flow)
     - Directory & Naming Rules
     - Roadmap / Milestones
     - Glossary & FAQ
-- [ ] Add `StartAI` target to Nuke build script.
-- [ ] Implement logic to aggregate manifest, README, and progress reports for output.
-- [ ] Support context filtering by role (e.g., `nuke StartAI --role Backend`).
-- [ ] Add pre-commit and CI checks for manifest consistency.
-- [ ] Update onboarding/contribution docs with Copilot/AI context instructions.
+- [x] Add `StartAI` target to Nuke build script.
+- [x] Implement logic to aggregate manifest, README, and progress reports for output.
+- [x] Support context filtering by role (e.g., `nuke StartAI --role Backend`).
+- [x] Add pre-commit and CI checks for manifest consistency.
+- [x] Update onboarding/contribution docs with Copilot/AI context instructions.
 - [ ] (Optional) Implement ManifestSync CLI for auto-updating manifest from codebase.
-- [ ] Enforce the rule: every new Story must have both English and Chinese versions.
+- [x] Enforce the rule: every new Story must have both English and Chinese versions.
 
 **Notes**
 - This ensures all Copilot/AI agent users have consistent, up-to-date project context, maximizing AI-assisted development efficiency.

@@ -33,6 +33,7 @@
         "Plugin",
         "Restore",
         "Run",
+        "StartAI",
         "Test"
       ]
     },
@@ -122,6 +123,10 @@
         "op": {
           "type": "string",
           "description": "Operation to perform: 'all' (default) or 'single'"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role to filter context (e.g., Backend, Frontend, Plugin)"
         },
         "Solution": {
           "type": "string",

@@ -24,6 +24,21 @@ dotnet new --install Modulus.Templates
 dotnet new modulus-plugin -n MyPlugin
 ```
 
+## 🤖 AI 辅助开发
+Modulus 内置了项目上下文引导系统，用于支持 GitHub Copilot 等 AI 工具：
+
+```powershell
+# 引导 AI 上下文（用于 GitHub Copilot）
+nuke StartAI
+
+# 特定角色的上下文
+nuke StartAI --role Backend
+nuke StartAI --role Frontend
+nuke StartAI --role Plugin
+```
+
+更多信息，请参阅 [CONTRIBUTING.zh-CN.md](./CONTRIBUTING.zh-CN.md)。
+
 ## 📚 文档
 - [English Documentation](./docs/en-US/README.md)
 - [中文文档](./README.zh-CN.md)
