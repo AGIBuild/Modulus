@@ -12,8 +12,8 @@ using System.Reflection;
 
 namespace Modulus.App.Services
 {    /// <summary>
-    /// Manages the loading, initialization, and integration of plugins with the Modulus UI.
-    /// </summary>
+     /// Manages the loading, initialization, and integration of plugins with the Modulus UI.
+     /// </summary>
     public class PluginManager
     {
         private readonly NavigationBarViewModel _navigationBarViewModel;
@@ -27,11 +27,11 @@ namespace Modulus.App.Services
         {
             _navigationBarViewModel = navigationBarViewModel ?? throw new ArgumentNullException(nameof(navigationBarViewModel));
             _navigationPluginService = navigationPluginService ?? throw new ArgumentNullException(nameof(navigationPluginService));
-            
+
             // Register application services for plugins to use
             RegisterServices();
         }
-        
+
         /// <summary>
         /// Safely gets the plugin metadata, handling potential interface mismatches.
         /// </summary>
@@ -45,7 +45,7 @@ namespace Modulus.App.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error getting plugin metadata: {ex.Message}");
-                
+
                 try
                 {
                     // Fallback to reflection if the interface method call fails
@@ -63,7 +63,7 @@ namespace Modulus.App.Services
                 {
                     // Ignore reflection errors
                 }
-                
+
                 return null;
             }
         }
@@ -76,7 +76,7 @@ namespace Modulus.App.Services
             // Add basic services for plugins
             _services.AddSingleton(_navigationBarViewModel);
             _services.AddSingleton(_navigationPluginService);
-            
+
             // Build the service provider
             _serviceProvider = _services.BuildServiceProvider();
         }
@@ -94,19 +94,19 @@ namespace Modulus.App.Services
         public async Task<int> LoadPluginsAsync(string pluginDirectoryPath)
         {            // Ensure we don't have any plugins loaded already
             UnloadAllPlugins();
-            
+
             await Task.Run(() =>
             {
                 // Use the proper plugin loader to load plugins from directory
                 var pluginPaths = _pluginLoader.DiscoverPlugins();
-                
+
                 foreach (var pluginPath in pluginPaths)
                 {
                     try
                     {
                         // Load and instantiate the plugin
                         var pluginInstance = _pluginLoader.RunPlugin(pluginPath);
-                        
+
                         if (pluginInstance is IPlugin plugin)
                         {
                             // Configure plugin services
@@ -140,14 +140,14 @@ namespace Modulus.App.Services
         private IConfiguration CreatePluginConfiguration(string pluginDirectoryPath)
         {
             var configPath = Path.Combine(pluginDirectoryPath, "pluginsettings.json");
-            
+
             var builder = new ConfigurationBuilder();
-            
+
             if (File.Exists(configPath))
             {
                 builder.AddJsonFile(configPath, optional: true, reloadOnChange: true);
             }
-            
+
             return builder.Build();
         }
 
@@ -159,8 +159,8 @@ namespace Modulus.App.Services
             // Add all plugins to the navigation
             _navigationPluginService.AddPluginNavigationItems(_loadedPlugins);
         }        /// <summary>
-        /// Unloads all plugins and removes them from the UI.
-        /// </summary>
+                 /// Unloads all plugins and removes them from the UI.
+                 /// </summary>
         public void UnloadAllPlugins()
         {
             foreach (var plugin in _loadedPlugins)
@@ -181,20 +181,20 @@ namespace Modulus.App.Services
 
             _loadedPlugins.Clear();
         }        /// <summary>
-        /// Unloads a specific plugin and removes it from the UI.
-        /// </summary>
-        /// <param name="pluginId">The ID/name of the plugin to unload.</param>
-        /// <returns>True if the plugin was found and unloaded, false otherwise.</returns>
+                 /// Unloads a specific plugin and removes it from the UI.
+                 /// </summary>
+                 /// <param name="pluginId">The ID/name of the plugin to unload.</param>
+                 /// <returns>True if the plugin was found and unloaded, false otherwise.</returns>
         public bool UnloadPlugin(string pluginId)
         {
             try
             {
-                var plugin = _loadedPlugins.FirstOrDefault(p => 
+                var plugin = _loadedPlugins.FirstOrDefault(p =>
                 {
                     var meta = GetPluginMetadataSafe(p);
                     return meta != null && meta.Name == pluginId;
                 });
-                
+
                 if (plugin == null)
                     return false;
 
@@ -208,8 +208,8 @@ namespace Modulus.App.Services
                 return false;
             }
         }/// <summary>
-        /// Adds test plugins for development purposes.
-        /// </summary>
+         /// Adds test plugins for development purposes.
+         /// </summary>
         public void AddTestPlugins()
         {
             // Load plugins from the samples directory

@@ -27,8 +27,10 @@
         "Build",
         "BuildAll",
         "Clean",
+        "CleanPluginsArtifacts",
         "Default",
         "Pack",
+        "Plugin",
         "Restore",
         "Run",
         "Test"
@@ -112,6 +114,14 @@
             "Debug",
             "Release"
           ]
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the plugin to pack (required when op=single)"
+        },
+        "op": {
+          "type": "string",
+          "description": "Operation to perform: 'all' (default) or 'single'"
         },
         "Solution": {
           "type": "string",

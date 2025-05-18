@@ -4,6 +4,7 @@ using Modulus.App.Controls.ViewModels;
 using Modulus.App.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Modulus.App.ViewModels;
@@ -20,6 +21,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool isProfileActive;
 
     [ObservableProperty] private NavigationBarViewModel navigationBar;
+    
     public MainViewModel()
     {
         navigationBar = new NavigationBarViewModel();
@@ -36,9 +38,34 @@ public partial class MainViewModel : ObservableObject
 
         // Auto-load plugins in background
         Task.Run(async () => await LoadPluginsAsync());
-    }    /// <summary>
-         /// Loads plugins from the default plugins directory.
-         /// </summary>
+        
+        // Demo notifications with badges
+        SetupNotificationDemo();
+    }
+    
+    /// <summary>
+    /// Sets up a demo of notifications with badges
+    /// </summary>
+    private void SetupNotificationDemo()
+    {
+        // Find the notifications menu item and add a badge
+        var notificationsItem = NavigationBar.BodyItems.FirstOrDefault(item => item.Tooltip == "Notifications");
+        if (notificationsItem != null)
+        {
+            notificationsItem.SetBadge(3);
+        }
+        
+        // Find the settings menu item and add a dot badge
+        var settingsItem = NavigationBar.FooterItems.FirstOrDefault(item => item.Tooltip == "Settings");
+        if (settingsItem != null)
+        {
+            settingsItem.SetDotBadge();
+        }
+    }
+    
+    /// <summary>
+    /// Loads plugins from the default plugins directory.
+    /// </summary>
     private async Task LoadPluginsAsync()
     {
         try
@@ -169,6 +196,13 @@ public partial class MainViewModel : ObservableObject
         SetActive("notifications");
         CurrentView = new NotificationsPlaceholderViewModel();
         UpdateNavigationMenuActiveState();
+        
+        // Clear the notification badge when viewing notifications
+        var notificationsItem = NavigationBar.BodyItems.FirstOrDefault(item => item.Tooltip == "Notifications");
+        if (notificationsItem != null)
+        {
+            notificationsItem.ClearBadge();
+        }
     }
 
     [RelayCommand]
@@ -177,6 +211,13 @@ public partial class MainViewModel : ObservableObject
         SetActive("settings");
         CurrentView = new SettingsPlaceholderViewModel();
         UpdateNavigationMenuActiveState();
+        
+        // Clear the settings badge when viewing settings
+        var settingsItem = NavigationBar.FooterItems.FirstOrDefault(item => item.Tooltip == "Settings");
+        if (settingsItem != null)
+        {
+            settingsItem.ClearBadge();
+        }
     }
 
     [RelayCommand]
@@ -186,6 +227,7 @@ public partial class MainViewModel : ObservableObject
         CurrentView = new ProfilePlaceholderViewModel();
         UpdateNavigationMenuActiveState();
     }
+    
     private void ShowFeedback()
     {
         // TODO: Implement feedback functionality

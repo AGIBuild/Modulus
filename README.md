@@ -34,3 +34,33 @@ Modulus - Modular Application Template for Cross-Platform Tooling
 ```bash
 dotnet new --install Modulus.Templates
 dotnet new modulus-plugin -n MyPlugin
+```
+
+---
+
+## 📚 文档
+
+完整的项目文档可以在 [docs](./docs/README.md) 目录中找到。文档包括：
+
+- **用户指南**：安装说明、使用说明和故障排除
+- **开发者指南**：插件开发、系统架构和 API 参考
+- **用户故事**：产品开发路线图和功能演进
+
+文档提供多种语言版本：
+- [English Documentation](./docs/en-US/README.md)
+- [中文文档](./docs/zh-CN/README.md)
+
+---
+
+## 📊 项目状态
+
+查看当前项目进度与状态请参阅 [README-Project-Status.md](./README-Project-Status.md)。
+
+我们使用标准化的用户故事文档，所有 Story 文件遵循以下命名规则：
+- 文件格式：`S-XXXX-标题.md`
+- 文档标题：`# S-XXXX-标题`
+- 必要元数据：包含优先级和状态标记
+
+通过运行 `.\Generate-StoryProgress.ps1` 可生成最新的项目进度报告。
+
+---

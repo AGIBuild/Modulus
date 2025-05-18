@@ -94,4 +94,51 @@ public partial class NavigationMenuItemViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private double fontSize = 26;
+
+    /// <summary>
+    /// Whether this menu item has a badge indicator
+    /// </summary>
+    [ObservableProperty]
+    private bool hasBadge;
+
+    /// <summary>
+    /// Text to display in the badge (if HasBadge is true)
+    /// </summary>
+    [ObservableProperty]
+    private string badgeText = string.Empty;
+
+    /// <summary>
+    /// Sets a numeric badge on the navigation item
+    /// </summary>
+    /// <param name="count">The count to display. If greater than 99, will show "99+"</param>
+    public void SetBadge(int count)
+    {
+        if (count <= 0)
+        {
+            HasBadge = false;
+            BadgeText = string.Empty;
+            return;
+        }
+
+        HasBadge = true;
+        BadgeText = count > 99 ? "99+" : count.ToString();
+    }
+
+    /// <summary>
+    /// Sets a simple dot badge with no text
+    /// </summary>
+    public void SetDotBadge()
+    {
+        HasBadge = true;
+        BadgeText = string.Empty;
+    }
+
+    /// <summary>
+    /// Removes the badge from the navigation item
+    /// </summary>
+    public void ClearBadge()
+    {
+        HasBadge = false;
+        BadgeText = string.Empty;
+    }
 }
