@@ -25,11 +25,11 @@ dotnet new modulus-plugin -n MyPlugin
 ```
 
 ## 📚 文档
-- [English Documentation](../en-US/README.md)
-- [中文文档](./README.md)
+- [English Documentation](./docs/en-US/README.md)
+- [中文文档](./README.zh-CN.md)
 
 ## 项目状态
-- 进度报告见 [docs/reports/story-progress-report.zh-CN.md](../reports/story-progress-report.zh-CN.md)
+- 进度报告见 [docs/reports/story-progress-report.zh-CN.md](./docs/reports/story-progress-report.zh-CN.md)
 
 ## Story 命名规则
 - 文件格式：`S-XXXX-标题.md`
