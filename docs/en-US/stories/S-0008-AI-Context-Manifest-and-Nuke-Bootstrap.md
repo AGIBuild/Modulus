@@ -26,7 +26,7 @@ As a developer using GitHub Copilot (or any AI agent), I want a single source of
 - [x] Support context filtering by role (e.g., `nuke StartAI --role Backend`).
 - [x] Add pre-commit and CI checks for manifest consistency.
 - [x] Update onboarding/contribution docs with Copilot/AI context instructions.
-- [ ] (Optional) Implement ManifestSync CLI for auto-updating manifest from codebase.
+- [x] (Optional) Implement ManifestSync CLI for auto-updating manifest from codebase.
 - [x] Enforce the rule: every new Story must have both English and Chinese versions.
 
 **Notes**

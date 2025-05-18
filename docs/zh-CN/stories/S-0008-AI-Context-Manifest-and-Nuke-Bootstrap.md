@@ -26,7 +26,7 @@
 - [x] 支持按角色过滤上下文（如 `nuke StartAI --role Backend`）。
 - [x] 添加 pre-commit 和 CI 检查，保证 manifest 一致性。
 - [x] 更新 Onboarding/贡献文档，说明 Copilot/AI 上下文注入方法。
-- [ ] （可选）实现 ManifestSync CLI，自动从代码生成/更新 manifest。
+- [x] （可选）实现 ManifestSync CLI，自动从代码生成/更新 manifest。
 - [x] 明确 Story 文档编写规范：每次新增 Story 必须同时提供中英文双版本。
 
 **说明**

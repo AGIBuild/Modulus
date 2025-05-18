@@ -64,6 +64,9 @@ class BuildTasks : NukeBuild
     [Parameter("Role to filter context (e.g., Backend, Frontend, Plugin)", Name = "role")]
     readonly string Role;
 
+    [Parameter("Verbosity for ManifestSync tool (true/false)", Name = "verbose")]
+    readonly bool Verbose = false;
+
     [Solution] readonly Solution Solution;
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
@@ -396,9 +399,9 @@ class BuildTasks : NukeBuild
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .IgnoreUnmatchedProperties()
                 .Build();
-            
+
             var manifest = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
-            
+
             // Load progress report if available
             string progressReport = "";
             var progressReportFile = ReportsDirectory / "story-progress-report.en-US.md";
@@ -416,17 +419,17 @@ class BuildTasks : NukeBuild
                     progressReport = "# Modulus Project Progress\nNo detailed progress information available.";
                 }
             }
-            
+
             // Filter based on role if specified
             if (!string.IsNullOrEmpty(Role))
             {
                 LogHighlight($"Filtering context for role: {Role}");
             }
-            
+
             // Generate AI context output
             var sb = new StringBuilder();
             sb.AppendLine("# 🌟 MODULUS PROJECT CONTEXT");
-            
+
             // Project Overview
             if (manifest.TryGetValue("projectInfo", out var projInfoObj))
             {
@@ -436,20 +439,20 @@ class BuildTasks : NukeBuild
                 {
                     if (projInfo.TryGetValue("name", out var name))
                         sb.AppendLine($"**Project Name:** {name}");
-                    
+
                     if (projInfo.TryGetValue("vision", out var vision))
                         sb.AppendLine($"**Vision:** {vision}");
-                    
+
                     if (projInfo.TryGetValue("description", out var desc))
                         sb.AppendLine($"**Description:** {desc}");
-                    
+
                     if (projInfo.TryGetValue("languages", out var langObj))
                     {
                         var languages = langObj as List<object>;
                         if (languages?.Count > 0)
                             sb.AppendLine($"**Languages:** {string.Join(", ", languages)}");
                     }
-                    
+
                     if (projInfo.TryGetValue("frameworks", out var fwObj))
                     {
                         var frameworks = fwObj as List<object>;
@@ -458,30 +461,30 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Role-specific context section
             if (!string.IsNullOrEmpty(Role))
             {
                 sb.AppendLine($"## Role-Specific Context: {Role}");
             }
-            
+
             // Architecture section (always include for technical roles)
-            if (string.IsNullOrEmpty(Role) || 
-                Role.Equals("Backend", StringComparison.OrdinalIgnoreCase) || 
+            if (string.IsNullOrEmpty(Role) ||
+                Role.Equals("Backend", StringComparison.OrdinalIgnoreCase) ||
                 Role.Equals("Developer", StringComparison.OrdinalIgnoreCase) ||
                 Role.Equals("Plugin", StringComparison.OrdinalIgnoreCase))
             {
                 sb.AppendLine("## Architecture");
-                
+
                 if (manifest.TryGetValue("architecture", out var archObj))
                 {
                     var arch = archObj as Dictionary<object, object>;
-                    
+
                     if (arch != null && arch.TryGetValue("overview", out var overview))
                     {
                         sb.AppendLine(overview.ToString());
                     }
-                    
+
                     // Add module information
                     if (arch != null && arch.TryGetValue("modules", out var modulesObj))
                     {
@@ -489,26 +492,26 @@ class BuildTasks : NukeBuild
                         if (modules != null)
                         {
                             sb.AppendLine("### Key Modules");
-                            
+
                             foreach (var moduleKV in modules)
                             {
                                 var moduleName = moduleKV.Key.ToString();
                                 var moduleData = moduleKV.Value as Dictionary<object, object>;
-                                
+
                                 sb.AppendLine($"#### {moduleName}");
-                                
+
                                 if (moduleData != null)
                                 {
                                     if (moduleData.TryGetValue("description", out var moduleDesc))
                                     {
                                         sb.AppendLine(moduleDesc.ToString());
                                     }
-                                    
+
                                     if (moduleData.TryGetValue("path", out var modulePath))
                                     {
                                         sb.AppendLine($"- Path: `{modulePath}`");
                                     }
-                                    
+
                                     if (moduleData.TryGetValue("responsibilities", out var respObj))
                                     {
                                         var responsibilities = respObj as List<object>;
@@ -525,9 +528,9 @@ class BuildTasks : NukeBuild
                             }
                         }
                     }
-                    
+
                     // If Backend role, include plugin system details
-                    if (string.IsNullOrEmpty(Role) || 
+                    if (string.IsNullOrEmpty(Role) ||
                         Role.Equals("Backend", StringComparison.OrdinalIgnoreCase) ||
                         Role.Equals("Plugin", StringComparison.OrdinalIgnoreCase))
                     {
@@ -537,12 +540,12 @@ class BuildTasks : NukeBuild
                             if (pluginSystem != null)
                             {
                                 sb.AppendLine("### Plugin System");
-                                
+
                                 if (pluginSystem.TryGetValue("description", out var psDesc))
                                 {
                                     sb.AppendLine(psDesc.ToString());
                                 }
-                                
+
                                 if (pluginSystem.TryGetValue("pluginLifecycle", out var lifecycleObj))
                                 {
                                     var lifecycle = lifecycleObj as List<object>;
@@ -560,13 +563,13 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Directory Structure - relevant for all roles
             if (manifest.TryGetValue("directoryStructure", out var dirStructObj))
             {
                 sb.AppendLine("## Directory Structure");
                 var dirStruct = dirStructObj as Dictionary<object, object>;
-                
+
                 if (dirStruct != null)
                 {
                     // Root directories
@@ -582,9 +585,9 @@ class BuildTasks : NukeBuild
                             }
                         }
                     }
-                    
+
                     // Source structure - more relevant for developers
-                    if (string.IsNullOrEmpty(Role) || 
+                    if (string.IsNullOrEmpty(Role) ||
                         !Role.Equals("Docs", StringComparison.OrdinalIgnoreCase))
                     {
                         if (dirStruct.TryGetValue("srcStructure", out var srcStructObj))
@@ -602,24 +605,24 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Naming Conventions
             if (manifest.TryGetValue("namingConventions", out var namingObj))
             {
                 sb.AppendLine("## Naming Conventions");
                 var naming = namingObj as Dictionary<object, object>;
-                
+
                 if (naming != null)
                 {
                     foreach (var conventionType in naming)
                     {
                         var typeName = conventionType.Key.ToString();
                         var conventions = conventionType.Value as List<object>;
-                        
+
                         if (conventions?.Count > 0)
                         {
                             // Filter conventions based on role
-                            if (string.IsNullOrEmpty(Role) || 
+                            if (string.IsNullOrEmpty(Role) ||
                                 typeName.Equals("general", StringComparison.OrdinalIgnoreCase) ||
                                 (Role.Equals("Docs", StringComparison.OrdinalIgnoreCase) && typeName.Equals("stories", StringComparison.OrdinalIgnoreCase)) ||
                                 (Role.Equals("Plugin", StringComparison.OrdinalIgnoreCase) && typeName.Equals("plugins", StringComparison.OrdinalIgnoreCase)))
@@ -634,13 +637,13 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Roadmap - include for all roles
             if (manifest.TryGetValue("roadmap", out var roadmapObj))
             {
                 sb.AppendLine("## Roadmap");
                 var roadmap = roadmapObj as Dictionary<object, object>;
-                
+
                 if (roadmap != null)
                 {
                     if (roadmap.TryGetValue("current", out var currentObj))
@@ -655,7 +658,7 @@ class BuildTasks : NukeBuild
                             }
                         }
                     }
-                    
+
                     if (roadmap.TryGetValue("upcoming", out var upcomingObj))
                     {
                         var upcoming = upcomingObj as List<object>;
@@ -670,13 +673,13 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Glossary - include for all roles
             if (manifest.TryGetValue("glossary", out var glossaryObj))
             {
                 sb.AppendLine("## Glossary");
                 var glossary = glossaryObj as Dictionary<object, object>;
-                
+
                 if (glossary != null)
                 {
                     foreach (var termKV in glossary)
@@ -685,20 +688,20 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // FAQ - include for all roles
             if (manifest.TryGetValue("faq", out var faqObj))
             {
                 sb.AppendLine("## FAQ");
                 var faqItems = faqObj as List<object>;
-                
+
                 if (faqItems != null)
                 {
                     foreach (var faqItemObj in faqItems)
                     {
                         var faqItem = faqItemObj as Dictionary<object, object>;
-                        if (faqItem != null && 
-                            faqItem.TryGetValue("question", out var question) && 
+                        if (faqItem != null &&
+                            faqItem.TryGetValue("question", out var question) &&
                             faqItem.TryGetValue("answer", out var answer))
                         {
                             sb.AppendLine($"### Q: {question}");
@@ -707,7 +710,7 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Team Culture
             if (string.IsNullOrEmpty(Role) || !Role.Equals("Plugin", StringComparison.OrdinalIgnoreCase))
             {
@@ -715,14 +718,14 @@ class BuildTasks : NukeBuild
                 {
                     sb.AppendLine("## Team Culture");
                     var culture = cultureObj as Dictionary<object, object>;
-                    
+
                     if (culture != null)
                     {
                         foreach (var cultureKV in culture)
                         {
                             var cultureName = cultureKV.Key.ToString();
                             var cultureItems = cultureKV.Value as List<object>;
-                            
+
                             if (cultureItems?.Count > 0)
                             {
                                 sb.AppendLine($"### {cultureName}");
@@ -735,7 +738,7 @@ class BuildTasks : NukeBuild
                     }
                 }
             }
-            
+
             // Append progress report
             if (!string.IsNullOrEmpty(progressReport))
             {
@@ -743,7 +746,7 @@ class BuildTasks : NukeBuild
                 sb.AppendLine("```");
                 sb.AppendLine(progressReport.Replace("```", "").Trim());
             }
-            
+
             // Output context
             LogNormal("");
             LogHighlight("→ AI Context Generated Successfully!");
@@ -753,6 +756,49 @@ class BuildTasks : NukeBuild
             LogNormal("");
             LogHighlight("→ Tip: Use /sync, /roadmap, or /why commands in Copilot Chat to reference specific sections of the manifest.");
             LogNormal("");
+        });
+
+    Target SyncAIManifest => _ => _
+        .Description("Updates the AI manifest by scanning the codebase")
+        .Executes(() =>
+        {
+            LogHeader("🔄 UPDATING AI CONTEXT MANIFEST");
+            LogNormal("Scanning codebase to update AI manifest...");
+
+            // Check if manifest exists
+            if (!File.Exists(AiManifestFile))
+            {
+                LogWarning("AI manifest file not found. Will create a new one at: " + AiManifestFile);
+            }
+
+            try
+            {
+                // Create ManifestSync instance and update manifest
+                var manifestSync = new Modulus.Build.ManifestSync(
+                    rootDirectory: RootDirectory.ToString(),
+                    manifestPath: AiManifestFile.ToString(),
+                    verbose: true);
+
+                // Update sections
+                manifestSync.UpdateDirectoryStructure();
+                manifestSync.UpdateProjectInfo();
+                manifestSync.UpdateNamingConventions();
+                manifestSync.UpdateGlossary();
+
+                // Save changes
+                manifestSync.SaveManifest();
+
+                LogSuccess("AI manifest successfully updated!");
+                LogNormal("");
+                LogHighlight("→ Run 'nuke StartAI' to see the updated context");
+                LogNormal("");
+            }
+            catch (Exception ex)
+            {
+                LogError($"Failed to update AI manifest: {ex.Message}");
+                LogError(ex.StackTrace);
+                throw;
+            }
         });
 
     // Helper method to determine if a section should be included based on role

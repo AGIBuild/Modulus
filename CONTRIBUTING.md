@@ -43,6 +43,31 @@ nuke StartAI --role Plugin
 nuke StartAI --role Docs
 ```
 
+### Updating the AI Manifest
+
+The AI manifest can be automatically updated from codebase analysis:
+
+```powershell
+# Update AI manifest with auto-detection
+nuke SyncAIManifest
+
+# Run with verbose output
+nuke SyncAIManifest --verbose true
+```
+
+This will scan the codebase and update the AI manifest with detected directories, naming conventions, and other structural information, while preserving manually edited sections.
+
+### AI Usage Guidelines
+
+When using AI tools like GitHub Copilot to assist with development:
+
+1. Always test generated code before committing it to ensure it works as expected
+2. Review AI-generated changes carefully to ensure they follow project standards
+3. Run appropriate tests after making AI-suggested changes
+4. Use `nuke StartAI` to ensure Copilot has the latest project context
+5. All code must be formatted according to the editorconfig configuration file
+6. Execute Nuke tasks using the `nuke commandName` format rather than the dotnet command with parameters
+
 ### Quick Reference Commands for Copilot Chat
 
 After providing context to Copilot, you can use the following commands in Copilot Chat:

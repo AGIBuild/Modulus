@@ -34,6 +34,7 @@
         "Restore",
         "Run",
         "StartAI",
+        "SyncAIManifest",
         "Test"
       ]
     },
@@ -131,6 +132,10 @@
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
+        },
+        "verbose": {
+          "type": "boolean",
+          "description": "Verbosity for ManifestSync tool (true/false)"
         }
       }
     },

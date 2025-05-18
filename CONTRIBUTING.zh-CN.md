@@ -43,6 +43,31 @@ nuke StartAI --role Plugin
 nuke StartAI --role Docs
 ```
 
+### 更新 AI 清单
+
+AI 清单可以通过代码库分析自动更新：
+
+```powershell
+# 使用自动检测更新 AI 清单
+nuke SyncAIManifest
+
+# 使用详细输出运行
+nuke SyncAIManifest --verbose true
+```
+
+这将扫描代码库并用检测到的目录、命名约定和其他结构信息更新 AI 清单，同时保留手动编辑的部分。
+
+### AI 使用指南
+
+使用 GitHub Copilot 等 AI 工具辅助开发时：
+
+1. 提交前必须先测试 AI 生成的代码，确保其按预期工作
+2. 仔细检查 AI 生成的变更，确保它们遵循项目标准
+3. 在进行 AI 建议的更改后运行相应的测试
+4. 使用 `nuke StartAI` 确保 Copilot 获得最新的项目上下文
+5. 所有代码必须按照 editorconfig 配置文件进行格式化
+6. 在 AI agent 工作过程中，使用 `nuke commandName` 的方式执行 Nuke 任务，而不是通过 dotnet 命令编译项目传入参数的方式
+
 ### Copilot Chat 的快速参考命令
 
 向 Copilot 提供上下文后，您可以在 Copilot Chat 中使用以下命令:
