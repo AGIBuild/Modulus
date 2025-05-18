@@ -1,7 +1,7 @@
 ##################################
 # Modulus AI Context Manifest
 # This file provides context for AI tools (GitHub Copilot)
-# Last auto-updated: 2025-05-18 18:51:14
+# Last auto-updated: 2025-05-18 21:22:04
 ##################################
 
 projectInfo:
@@ -147,7 +147,7 @@ aiContextNotes:
   - Run 'nuke StartAI' before starting AI-assisted development
   - Use role filtering for specific context (e.g., 'nuke StartAI --role Backend')
   - Use Copilot Chat commands like /sync, /roadmap, /why for specific context
-  bestPractices: 
+  bestPractices:
   - Update AI context when adding significant new functionality
   - Include bilingual documentation for all stories
   - Reference architecture patterns in code comments

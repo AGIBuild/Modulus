@@ -2,6 +2,11 @@
 
 本文档提供了 Modulus 插件 API 接口及其用法的详细参考。
 
+## 相关文档
+
+- [插件开发指南](plugin-development-guide.md) - 插件开发的主要文档
+- [高级示例](plugin-advanced-examples.md) - 高级代码示例和模式
+
 ## 核心接口
 
 ### IPlugin
