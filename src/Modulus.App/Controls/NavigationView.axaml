@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Modulus.App.Controls.ViewModels"
+             xmlns:controls="clr-namespace:Modulus.App.Controls"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+             x:DataType="vm:NavigationViewModel"
+             x:Class="Modulus.App.Controls.NavigationView">
+    <Design.DataContext>
+        <vm:NavigationViewModel />
+    </Design.DataContext>
+    
+    <!-- Root grid layout dividing the UI into Navigation and Content areas -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Navigation panel with dynamic width (collapsed or expanded) -->
+            <ColumnDefinition Width="{Binding NavigationBarWidth}" MinWidth="60" />
+            <!-- ContentArea with flexible width -->
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        
+        <!-- Left side: Navigation Panel -->
+        <Panel x:Name="NavigationPanel" Grid.Column="0">
+            <Border x:Name="NavigationBarContainer" 
+                   Background="#1E1E2E" 
+                   CornerRadius="0,16,16,0"
+                   ZIndex="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" /> <!-- Header -->
+                        <RowDefinition Height="*" /> <!-- Body -->
+                        <RowDefinition Height="Auto" /> <!-- Footer -->
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Header Section -->
+                    <controls:NavigationHeader 
+                        x:Name="NavHeader"
+                        Grid.Row="0"
+                        IsVisible="{Binding ShowHeader}"
+                        IsExpanded="{Binding IsNavigationExpanded}"
+                        AppName="{Binding AppName}"
+                        AppVersion="{Binding AppVersion}"
+                        AppIcon="{Binding AppIcon}" />
+                    
+                    <!-- Body Section - Navigation Items -->
+                    <controls:NavigationBody 
+                        x:Name="NavBody"
+                        Grid.Row="1"
+                        IsVisible="{Binding ShowBody}"
+                        IsExpanded="{Binding IsNavigationExpanded}"
+                        NavigationItems="{Binding NavigationItems}" />
+                    
+                    <!-- Footer Section -->
+                    <controls:NavigationFooter 
+                        x:Name="NavFooter"
+                        Grid.Row="2"
+                        IsVisible="{Binding ShowFooter}"
+                        IsExpanded="{Binding IsNavigationExpanded}"
+                        FooterItems="{Binding FooterItems}" />
+                </Grid>
+            </Border>
+            <!-- Overlay Shadow/Fade -->
+            <Border x:Name="NavShadowOverlay"
+                    Background="#40000000"
+                    IsVisible="{Binding IsNavigationOverlayed}"
+                    ZIndex="5"
+                    PointerPressed="NavOverlay_PointerPressed"/>
+        </Panel>
+        
+        <!-- Right side: Content Area -->
+        <controls:ContentArea Grid.Column="1"
+                              Background="{Binding ContentBackground}"
+                              PageTitle="{Binding CurrentPageTitle}"
+                              ContentValue="{Binding CurrentPage}"
+                              ContentMargin="24"
+                              CollapseExpandIcon="{Binding CollapseExpandIcon}"
+                              ToggleCommand="{Binding ToggleNavigationBarCommand}" />
+    </Grid>
+</UserControl> 

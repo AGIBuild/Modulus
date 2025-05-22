@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Modulus.App.Controls.ContentArea"
+             x:Name="control">
+    <Border Background="{Binding Background, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}"
+            CornerRadius="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <!-- 内容区头部 -->
+            <Grid Grid.Row="0" Height="64" Margin="16,8,16,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <!-- 折叠/展开按钮 -->
+                    <Button x:Name="ToggleButton"
+                            Width="40" Height="40" 
+                            CornerRadius="8"
+                            Background="Transparent"
+                            IsVisible="{Binding ShowToggleButton, ElementName=control}">
+                        <TextBlock x:Name="ToggleButtonIcon"
+                                   Text="{Binding CollapseExpandIcon, ElementName=control}" 
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Button>
+                    
+                    <!-- 页面标题 -->
+                    <TextBlock x:Name="PageTitleText"
+                               Text="{Binding PageTitle, ElementName=control}" 
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0"
+                               FontSize="20"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+            
+            <!-- 内容区主要内容 -->
+            <Border Grid.Row="1" 
+                    Background="{Binding Background, ElementName=control}"
+                    Margin="16,0,16,16"
+                    CornerRadius="16">
+                <ContentControl x:Name="ContentPresenter"
+                                Content="{Binding ContentValue, ElementName=control}" 
+                                Margin="{Binding ContentMargin, ElementName=control}"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl> 

@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="140"
+             x:Class="Modulus.App.Controls.NavigationHeader"
+             x:Name="control">
+    
+    <UserControl.Styles>
+        <!-- 应用名称和版本的样式处理 -->
+        <Style Selector="UserControl:not(.expanded) TextBlock.expandable">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="UserControl.expanded TextBlock.expandable">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        
+        <!-- 折叠状态下图标容器的样式 -->
+        <Style Selector="UserControl:not(.expanded) Border#IconContainer">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        
+        <!-- 折叠状态下图标的样式 -->
+        <Style Selector="UserControl:not(.expanded) Image#AppIconImage">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+        </Style>
+    </UserControl.Styles>
+    
+    <StackPanel Margin="0,16,0,0" HorizontalAlignment="Center">
+        <Border x:Name="IconContainer" 
+                Background="#2C2C2C"
+                CornerRadius="12" 
+                Width="48" 
+                Height="48" 
+                Margin="0,0,0,8">
+            <Image x:Name="AppIconImage" 
+                   Source="{Binding AppIcon, ElementName=control}" 
+                   Width="28" 
+                   Height="28" 
+                   Stretch="Uniform"/>
+        </Border>
+        <TextBlock x:Name="AppNameText"
+                   Classes="expandable"
+                   Text="{Binding AppName, ElementName=control}" 
+                   FontSize="16" 
+                   FontWeight="Bold" 
+                   Foreground="#3B82F6" 
+                   HorizontalAlignment="Center"/>
+        <TextBlock x:Name="AppVersionText"
+                   Classes="expandable"
+                   Text="{Binding AppVersion, ElementName=control}" 
+                   FontSize="11" 
+                   Foreground="#888888" 
+                   HorizontalAlignment="Center" 
+                   Margin="0,2,0,8"/>
+    </StackPanel>
+</UserControl> 

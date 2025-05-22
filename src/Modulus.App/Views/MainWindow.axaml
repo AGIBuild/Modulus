@@ -14,20 +14,7 @@
         <vm:MainViewModel />
     </Design.DataContext>
     <Window.Resources>
-        <converters:NavHighlightConverter x:Key="NavHighlightConverter" />
+        <converters:NavItemBackgroundConverter x:Key="NavItemBackgroundConverter" />
     </Window.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="80"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <!-- Left Sidebar (Navigation Panel) -->
-        <Border Grid.Column="0" Background="#1E1E2E">
-            <controls:NavigationBar DataContext="{Binding NavigationBar}" Grid.Column="0"/>
-        </Border>
-        <!-- Main Content Area -->
-        <Border Grid.Column="1" Background="#F7F9FB">
-            <ContentControl Content="{Binding CurrentView}"/>
-        </Border>
-    </Grid>
+    <controls:NavigationView x:Name="MainNavigation" DataContext="{Binding Navigation}" />
 </Window>

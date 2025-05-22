@@ -1,10 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Modulus.App.Services;
-using Modulus.Plugin.Abstractions;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Modulus.App.ViewModels
@@ -12,121 +10,164 @@ namespace Modulus.App.ViewModels
     /// <summary>
     /// ViewModel for the Plugin Manager view.
     /// </summary>
-    public partial class PluginManagerViewModel : ObservableObject
+    public partial class PluginManagerViewModel : NavigationViewModelBase
     {
-        private readonly PluginManager? _pluginManager;
+        private readonly IPluginManager _pluginManager;
 
+        /// <summary>
+        /// 视图名称
+        /// </summary>
+        public override string ViewName => "PluginManagerView";
+
+        /// <summary>
+        /// 插件列表
+        /// </summary>
         [ObservableProperty]
         private ObservableCollection<PluginViewModel> plugins = new();
 
+        /// <summary>
+        /// 选中的插件
+        /// </summary>
         [ObservableProperty]
         private PluginViewModel? selectedPlugin;
 
+        /// <summary>
+        /// 搜索文本
+        /// </summary>
         [ObservableProperty]
         private string searchText = string.Empty;
 
+        /// <summary>
+        /// 最近更新的插件
+        /// </summary>
         [ObservableProperty]
         private ObservableCollection<PluginViewModel> recentlyUpdatedPlugins = new();
 
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
         [ObservableProperty]
         private bool isLoading;
 
+        /// <summary>
+        /// 状态消息
+        /// </summary>
         [ObservableProperty]
         private string statusMessage = string.Empty;
 
-        public PluginManagerViewModel()
+        /// <summary>
+        /// 创建插件管理器视图模型
+        /// </summary>
+        public PluginManagerViewModel(INavigationService navigationService, IPluginManager pluginManager) 
+            : base(navigationService)
         {
-            // Default constructor for design-time support
-        }
-
-        public PluginManagerViewModel(PluginManager pluginManager)
-        {
-            _pluginManager = pluginManager;
-            RefreshPluginsList();
+            _pluginManager = pluginManager ?? throw new ArgumentNullException(nameof(pluginManager));
+            
+            // 添加一些示例插件数据
+            AddSamplePlugins();
         }
 
         /// <summary>
-        /// Refreshes the list of plugins from the plugin manager.
+        /// 添加示例插件数据
         /// </summary>
-        private void RefreshPluginsList()
+        private void AddSamplePlugins()
         {
-            if (_pluginManager == null) return;
-
             Plugins.Clear();
             RecentlyUpdatedPlugins.Clear();
 
-            foreach (var plugin in _pluginManager.LoadedPlugins)
+            // 添加一些示例插件
+            var samplePlugins = new[]
             {
-                try
+                new PluginViewModel
                 {
-                    var meta = plugin.GetMetadata();
-                    var viewModel = new PluginViewModel
-                    {
-                        PluginName = meta.Name,
-                        PluginVersion = meta.Version,
-                        PluginAuthor = meta.Author,
-                        PluginDescription = meta.Description,
-                        PluginIsEnabled = true,
-                        PluginStatus = "Enabled"
-                    };
-
-                    Plugins.Add(viewModel);
-
-                    // Add to recently updated (just for demonstration)
-                    RecentlyUpdatedPlugins.Add(viewModel);
+                    PluginName = "数据分析插件",
+                    PluginVersion = "1.2.3",
+                    PluginAuthor = "数据团队",
+                    PluginDescription = "提供数据分析和可视化功能",
+                    PluginIsEnabled = true,
+                    PluginStatus = "已启用"
+                },
+                new PluginViewModel
+                {
+                    PluginName = "报表生成器",
+                    PluginVersion = "2.0.1",
+                    PluginAuthor = "报表团队",
+                    PluginDescription = "支持导出各种格式的报表",
+                    PluginIsEnabled = true,
+                    PluginStatus = "已启用"
+                },
+                new PluginViewModel
+                {
+                    PluginName = "文档处理工具",
+                    PluginVersion = "0.9.5",
+                    PluginAuthor = "文档团队",
+                    PluginDescription = "处理各种文档格式",
+                    PluginIsEnabled = false,
+                    PluginStatus = "已禁用"
                 }
-                catch (Exception ex)
+            };
+
+            foreach (var plugin in samplePlugins)
+            {
+                Plugins.Add(plugin);
+                
+                // 假设前两个插件是最近更新的
+                if (plugin.PluginName == "数据分析插件" || plugin.PluginName == "报表生成器")
                 {
-                    // Log the error but continue processing other plugins
-                    StatusMessage = $"Error loading plugin: {ex.Message}";
+                    RecentlyUpdatedPlugins.Add(plugin);
                 }
             }
         }
 
+        /// <summary>
+        /// 安装插件命令
+        /// </summary>
         [RelayCommand]
         private async Task InstallPluginFromFile()
         {
             IsLoading = true;
-            StatusMessage = "Installing plugin...";
+            StatusMessage = "正在安装插件...";
 
-            // In a real implementation, this would show a file dialog
-            // and install the selected plugin.
-            await Task.Delay(1000); // Simulate installation delay
+            // 在实际实现中，这里会显示文件对话框
+            // 并安装选定的插件
+            await Task.Delay(1000); // 模拟安装延迟
 
-            // Refresh the plugins list
-            RefreshPluginsList();
+            // 刷新插件列表
+            AddSamplePlugins();
 
             IsLoading = false;
-            StatusMessage = "Plugin installed successfully.";
+            StatusMessage = "插件安装成功。";
         }
 
+        /// <summary>
+        /// 刷新插件命令
+        /// </summary>
         [RelayCommand]
         private void RefreshPlugins()
         {
-            RefreshPluginsList();
-            StatusMessage = "Plugins refreshed.";
+            AddSamplePlugins();
+            StatusMessage = "插件已刷新。";
         }
 
+        /// <summary>
+        /// 卸载插件命令
+        /// </summary>
         [RelayCommand]
         private void UninstallSelectedPlugin()
         {
-            if (_pluginManager == null || SelectedPlugin == null)
+            if (SelectedPlugin == null)
             {
-                StatusMessage = "No plugin selected or plugin manager not available.";
+                StatusMessage = "未选择插件。";
                 return;
             }
 
-            // Uninstall the selected plugin
-            if (SelectedPlugin != null)
-            {
-                _pluginManager.UnloadPlugin(SelectedPlugin.PluginName);
-                
-                // Refresh the list
-                RefreshPluginsList();
-                
-                StatusMessage = $"Plugin '{SelectedPlugin.PluginName}' uninstalled.";
-                SelectedPlugin = null;
-            }
+            // 卸载选中的插件
+            var pluginName = SelectedPlugin.PluginName;
+            Plugins.Remove(SelectedPlugin);
+            RecentlyUpdatedPlugins.Remove(SelectedPlugin);
+            
+            StatusMessage = $"插件'{pluginName}'已卸载。";
+            SelectedPlugin = null;
         }
     }
 }
