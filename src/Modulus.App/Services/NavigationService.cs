@@ -379,6 +379,23 @@ namespace Modulus.App.Services
             
             return null;
         }
+        
+        /// <summary>
+        /// Registers a view model factory for plugin navigation.
+        /// </summary>
+        /// <param name="viewName">The unique view name.</param>
+        /// <param name="factory">A factory function that returns a new ViewModel instance.</param>
+        public void RegisterViewModel(string viewName, Func<object> factory)
+        {
+            // Store the factory in a dictionary for plugin navigation
+            if (string.IsNullOrWhiteSpace(viewName) || factory == null)
+                return;
+            // Use a separate dictionary for plugin factories
+            if (_pluginViewModelFactories == null)
+                _pluginViewModelFactories = new Dictionary<string, Func<object>>();
+            _pluginViewModelFactories[viewName] = factory;
+        }
+        private Dictionary<string, Func<object>>? _pluginViewModelFactories;
     }
     
     /// <summary>
@@ -396,4 +413,4 @@ namespace Modulus.App.Services
         /// </summary>
         public object? Parameter { get; set; }
     }
-} 
+}

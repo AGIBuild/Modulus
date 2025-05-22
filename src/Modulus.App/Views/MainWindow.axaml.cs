@@ -1,11 +1,14 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+using Modulus.App.ViewModels;
 
 namespace Modulus.App.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow(MainWindowViewModel viewModel)
     {
-        InitializeComponent();
+        AvaloniaXamlLoader.Load(this);
+        DataContext = viewModel;
     }
 }

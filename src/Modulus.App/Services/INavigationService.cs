@@ -77,5 +77,12 @@ namespace Modulus.App.Services
         /// <param name="route">路由名称（通常是View类名）</param>
         /// <param name="section">导航项所在区域（body或footer）</param>
         void RegisterNavigationItem(string label, string icon, string route, string section = "body");
+        
+        /// <summary>
+        /// 注册视图模型工厂，用于插件导航
+        /// </summary>
+        /// <param name="viewName">唯一视图名称</param>
+        /// <param name="factory">返回新建ViewModel实例的工厂函数</param>
+        void RegisterViewModel(string viewName, Func<object> factory);
     }
-} 
+}

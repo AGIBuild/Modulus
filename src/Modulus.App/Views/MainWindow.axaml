@@ -7,11 +7,11 @@
         xmlns:vm="clr-namespace:Modulus.App.ViewModels"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="Modulus.App.Views.MainWindow"
-        x:DataType="vm:MainViewModel"
+        x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Modulus.App">
     <Design.DataContext>
-        <vm:MainViewModel />
+        <vm:MainWindowViewModel />
     </Design.DataContext>
     <Window.Resources>
         <converters:NavItemBackgroundConverter x:Key="NavItemBackgroundConverter" />

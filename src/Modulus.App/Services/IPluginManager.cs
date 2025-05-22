@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Modulus.Plugin.Abstractions;
 
 namespace Modulus.App.Services
 {
@@ -8,15 +10,15 @@ namespace Modulus.App.Services
     public interface IPluginManager
     {
         /// <summary>
+        /// 已加载的插件列表
+        /// </summary>
+        List<IPlugin> LoadedPlugins { get; }
+        
+        /// <summary>
         /// 异步加载插件
         /// </summary>
         /// <param name="pluginsPath">插件路径</param>
-        /// <returns>异步任务</returns>
-        Task LoadPluginsAsync(string pluginsPath);
-        
-        /// <summary>
-        /// 添加测试插件（用于开发和测试环境）
-        /// </summary>
-        void AddTestPlugins();
+        /// <returns>加载的插件列表</returns>
+        Task<IEnumerable<IPlugin>> LoadPluginsAsync(string pluginsPath);
     }
 } 

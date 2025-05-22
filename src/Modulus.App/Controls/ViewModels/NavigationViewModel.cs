@@ -115,6 +115,12 @@ public partial class NavigationViewModel : ObservableObject
     [ObservableProperty]
     private IRelayCommand<NavigationItemModel>? navigateToViewCommand;
 
+    /// <summary>
+    /// 状态消息（用于显示插件加载等状态）
+    /// </summary>
+    [ObservableProperty]
+    private string statusMessage = string.Empty;
+
     #endregion
 
     #region Commands
@@ -262,4 +268,9 @@ public class NavigationPageInfo
     /// Navigation route/identifier for this page
     /// </summary>
     public string Route { get; set; } = string.Empty;
-} 
+
+    /// <summary>
+    /// Icon character to display (typically from an icon font like Segoe MDL2 Assets)
+    /// </summary>
+    public string Icon { get; set; } = string.Empty;
+}

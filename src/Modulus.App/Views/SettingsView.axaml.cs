@@ -1,14 +1,12 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Modulus.App.ViewModels;
 
 namespace Modulus.App.Views
 {
-    public partial class DashboardView : UserControl
+    public partial class SettingsView : UserControl
     {
-        // 遵循约定的构造函数，接收ViewModel参数
-        public DashboardView(DashboardViewModel viewModel)
+        public SettingsView(SettingsViewModel viewModel)
         {
             InitializeComponent();
             DataContext = viewModel;
@@ -19,4 +17,4 @@ namespace Modulus.App.Views
             AvaloniaXamlLoader.Load(this);
         }
     }
-} 
+}

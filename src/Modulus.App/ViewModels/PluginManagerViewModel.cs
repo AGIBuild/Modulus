@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Modulus.App.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Modulus.App.ViewModels
@@ -53,9 +54,7 @@ namespace Modulus.App.ViewModels
         /// 状态消息
         /// </summary>
         [ObservableProperty]
-        private string statusMessage = string.Empty;
-
-        /// <summary>
+        private string statusMessage = string.Empty;        /// <summary>
         /// 创建插件管理器视图模型
         /// </summary>
         public PluginManagerViewModel(INavigationService navigationService, IPluginManager pluginManager) 
@@ -63,90 +62,83 @@ namespace Modulus.App.ViewModels
         {
             _pluginManager = pluginManager ?? throw new ArgumentNullException(nameof(pluginManager));
             
-            // 添加一些示例插件数据
-            AddSamplePlugins();
-        }
-
-        /// <summary>
-        /// 添加示例插件数据
+            // 初始化插件列表
+            RefreshPluginsList();
+        }/// <summary>
+        /// 刷新插件列表
         /// </summary>
-        private void AddSamplePlugins()
+        private void RefreshPluginsList()
         {
             Plugins.Clear();
             RecentlyUpdatedPlugins.Clear();
 
-            // 添加一些示例插件
-            var samplePlugins = new[]
+            foreach (var plugin in _pluginManager.LoadedPlugins)
             {
-                new PluginViewModel
+                var meta = plugin.GetMetadata();
+                var viewModel = new PluginViewModel
                 {
-                    PluginName = "数据分析插件",
-                    PluginVersion = "1.2.3",
-                    PluginAuthor = "数据团队",
-                    PluginDescription = "提供数据分析和可视化功能",
+                    PluginName = meta.Name,
+                    PluginVersion = meta.Version,
+                    PluginAuthor = meta.Author,
+                    PluginDescription = meta.Description,
                     PluginIsEnabled = true,
                     PluginStatus = "已启用"
-                },
-                new PluginViewModel
-                {
-                    PluginName = "报表生成器",
-                    PluginVersion = "2.0.1",
-                    PluginAuthor = "报表团队",
-                    PluginDescription = "支持导出各种格式的报表",
-                    PluginIsEnabled = true,
-                    PluginStatus = "已启用"
-                },
-                new PluginViewModel
-                {
-                    PluginName = "文档处理工具",
-                    PluginVersion = "0.9.5",
-                    PluginAuthor = "文档团队",
-                    PluginDescription = "处理各种文档格式",
-                    PluginIsEnabled = false,
-                    PluginStatus = "已禁用"
-                }
-            };
+                };
 
-            foreach (var plugin in samplePlugins)
-            {
-                Plugins.Add(plugin);
+                Plugins.Add(viewModel);
                 
-                // 假设前两个插件是最近更新的
-                if (plugin.PluginName == "数据分析插件" || plugin.PluginName == "报表生成器")
+                // 添加最近更新的插件 (基于版本号)
+                if (meta.Version.EndsWith(".0"))
                 {
-                    RecentlyUpdatedPlugins.Add(plugin);
+                    RecentlyUpdatedPlugins.Add(viewModel);
                 }
             }
-        }
-
-        /// <summary>
+        }        /// <summary>
         /// 安装插件命令
         /// </summary>
         [RelayCommand]
         private async Task InstallPluginFromFile()
         {
-            IsLoading = true;
-            StatusMessage = "正在安装插件...";
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "正在安装插件...";
 
-            // 在实际实现中，这里会显示文件对话框
-            // 并安装选定的插件
-            await Task.Delay(1000); // 模拟安装延迟
+                // TODO: 显示文件对话框选择插件文件
+                // 为了演示，我们暂时使用内置的示例插件目录
+                var pluginsPath = Path.Combine(AppContext.BaseDirectory, "plugins");
+                
+                // 加载新插件
+                await _pluginManager.LoadPluginsAsync(pluginsPath);
 
-            // 刷新插件列表
-            AddSamplePlugins();
+                // 刷新插件列表UI
+                RefreshPluginsList();
 
-            IsLoading = false;
-            StatusMessage = "插件安装成功。";
-        }
-
-        /// <summary>
+                StatusMessage = "插件安装成功。";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"安装插件失败: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }/// <summary>
         /// 刷新插件命令
         /// </summary>
         [RelayCommand]
         private void RefreshPlugins()
         {
-            AddSamplePlugins();
-            StatusMessage = "插件已刷新。";
+            try
+            {
+                RefreshPluginsList();
+                StatusMessage = "插件已刷新。";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"刷新插件失败: {ex.Message}";
+            }
         }
 
         /// <summary>
