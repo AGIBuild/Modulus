@@ -120,8 +120,6 @@ public partial class App : Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<PluginManagerViewModel>();
         services.AddTransient<SettingsViewModel>();
-        services.AddTransient<MainWindowViewModel>();
-        services.AddTransient<MainWindowViewModel>();
 
         // 创建服务提供器
         _serviceProvider = services.BuildServiceProvider();

@@ -136,7 +136,7 @@ public partial class NavigationViewModel : ObservableObject
         if (IsNavigationExpanded)
         {
             NavigationBarWidth = new GridLength(220);
-            CollapseExpandIcon = "\u276E"; // ChevronLeft icon
+            CollapseExpandIcon = "\uE700"; // ChevronLeft icon
         }
         else
         {

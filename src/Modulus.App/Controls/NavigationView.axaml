@@ -48,16 +48,14 @@
                         x:Name="NavBody"
                         Grid.Row="1"
                         IsVisible="{Binding ShowBody}"
-                        IsExpanded="{Binding IsNavigationExpanded}"
-                        NavigationItems="{Binding NavigationItems}" />
+                        IsExpanded="{Binding IsNavigationExpanded}" />
                     
                     <!-- Footer Section -->
                     <controls:NavigationFooter 
                         x:Name="NavFooter"
                         Grid.Row="2"
                         IsVisible="{Binding ShowFooter}"
-                        IsExpanded="{Binding IsNavigationExpanded}"
-                        FooterItems="{Binding FooterItems}" />
+                        IsExpanded="{Binding IsNavigationExpanded}" />
                 </Grid>
             </Border>
             <!-- Overlay Shadow/Fade -->

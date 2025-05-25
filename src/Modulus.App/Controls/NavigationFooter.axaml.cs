@@ -30,21 +30,7 @@ namespace Modulus.App.Controls
             set => SetValue(IsExpandedProperty, value);
         }
 
-        /// <summary>
-        /// 定义 FooterItems 依赖属性
-        /// </summary>
-        public static readonly StyledProperty<ObservableCollection<NavigationItemModel>> FooterItemsProperty =
-            AvaloniaProperty.Register<NavigationFooter, ObservableCollection<NavigationItemModel>>(
-                nameof(FooterItems), new ObservableCollection<NavigationItemModel>());
-
-        /// <summary>
-        /// 获取或设置页脚导航项列表
-        /// </summary>
-        public ObservableCollection<NavigationItemModel> FooterItems
-        {
-            get => GetValue(FooterItemsProperty);
-            set => SetValue(FooterItemsProperty, value);
-        }
+        // Removed FooterItemsProperty and FooterItems property
 
         #endregion
         
@@ -79,12 +65,6 @@ namespace Modulus.App.Controls
             {
                 // 更新导航命令
                 this.SetValue(NavigateToViewCommandProperty, viewModel.NavigateToViewCommand);
-                
-                // 更新底部导航项列表 - 重要：确保菜单项数据正确传递
-                if (viewModel.FooterItems != null)
-                {
-                    this.FooterItems = viewModel.FooterItems;
-                }
             }
         }
 

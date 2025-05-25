@@ -30,21 +30,7 @@ namespace Modulus.App.Controls
             set => SetValue(IsExpandedProperty, value);
         }
 
-        /// <summary>
-        /// 定义 NavigationItems 依赖属性
-        /// </summary>
-        public static readonly StyledProperty<ObservableCollection<NavigationItemModel>> NavigationItemsProperty =
-            AvaloniaProperty.Register<NavigationBody, ObservableCollection<NavigationItemModel>>(
-                nameof(NavigationItems), new ObservableCollection<NavigationItemModel>());
-
-        /// <summary>
-        /// 获取或设置导航项列表
-        /// </summary>
-        public ObservableCollection<NavigationItemModel> NavigationItems
-        {
-            get => GetValue(NavigationItemsProperty);
-            set => SetValue(NavigationItemsProperty, value);
-        }
+        // Removed NavigationItemsProperty and NavigationItems property
 
         #endregion
 
@@ -79,12 +65,6 @@ namespace Modulus.App.Controls
             {
                 // 更新导航命令
                 this.SetValue(NavigateToViewCommandProperty, viewModel.NavigateToViewCommand);
-                
-                // 更新导航项列表 - 重要：确保菜单项数据正确传递
-                if (viewModel.NavigationItems != null)
-                {
-                    this.NavigationItems = viewModel.NavigationItems;
-                }
             }
         }
 

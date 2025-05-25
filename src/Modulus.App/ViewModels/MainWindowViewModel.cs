@@ -74,9 +74,11 @@ public partial class MainWindowViewModel : ObservableObject
     public void SetActive(string viewName)
     {
         Navigation.SetActiveNavigationItem(viewName);
-    }    /// <summary>
-         /// 加载插件
-         /// </summary>
+    }
+
+    /// <summary>
+    /// 加载插件
+    /// </summary>
     private async Task LoadPluginsAsync()
     {
         try

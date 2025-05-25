@@ -1,14 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Modulus.App.Controls.ViewModels"
              xmlns:conv="clr-namespace:Modulus.App.Converters"
+             xmlns:controls="clr-namespace:Modulus.App.Controls"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="150"
              x:Class="Modulus.App.Controls.NavigationFooter"
              x:Name="control"
-             x:DataType="vm:NavigationViewModel">
+             x:DataType="vm:NavigationViewModel"
+             DataContext="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=controls:NavigationView}, Path=DataContext}">
     <Design.DataContext>
         <vm:NavigationViewModel />
     </Design.DataContext>
@@ -18,28 +19,41 @@
     </UserControl.Resources>
     
     <UserControl.Styles>
-        <!-- 当控件未展开时，隐藏所有标记为label的TextBlock -->
-        <Style Selector="UserControl:not(.expanded) TextBlock.label">
+        <!-- 默认按钮样式 -->
+        <Style Selector="Button.nav-button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- 折叠状态按钮样式 -->
+        <Style Selector="Button.collapsed">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- 展开状态按钮样式 -->
+        <Style Selector="Button.expanded">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Width" Value="196" />
+        </Style>
+
+        <!-- 标签文本样式 -->
+        <Style Selector="TextBlock.nav-label">
             <Setter Property="IsVisible" Value="False" />
         </Style>
-        <!-- 确保展开时的样式 -->
-        <Style Selector="UserControl.expanded TextBlock.label">
+
+        <Style Selector="TextBlock.nav-label.expanded">
             <Setter Property="IsVisible" Value="True" />
-        </Style>
-        
-        <!-- 折叠状态下的按钮样式 -->
-        <Style Selector="UserControl:not(.expanded) Button">
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="8" />
         </Style>
     </UserControl.Styles>
     
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -50,66 +64,60 @@
                 Background="#333333" 
                 Margin="16,0,16,12"/>
         
-        <!-- DEBUG: 显示FooterItems数量 -->
-        <TextBlock Grid.Row="1" 
-                 Text="{Binding FooterItems.Count, StringFormat='底部菜单项: {0}个'}" 
-                 Foreground="White"
-                 HorizontalAlignment="Center"
-                 Margin="0,0,0,8"/>
-                 
         <!-- 底部导航项列表 -->
-        <ItemsControl Grid.Row="2" 
+        <ItemsControl Grid.Row="1" 
                       x:Name="FooterItemsControl"
                       ItemsSource="{Binding FooterItems}" 
                       Margin="12,0,12,24" 
-                      HorizontalAlignment="Center">
+                      HorizontalAlignment="Stretch">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel Spacing="8"/>
+                    <StackPanel Spacing="4"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:NavigationItemModel}">
-                    <Button Background="{Binding IsActive, Converter={StaticResource NavItemBackgroundConverter}}"
-                            Foreground="White"
-                            ToolTip.Tip="{Binding Label}"
-                            Command="{Binding $parent[UserControl].((vm:NavigationViewModel)DataContext).NavigateToViewCommand}"
-                            CommandParameter="{Binding}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Left"
-                            CornerRadius="8"
-                            Margin="0,0,0,4"
-                            Padding="12,8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- 图标 -->
-                            <TextBlock Text="{Binding Icon}"
-                                      Grid.Column="0"
-                                      FontFamily="Segoe MDL2 Assets"
-                                      FontSize="18"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Center"/>
+                    <Grid>
+                        <Button Classes="nav-button"
+                                Classes.collapsed="{Binding !$parent[UserControl].((vm:NavigationViewModel)DataContext).IsNavigationExpanded}"
+                                Classes.expanded="{Binding $parent[UserControl].((vm:NavigationViewModel)DataContext).IsNavigationExpanded}"
+                                Background="{Binding IsActive, Converter={StaticResource NavItemBackgroundConverter}}"
+                                Foreground="White"
+                                ToolTip.Tip="{Binding Label}"
+                                Command="{Binding $parent[UserControl].((vm:NavigationViewModel)DataContext).NavigateToViewCommand}"
+                                CommandParameter="{Binding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
                                 
-                            <!-- 标签文本 - 使用样式类控制可见性 -->
-                            <TextBlock Text="{Binding Label}"
-                                      Classes="label"
-                                      Grid.Column="1"
-                                      Margin="10,0,0,0"
-                                      VerticalAlignment="Center"/>
-                                       
-                            <!-- 徽章 - 调整徽章大小 -->
+                                <!-- 图标 -->
+                                <TextBlock Text="{Binding Icon}"
+                                          Grid.Column="0"
+                                          FontFamily="Segoe MDL2 Assets"
+                                          FontSize="18"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"/>
+                                    
+                                    <!-- 标签文本 -->
+                                    <TextBlock Text="{Binding Label}"
+                                              Classes="nav-label"
+                                              Classes.expanded="{Binding $parent[UserControl].((vm:NavigationViewModel)DataContext).IsNavigationExpanded}"
+                                              Grid.Column="1"
+                                              Margin="10,0,0,0"
+                                              VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+                            
+                            <!-- 徽章 -->
                             <Border IsVisible="{Binding HasBadge}" 
-                                    Grid.Column="1"
                                     Background="#FF3B30" 
                                     CornerRadius="6" 
-                                    Width="12" Height="12" 
+                                    Width="12" Height="12"
                                     HorizontalAlignment="Right" 
                                     VerticalAlignment="Top"
-                                    Margin="0,0,4,0">
+                                    Margin="0,0,0,0">
                                 <TextBlock Text="{Binding BadgeText}" 
                                           FontSize="8" 
                                           FontWeight="Bold" 
@@ -118,9 +126,8 @@
                                           Foreground="White"/>
                             </Border>
                         </Grid>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
 </UserControl> 
