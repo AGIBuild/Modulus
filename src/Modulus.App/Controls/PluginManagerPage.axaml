@@ -4,10 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Modulus.App.ViewModels;assembly=Modulus.App"
              xmlns:converters="clr-namespace:Modulus.App.Converters;assembly=Modulus.App"
+             xmlns:sysconv="using:System.ComponentModel"
              mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
-             x:Class="Modulus.App.Views.PluginManagerView"
+             x:Class="Modulus.App.Controls.PluginManagerPage"
+             x:Name="PluginManagerPageRoot"
              x:DataType="vm:PluginManagerViewModel">
-    
+
     <Design.DataContext>
         <vm:PluginManagerViewModel />
     </Design.DataContext>

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Modulus.Plugin.Abstractions;
 using Modulus.App.Options;
@@ -20,7 +21,7 @@ namespace Modulus.App.Services
         private readonly IConfiguration _configuration;
         private readonly IOptionsMonitor<PluginOptions> _pluginOptions;
         private readonly IValidateOptions<PluginOptions> _pluginOptionsValidator;
-        private IServiceProvider? _serviceProvider;
+        private IServiceProvider _serviceProvider; // Kept as field, ensure it's initialized before use.
 
         public List<IPlugin> LoadedPlugins { get; } = new();
 
@@ -28,7 +29,7 @@ namespace Modulus.App.Services
         /// 创建插件管理器实例
         /// </summary>
         public PluginManager(
-            NavigationPluginService navigationPluginService, 
+            NavigationPluginService navigationPluginService,
             IConfiguration configuration,
             IOptionsMonitor<PluginOptions> pluginOptions,
             IValidateOptions<PluginOptions> pluginOptionsValidator)
@@ -41,28 +42,29 @@ namespace Modulus.App.Services
             // 初始化服务集合
             _services = new ServiceCollection();
             _services.AddSingleton(_configuration);
+            // Initial build of service provider, might be rebuilt if plugins add services.
+            _serviceProvider = _services.BuildServiceProvider(); 
             
             // 验证和应用初始配置
             var validationResult = _pluginOptionsValidator.Validate(null, _pluginOptions.CurrentValue);
             if (!validationResult.Succeeded)
             {
-                throw new OptionsValidationException(nameof(PluginOptions), typeof(PluginOptions), new[] { validationResult.FailureMessage});
+                throw new OptionsValidationException(nameof(PluginOptions), typeof(PluginOptions), validationResult.Failures ?? new[] { validationResult.FailureMessage ?? "Unknown validation error" });
             }
             
             // 监听插件配置更改
-            _pluginOptions.OnChange((options, name) =>
+            _pluginOptions.OnChange(async (options, name) =>
             {
                 try
                 {
                     var result = _pluginOptionsValidator.Validate(name, options);
                     if (result.Succeeded)
                     {
-                        // 当插件配置发生更改且验证通过时，触发重新加载
-                        Task.Run(() => LoadPluginsAsync(options.InstallPath));
+                        await LoadPluginsAsync(options.InstallPath);
                     }
                     else
                     {
-                        Console.WriteLine($"Plugin configuration validation failed: {string.Join(", ", result.FailureMessage)}");
+                        Console.WriteLine($"Plugin configuration validation failed: {string.Join(", ", result.Failures ?? new[] { "Unknown validation error"})}");
                     }
                 }
                 catch (Exception ex)
@@ -91,152 +93,209 @@ namespace Modulus.App.Services
         /// <returns>异步任务</returns>
         public async Task<IEnumerable<IPlugin>> LoadPluginsAsync(string pluginsPath)
         {
-            try
+            return await Task.Run(() =>
             {
-                var options = _pluginOptions.CurrentValue;
-                
-                // 1. 软件自带插件目录（安装目录）
-                string installPluginsPath = Path.Combine(AppContext.BaseDirectory, options.InstallPath);
-                // 2. 用户自定义插件目录
-                string userPluginsPath = Environment.ExpandEnvironmentVariables(options.UserPath);
-
-                var allPluginDirs = new List<string>();
-                if (Directory.Exists(installPluginsPath)) allPluginDirs.Add(installPluginsPath);
-                if (Directory.Exists(userPluginsPath)) allPluginDirs.Add(userPluginsPath);
-                // 兼容旧参数
-                if (!string.IsNullOrWhiteSpace(pluginsPath) && Directory.Exists(pluginsPath) && !allPluginDirs.Contains(pluginsPath))
-                    allPluginDirs.Add(pluginsPath);
-
-                LoadedPlugins.Clear();
-                _services.Clear();
-                _services.AddSingleton(_configuration);
-
-                foreach (var dir in allPluginDirs)
+                try
                 {
-                    var pluginFiles = Directory.GetFiles(dir, "*.dll", SearchOption.AllDirectories);
-                    foreach (var pluginFile in pluginFiles)
+                    var options = _pluginOptions.CurrentValue;
+                    
+                    // 1. 软件自带插件目录（安装目录）
+                    string installPluginsPath = Path.Combine(AppContext.BaseDirectory, options.InstallPath);
+                    // 2. 用户自定义插件目录
+                    string userPluginsPath = Environment.ExpandEnvironmentVariables(options.UserPath);
+
+                    Directory.CreateDirectory(installPluginsPath); // Ensure directories exist
+                    Directory.CreateDirectory(userPluginsPath);
+
+                    var allPluginDirs = new List<string>();
+                    if (Directory.Exists(installPluginsPath)) allPluginDirs.Add(installPluginsPath);
+                    if (Directory.Exists(userPluginsPath)) allPluginDirs.Add(userPluginsPath);
+                    // 兼容旧参数
+                    if (!string.IsNullOrWhiteSpace(pluginsPath) && Directory.Exists(pluginsPath) && !allPluginDirs.Contains(pluginsPath))
+                        allPluginDirs.Add(pluginsPath);
+
+                    LoadedPlugins.Clear();
+                    // Reset services collection for new plugin loading cycle
+                    // This is a simple approach; more sophisticated DI might involve child containers per plugin.
+                    _services.Clear(); 
+                    _services.AddSingleton(_configuration);
+                    // Add any other core services that plugins might depend on, if not already present or if cleared.
+
+                    foreach (var dir in allPluginDirs)
+                    {
+                        var pluginFiles = Directory.GetFiles(dir, "*.dll", SearchOption.AllDirectories);
+                        foreach (var pluginFile in pluginFiles)
+                        {
+                            LoadPluginFromFile(pluginFile, _services);
+                        }
+                    }
+
+                    _serviceProvider = _services.BuildServiceProvider();
+
+                    // 初始化所有加载的插件
+                    foreach (var plugin in LoadedPlugins)
                     {
                         try
                         {
-                            // 加载插件程序集
-                            var assembly = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(pluginFile);
-
-                            // 查找实现了 IPlugin 接口的类型
-                            foreach (var type in assembly.GetTypes())
-                            {
-                                if (typeof(Modulus.Plugin.Abstractions.IPlugin).IsAssignableFrom(type) && !type.IsAbstract)
-                                {
-                                    try
-                                    {
-                                        // 创建插件实例
-                                        if (Activator.CreateInstance(type) is not IPlugin plugin)
-                                        {
-                                            throw new InvalidOperationException($"无法创建插件实例: {type.FullName}");
-                                        }
-
-                                        // 获取并验证插件元数据
-                                        var meta = plugin.GetMetadata();
-                                        if (meta == null)
-                                        {
-                                            throw new InvalidOperationException($"插件元数据为空: {type.FullName}");
-                                        }
-
-                                        System.Diagnostics.Debug.WriteLine($"加载插件: {meta.Name} v{meta.Version}");
-
-                                        // 配置插件服务
-                                        plugin.ConfigureServices(_services, _configuration);
-
-                                        // 添加到已加载插件列表
-                                        LoadedPlugins.Add(plugin);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"初始化插件 {type.FullName} 时出错: {ex.Message}");
-                                        System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-                                        continue;
-                                    }
-                                }
-                            }
+                            plugin.Initialize(_serviceProvider);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"加载插件 {pluginFile} 时出错: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"Error initializing plugin {plugin.GetMetadata()?.Name}: {ex.Message}");
                         }
                     }
+
+                    // 为所有已加载的插件添加导航菜单项
+                    _navigationPluginService.AddPluginNavigationItems(LoadedPlugins);
+
+                    // 返回已加载的插件列表
+                    return LoadedPlugins.AsEnumerable();
                 }
-
-                // 重建服务提供器
-                _serviceProvider = _services.BuildServiceProvider();
-
-                // 初始化所有加载的插件
-                foreach (var plugin in LoadedPlugins)
+                catch (Exception ex)
                 {
-                    try
+                    System.Diagnostics.Debug.WriteLine($"插件加载流程发生异常: {ex.Message}");
+                    return Enumerable.Empty<IPlugin>();
+                }
+            });
+        }
+
+        private void LoadPluginFromFile(string pluginFile, IServiceCollection services)
+        {
+            try
+            {
+                var assembly = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(pluginFile);
+                foreach (var type in assembly.GetTypes())
+                {
+                    if (typeof(IPlugin).IsAssignableFrom(type) && !type.IsAbstract)
                     {
-                        plugin.Initialize(_serviceProvider);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"初始化插件时出错: {ex.Message}");
-                        System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+                        var plugin = Activator.CreateInstance(type) as IPlugin;
+                        if (plugin == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Could not create plugin instance: {type.FullName}");
+                            continue;
+                        }
+
+                        var meta = plugin.GetMetadata();
+                        if (meta == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"插件元数据为空: {type.FullName}");
+                            continue;
+                        }
+                        
+                        if (LoadedPlugins.Any(p => p.GetMetadata().Name == meta.Name))
+                        {
+                             System.Diagnostics.Debug.WriteLine($"Plugin {meta.Name} is already processed in this batch.");
+                             continue; // Avoid duplicate processing if found multiple times in scan
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"加载插件: {meta.Name} v{meta.Version}");
+
+                        // 配置插件服务
+                        plugin.ConfigureServices(services, _configuration);
+
+                        // 添加到已加载插件列表
+                        LoadedPlugins.Add(plugin);
                     }
                 }
-
-                // 为所有已加载的插件添加导航菜单项
-                _navigationPluginService.AddPluginNavigationItems(LoadedPlugins);
-
-                // 返回已加载的插件列表
-                return LoadedPlugins;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"插件加载流程发生异常: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-                return LoadedPlugins;
+                System.Diagnostics.Debug.WriteLine($"加载插件 {pluginFile} 时出错: {ex.Message}");
             }
         }
 
-#if DEBUG
-        /// <summary>
-        /// 仅在开发环境使用：复制示例插件到插件目录
-        /// </summary>
-        private async Task CopyExamplePluginsAsync(string pluginsPath)
+        public async Task<IPlugin?> LoadPluginAsync(string pluginFilePath)
         {
-            // 获取示例插件目录路径
-            var solutionDir = AppContext.BaseDirectory;
-            while (!File.Exists(Path.Combine(solutionDir, "Modulus.sln")) && Directory.GetParent(solutionDir) != null)
+            return await Task.Run(() =>
             {
-                solutionDir = Directory.GetParent(solutionDir)!.FullName;
-            }
-
-            var samplesDir = Path.Combine(solutionDir, "src", "samples");
-            if (!Directory.Exists(samplesDir))
-            {
-                Console.WriteLine($"示例目录不存在: {samplesDir}");
-                return;
-            }
-
-            // 复制每个示例插件的输出到插件目录
-            foreach (var projectDir in Directory.GetDirectories(samplesDir))
-            {
-                var projectName = new DirectoryInfo(projectDir).Name;
-                var binDir = Path.Combine(projectDir, "bin", "Debug", "net8.0");
-                if (Directory.Exists(binDir))
+                if (string.IsNullOrEmpty(pluginFilePath) || !File.Exists(pluginFilePath))
                 {
-                    var pluginDir = Path.Combine(pluginsPath, projectName);
-                    Directory.CreateDirectory(pluginDir);
-
-                    foreach (var file in Directory.GetFiles(binDir))
-                    {
-                        var destFile = Path.Combine(pluginDir, Path.GetFileName(file));
-                        File.Copy(file, destFile, true);
-                    }
-                    Console.WriteLine($"已复制示例插件: {projectName}");
+                    Console.WriteLine($"Plugin file not found: {pluginFilePath}");
+                    return null;
                 }
-            }
 
-            await Task.CompletedTask;
+                try
+                {
+                    var assembly = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(pluginFilePath);
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (typeof(IPlugin).IsAssignableFrom(type) && !type.IsAbstract)
+                        {
+                            var plugin = Activator.CreateInstance(type) as IPlugin;
+                            if (plugin == null) continue;
+
+                            var meta = plugin.GetMetadata();
+                            if (meta == null) continue;
+                            
+                            if (LoadedPlugins.Any(p => p.GetMetadata().Name == meta.Name))
+                            {
+                                Console.WriteLine($"Plugin {meta.Name} is already loaded.");
+                                return LoadedPlugins.First(p => p.GetMetadata().Name == meta.Name);
+                            }
+
+                            // Create a temporary service collection to see what services the plugin wants to add.
+                            // This is complex if services are singletons or have other lifetime considerations
+                            // that conflict with the main container. A true isolated DI per plugin is better.
+                            var pluginServiceCollection = new ServiceCollection();
+                            plugin.ConfigureServices(pluginServiceCollection, _configuration);
+                            
+                            // For simplicity, we're assuming plugins can add to the main _services collection
+                            // and then we rebuild the _serviceProvider. This has limitations.
+                            foreach(var descriptor in pluginServiceCollection)
+                            {
+                                _services.Add(descriptor);
+                            }
+                            _serviceProvider = _services.BuildServiceProvider(); // Rebuild after adding new services
+                            
+                            plugin.Initialize(_serviceProvider);
+                            LoadedPlugins.Add(plugin);
+                            _navigationPluginService.AddPluginNavigationItems(new List<IPlugin> { plugin });
+                            Console.WriteLine($"Loaded plugin: {meta.Name} v{meta.Version}");
+                            return plugin;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading plugin {pluginFilePath}: {ex.Message}");
+                    return null;
+                }
+                return null;
+            });
         }
-#endif
+
+        public async Task<bool> UnloadPluginAsync(string pluginId)
+        {
+            return await Task.Run(() =>
+            {
+                var pluginToUnload = LoadedPlugins.FirstOrDefault(p => p.GetMetadata().Name.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
+                if (pluginToUnload != null)
+                {
+                    try
+                    {
+                        // Basic unloading: remove from list and navigation
+                        // Proper unloading in .NET with AssemblyLoadContext is complex and involves ensuring no references are held to the plugin's types or assembly.
+                        // This example is highly simplified.
+                        _navigationPluginService.RemovePluginNavigationItems(pluginToUnload.GetMetadata().Name);
+                        LoadedPlugins.Remove(pluginToUnload);
+                        
+                        Console.WriteLine($"Unloaded plugin: {pluginId}");
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error unloading plugin {pluginId}: {ex.Message}");
+                        return false;
+                    }
+                }
+                Console.WriteLine($"Plugin not found for unload: {pluginId}");
+                return false;
+            });
+        }
+
+        public bool IsPluginLoaded(string pluginId)
+        {
+            return LoadedPlugins.Any(p => p.GetMetadata().Name.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
+        }
     }
 }

@@ -7,10 +7,13 @@ namespace Modulus.App.Views
 {
     public partial class PluginManagerView : UserControl
     {
-
-        public PluginManagerView(PluginManagerViewModel  viewModel)
+        public PluginManagerView()
         {
-            AvaloniaXamlLoader.Load(this);
+            InitializeComponent();
+        }
+
+        public PluginManagerView(PluginManagerViewModel viewModel) : this()
+        {
             DataContext = viewModel;
         }
     }

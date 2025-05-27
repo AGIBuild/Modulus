@@ -11,6 +11,7 @@
         Icon="/Assets/avalonia-logo.ico"
         Title="Modulus.App">
     <Design.DataContext>
+        <!-- DesignInstance Type for ViewModel is recommended for better design-time experience -->
         <vm:MainWindowViewModel />
     </Design.DataContext>
     <Window.Resources>

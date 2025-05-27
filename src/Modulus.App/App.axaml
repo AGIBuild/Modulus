@@ -6,7 +6,59 @@
 
     <Application.Styles>
         <FluentTheme />
+
+        <Style Selector="Button.transparent">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.transparent:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralSubtleSecondary}"/>
+        </Style>
+        <Style Selector="Button.transparent:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralSubtleTertiary}"/>
+        </Style>
+
+        <!-- 卡片式切换按钮样式 -->
+        <Style Selector="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ToggleButton:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemFillColorNeutralSubtleSecondary}"/>
+        </Style>
+        <Style Selector="ToggleButton:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight3}"/>
+        </Style>
+
+        <!-- 危险按钮样式 -->
+        <Style Selector="Button.danger">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCritical}"/>
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalSubtleSecondary}"/>
+        </Style>
+        <Style Selector="Button.danger:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalSubtleTertiary}"/>
+        </Style>
+
+        <!-- 插件卡片样式 -->
+        <Style Selector="Border.plugin-card">
+            <Setter Property="Background" Value="{DynamicResource SystemAltHighColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlTransparentBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="0,0,16,16"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+        <Style Selector="Border.plugin-card:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorLight2}"/>
+            <Setter Property="Background" Value="{DynamicResource SystemAltMediumHighColor}"/>
+        </Style>
     </Application.Styles>
-	
-	
 </Application>

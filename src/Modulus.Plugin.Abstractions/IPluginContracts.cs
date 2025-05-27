@@ -34,10 +34,11 @@ namespace Modulus.Plugin.Abstractions
         /// Returns the main view/control for UI plugins (optional).
         /// </summary>
         object? GetMainView();
-          /// <summary>
-        /// Returns a menu or menu extension for the host (optional).
+        
+        /// <summary>
+        /// Returns a collection of menu items to be added to the host application's menu (optional).
         /// </summary>
-        object? GetMenu();
+        IEnumerable<PluginMenuItem>? GetMenu();
     }
     /// <summary>
     /// Plugin metadata contract. Describes plugin identity and contract version.

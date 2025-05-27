@@ -7,10 +7,13 @@ namespace Modulus.App.Views
 {
     public partial class DashboardView : UserControl
     {
-        // 遵循约定的构造函数，接收ViewModel参数
-        public DashboardView(DashboardViewModel viewModel)
+        public DashboardView()
         {
             InitializeComponent();
+        }
+
+        public DashboardView(DashboardViewModel viewModel) : this()
+        {
             DataContext = viewModel;
         }
 

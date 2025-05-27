@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System;
 using System.IO;
+using Serilog;
+using Serilog.Events;
 
 namespace Modulus.App;
 
@@ -33,12 +35,30 @@ public partial class App : Application
             // Without this line you will get duplicate validations from both Avalonia and CT
             BindingPlugins.DataValidators.RemoveAt(0);
 
+            // Configure Serilog
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .Enrich.FromLogContext()
+                .WriteTo.Debug()
+                .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs", "modulus-.log"), rollingInterval: RollingInterval.Day)
+                // Add other sinks like remote service if needed
+                .CreateLogger();
+            
+            Log.Information("Application Starting...");
+
             // 配置服务
             ConfigureServices();
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var mainViewModel = _serviceProvider!.GetRequiredService<MainWindowViewModel>();
+                if (_serviceProvider == null) 
+                {
+                    // Handle the case where _serviceProvider is null, perhaps log an error or throw an exception
+                    // For now, let's throw an exception as this indicates a critical initialization failure.
+                    throw new InvalidOperationException("Service provider is not initialized.");
+                }
+                var mainViewModel = _serviceProvider.GetRequiredService<MainWindowViewModel>();
                 desktop.MainWindow = new MainWindow(mainViewModel);
 
                 // 启动配置更改监听器
@@ -84,8 +104,14 @@ public partial class App : Application
 
         var services = new ServiceCollection();
 
+        // Add Serilog to the service collection
+        services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+
         // 注册配置服务
         services.AddSingleton<IConfiguration>(_configuration);
+
+        // Register IPluginService and its implementation
+        services.AddSingleton<IPluginService, PluginService>();
 
         // 注册选项（支持热重载和验证）
         services.AddOptions<AppOptions>()
