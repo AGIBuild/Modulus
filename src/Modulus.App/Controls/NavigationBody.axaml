@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:Modulus.App.Controls.ViewModels"
              xmlns:conv="clr-namespace:Modulus.App.Converters"
              xmlns:controls="clr-namespace:Modulus.App.Controls"
+             xmlns:system="clr-namespace:System;assembly=netstandard"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="400"
              x:Class="Modulus.App.Controls.NavigationBody"
              x:Name="control"
@@ -95,12 +96,12 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <!-- 图标 -->
-                                    <TextBlock Text="{Binding Icon}"
-                                              Grid.Column="0"
-                                              FontFamily="Segoe MDL2 Assets"
-                                              FontSize="18"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Center"/>
+                                    <PathIcon Grid.Column="0"
+                                             Width="18" Height="18"
+                                             Foreground="White"
+                                             Data="{Binding Icon, Converter={x:Static conv:ResourceKeyToGeometryConverter.Instance}}"
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"/>
                                         
                                     <!-- 标签文本 -->
                                     <TextBlock Text="{Binding Label}"

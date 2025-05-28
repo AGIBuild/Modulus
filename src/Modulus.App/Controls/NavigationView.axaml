@@ -37,11 +37,7 @@
                     <controls:NavigationHeader 
                         x:Name="NavHeader"
                         Grid.Row="0"
-                        IsVisible="{Binding ShowHeader}"
-                        IsExpanded="{Binding IsNavigationExpanded}"
-                        AppName="{Binding AppName}"
-                        AppVersion="{Binding AppVersion}"
-                        AppIcon="{Binding AppIcon}" />
+                        IsVisible="{Binding ShowHeader}" />
                     
                     <!-- Body Section - Navigation Items -->
                     <controls:NavigationBody 

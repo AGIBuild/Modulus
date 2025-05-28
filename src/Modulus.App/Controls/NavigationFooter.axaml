@@ -93,12 +93,12 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <!-- 图标 -->
-                                <TextBlock Text="{Binding Icon}"
-                                          Grid.Column="0"
-                                          FontFamily="Segoe MDL2 Assets"
-                                          FontSize="18"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Center"/>
+                                <PathIcon Grid.Column="0"
+                                         Width="18" Height="18"
+                                         Foreground="White"
+                                         Data="{Binding Icon, Converter={x:Static conv:ResourceKeyToGeometryConverter.Instance}}"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Center"/>
                                     
                                     <!-- 标签文本 -->
                                     <TextBlock Text="{Binding Label}"

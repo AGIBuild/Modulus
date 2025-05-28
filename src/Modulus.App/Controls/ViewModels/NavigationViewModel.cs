@@ -77,7 +77,7 @@ public partial class NavigationViewModel : ObservableObject
     /// Icon to display on the collapse/expand button
     /// </summary>
     [ObservableProperty]
-    private string collapseExpandIcon = "\uE700"; // Menu icon (hamburger)
+    private string collapseExpandIcon = "menu_regular";
 
     /// <summary>
     /// Background color for the content area
@@ -136,12 +136,12 @@ public partial class NavigationViewModel : ObservableObject
         if (IsNavigationExpanded)
         {
             NavigationBarWidth = new GridLength(220);
-            CollapseExpandIcon = "\uE700"; // ChevronLeft icon
+            CollapseExpandIcon = "menu_regular";
         }
         else
         {
             NavigationBarWidth = new GridLength(40);
-            CollapseExpandIcon = "\uE700"; // Menu icon (hamburger)
+            CollapseExpandIcon = "menu_regular";
         }
     }
     

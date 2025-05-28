@@ -16,20 +16,6 @@
             <!-- 内容区头部 -->
             <Grid Grid.Row="0" Height="64" Margin="16,8,16,0">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                    <!-- 折叠/展开按钮 -->
-                    <Button x:Name="ToggleButton"
-                            Width="40" Height="40" 
-                            CornerRadius="8"
-                            Background="Transparent"
-                            IsVisible="{Binding ShowToggleButton, ElementName=control}">
-                        <TextBlock x:Name="ToggleButtonIcon"
-                                   Text="{Binding CollapseExpandIcon, ElementName=control}" 
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="16"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-                    </Button>
-                    
                     <!-- 页面标题 -->
                     <TextBlock x:Name="PageTitleText"
                                Text="{Binding PageTitle, ElementName=control}" 

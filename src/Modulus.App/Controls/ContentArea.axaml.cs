@@ -49,7 +49,7 @@ namespace Modulus.App.Controls
         /// 定义 CollapseExpandIcon 依赖属性
         /// </summary>
         public static readonly StyledProperty<string> CollapseExpandIconProperty =
-            AvaloniaProperty.Register<ContentArea, string>(nameof(CollapseExpandIcon), defaultValue: "\uE700");
+            AvaloniaProperty.Register<ContentArea, string>(nameof(CollapseExpandIcon), defaultValue: "menu_regular");
 
         /// <summary>
         /// 获取或设置折叠/展开按钮图标

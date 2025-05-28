@@ -46,11 +46,11 @@ namespace Modulus.App.ViewModels
 
         private void InitializeNavigationMenu()
         {
-            Navigation.AddNavigationItem("仪表盘", "\uE80F", "DashboardView");
-            Navigation.AddNavigationItem("插件管理", "\uE7FC", "PluginManagerView");
-            Navigation.AddNavigationItem("设置", "\uE713", "SettingsView", "footer");
+            Navigation.AddNavigationItem("仪表盘", "home_regular", "DashboardView");
+            Navigation.AddNavigationItem("插件管理", "puzzle_regular", "PluginManagerView");
+            Navigation.AddNavigationItem("设置", "settings_regular", "SettingsView", "footer");
 
-            var notificationsItem = Navigation.AddNavigationItem("通知", "\uE7E7", "NotificationsView");
+            var notificationsItem = Navigation.AddNavigationItem("通知", "info_regular", "NotificationsView");
             notificationsItem.SetBadge(3);
         }
 

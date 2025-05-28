@@ -152,16 +152,10 @@ namespace Modulus.App.Controls
         private void ForceUpdateChildrenExpandedState(bool isExpanded)
         {
             // 查找子组件（如果未找到则尝试通过XAML查找）
-            _navigationHeader ??= this.FindControl<NavigationHeader>("NavHeader");
             _navigationBody ??= this.FindControl<NavigationBody>("NavBody");
             _navigationFooter ??= this.FindControl<NavigationFooter>("NavFooter");
             
             // 更新组件状态
-            if (_navigationHeader != null)
-            {
-                _navigationHeader.SetValue(NavigationHeader.IsExpandedProperty, isExpanded);
-            }
-            
             if (_navigationBody != null)
             {
                 _navigationBody.SetValue(NavigationBody.IsExpandedProperty, isExpanded);
