@@ -41,7 +41,6 @@ For more information, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 📚 Documentation
 - [English Documentation](./docs/en-US/README.md)
-- [中文文档 Chinese Documentation](./docs/zh-CN/README.md)
 
 ## Project Status
 - See progress report: [docs/reports/story-progress-report.en-US.md](./docs/reports/story-progress-report.en-US.md)

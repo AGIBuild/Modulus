@@ -41,7 +41,6 @@ nuke StartAI --role Plugin
 
 ## 📚 文档
 - [English Documentation](./docs/en-US/README.md)
-- [中文文档](./README.zh-CN.md)
 
 ## 项目状态
 - 进度报告见 [docs/reports/story-progress-report.zh-CN.md](./docs/reports/story-progress-report.zh-CN.md)
