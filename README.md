@@ -1,13 +1,13 @@
 # Modulus
 
-Modulus is a modern, cross-platform, plugin-based application framework designed to help developers quickly build extensible, maintainable, and AI-ready desktop tools.
+Modulus is a modern, cross-platform, plugin-based application framework designed to help developers quickly build extensible, maintainable, and AI-ready tools.
 
 ## ✨ Features
 
-### Dual-Host Architecture
-- **Blazor Hybrid Host**: MAUI-based with MudBlazor UI components
-- **Avalonia Host**: Native desktop experience with Avalonia UI
-- **Shared Core Logic**: Same Domain/Application code runs on both hosts
+### Multi-Host Architecture
+- **UI-Agnostic Core**: Business logic independent of any UI framework
+- **Pluggable Hosts**: Currently supports Blazor Hybrid (MAUI) and Avalonia, extensible to other UI technologies
+- **Shared Core Logic**: Same Domain/Application code runs across all supported hosts
 
 ### Plugin System
 - Hot-reloadable and dynamically unloadable plugins (AssemblyLoadContext)

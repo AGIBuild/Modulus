@@ -4,12 +4,12 @@ Thank you for your interest in contributing to Modulus! This guide will help you
 
 ## Architecture Overview
 
-Modulus is a modular .NET desktop framework with a **dual-host architecture**:
+Modulus is a modular .NET application framework with a **multi-host architecture**:
 
 ### Core Principles
 
 1. **UI-Agnostic Core**: Domain and Application code must not depend on any UI framework
-2. **Dual-Host Support**: Same business logic runs on both Blazor Hybrid and Avalonia hosts
+2. **Multi-Host Support**: Same business logic runs across all supported hosts (Blazor, Avalonia, and future hosts)
 3. **Vertical Slice Modules**: Each feature is a self-contained module with its own layers
 4. **Dependency Pyramid**: Presentation → UI Abstraction → Application → Domain → Infrastructure
 

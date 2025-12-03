@@ -4,12 +4,12 @@
 
 ## 架构概述
 
-Modulus 是一个具有**双宿主架构**的模块化 .NET 桌面框架：
+Modulus 是一个具有**多宿主架构**的模块化 .NET 应用框架：
 
 ### 核心原则
 
 1. **UI 无关的核心层**: Domain 和 Application 代码不能依赖任何 UI 框架
-2. **双宿主支持**: 相同的业务逻辑可在 Blazor Hybrid 和 Avalonia 宿主上运行
+2. **多宿主支持**: 相同的业务逻辑可在所有支持的宿主上运行 (Blazor、Avalonia 及未来的宿主)
 3. **垂直切片模块**: 每个功能是一个独立的模块，包含自己的各层
 4. **依赖金字塔**: Presentation → UI Abstraction → Application → Domain → Infrastructure
 

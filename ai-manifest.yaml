@@ -4,11 +4,12 @@
 
 projectInfo:
   name: Modulus
-  vision: A modern, cross-platform, plugin-based desktop application framework
+  vision: A modern, cross-platform, plugin-based application framework
   description: |
-    Modulus is a modular .NET desktop framework with dual-host architecture,
-    supporting both Blazor Hybrid (MAUI) and Avalonia UI hosts. It enables
-    developers to write UI-agnostic business logic that runs on multiple platforms.
+    Modulus is a modular .NET application framework with multi-host architecture,
+    currently supporting Blazor Hybrid (MAUI) and Avalonia UI hosts, with extensibility
+    for additional UI technologies. It enables developers to write UI-agnostic business
+    logic that runs across all supported platforms.
   languages:
     - C#
     - XAML
@@ -23,11 +24,12 @@ projectInfo:
 
 architecture:
   overview: |
-    Modulus follows a dual-host architecture with vertical slice modularity:
+    Modulus follows a multi-host architecture with vertical slice modularity:
     - Core runtime handles module discovery, loading, and lifecycle
     - UI abstractions provide host-agnostic contracts
     - Each module contains Domain/Application (Core) and host-specific UI projects
     - Modules are loaded via AssemblyLoadContext for isolation
+    - New host types can be added without changing core modules
 
   modules:
     ModulusCore:
@@ -167,7 +169,7 @@ faq:
 teamCulture:
   principles:
     - UI-agnostic core (no UI dependencies in Domain/Application)
-    - Dual-host support (same logic on Blazor and Avalonia)
+    - Multi-host support (same logic across all supported hosts)
     - Vertical slice modularity (features as self-contained modules)
     - Dependency pyramid (Presentation → UI Abstraction → Application → Domain)
     - AI-friendly contracts (strongly typed, self-describing)
