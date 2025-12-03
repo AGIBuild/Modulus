@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Modulus.UI.Abstractions;
 
@@ -11,11 +9,18 @@ public enum MenuLocation
     Bottom
 }
 
-public class MenuItem : INotifyPropertyChanged
+public partial class MenuItem : ObservableObject
 {
+    [ObservableProperty]
     private bool _isEnabled = true;
+
+    [ObservableProperty]
     private int? _badgeCount;
+
+    [ObservableProperty]
     private string? _badgeColor;
+
+    [ObservableProperty]
     private bool _isExpanded;
 
     // Core properties (read-only)
@@ -25,33 +30,6 @@ public class MenuItem : INotifyPropertyChanged
     public MenuLocation Location { get; }
     public string NavigationKey { get; } // View Key or Route
     public int Order { get; }
-
-    /// <summary>
-    /// Whether the menu item is enabled. Disabled items are visible but not clickable.
-    /// </summary>
-    public bool IsEnabled
-    {
-        get => _isEnabled;
-        set => SetField(ref _isEnabled, value);
-    }
-
-    /// <summary>
-    /// Badge count to display. Null or 0 hides the badge.
-    /// </summary>
-    public int? BadgeCount
-    {
-        get => _badgeCount;
-        set => SetField(ref _badgeCount, value);
-    }
-
-    /// <summary>
-    /// Badge color identifier (e.g., "error", "warning", "info", "success").
-    /// </summary>
-    public string? BadgeColor
-    {
-        get => _badgeColor;
-        set => SetField(ref _badgeColor, value);
-    }
 
     /// <summary>
     /// Controls page instance lifecycle during navigation.
@@ -67,15 +45,6 @@ public class MenuItem : INotifyPropertyChanged
     /// Context menu actions shown on right-click. Null for no context menu.
     /// </summary>
     public IReadOnlyList<MenuAction>? ContextActions { get; set; }
-
-    /// <summary>
-    /// Whether this group item is currently expanded (for hierarchical menus).
-    /// </summary>
-    public bool IsExpanded
-    {
-        get => _isExpanded;
-        set => SetField(ref _isExpanded, value);
-    }
 
     public MenuItem(string id, string displayName, string icon, string navigationKey, MenuLocation location = MenuLocation.Main, int order = 0)
     {
@@ -96,20 +65,5 @@ public class MenuItem : INotifyPropertyChanged
         {
             Children = children
         };
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
     }
 }
