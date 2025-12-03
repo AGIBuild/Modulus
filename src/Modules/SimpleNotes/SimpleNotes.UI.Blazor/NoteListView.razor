@@ -1,0 +1,41 @@
+@using SimpleNotes.Core.Application.ViewModels
+@inject NoteListViewModel ViewModel
+
+<div class="simple-notes">
+    <h3>@ViewModel.Title</h3>
+
+    <div class="toolbar">
+        <button @onclick="() => {}">Add Note</button>
+    </div>
+
+    <ul class="note-list">
+        @foreach (var note in ViewModel.Notes)
+        {
+            <li @onclick="() => ViewModel.SelectedNote = note" 
+                class="@(ViewModel.SelectedNote == note ? "selected" : "")">
+                <span class="title">@note.Title</span>
+                <span class="date">@note.ModifiedAt.ToShortDateString()</span>
+            </li>
+        }
+    </ul>
+
+    @if (ViewModel.SelectedNote != null)
+    {
+        <div class="note-detail">
+            <h4>@ViewModel.SelectedNote.Title</h4>
+            <p>@ViewModel.SelectedNote.Content</p>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Subscribe to property changes if needed, or use a base component that supports INotifyPropertyChanged
+        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        base.OnInitialized();
+    }
+    
+    // Dispose subscription? Usually yes.
+}
+

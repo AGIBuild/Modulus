@@ -23,26 +23,26 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 **Purpose**: 创建基础目录与项目结构，为后续实现提供落地点。
 
-- [ ] T001 创建基础目录结构 `src/` 与 `tests/`（如不存在）于仓库根目录  
+- [X] T001 创建基础目录结构 `src/` 与 `tests/`（如不存在）于仓库根目录  
       （修改路径：`D:\src\tools\Modulus\`）
-- [ ] T002 [P] 创建核心运行时项目 `src/Modulus.Core/Modulus.Core.csproj` 并将其加入 `Modulus.sln`  
+- [X] T002 [P] 创建核心运行时项目 `src/Modulus.Core/Modulus.Core.csproj` 并将其加入 `Modulus.sln`  
       （修改文件：`Modulus.sln`）
-- [ ] T003 [P] 创建 UI 抽象层项目 `src/Modulus.UI.Abstractions/Modulus.UI.Abstractions.csproj` 并加入解决方案  
+- [X] T003 [P] 创建 UI 抽象层项目 `src/Modulus.UI.Abstractions/Modulus.UI.Abstractions.csproj` 并加入解决方案  
       （修改文件：`Modulus.sln`）
-- [ ] T004 [P] 创建 SDK 项目 `src/Modulus.Sdk/Modulus.Sdk.csproj` 并加入解决方案  
+- [X] T004 [P] 创建 SDK 项目 `src/Modulus.Sdk/Modulus.Sdk.csproj` 并加入解决方案  
       （修改文件：`Modulus.sln`）
-- [ ] T005 [P] 在 `src/Hosts/` 下创建 Blazor 宿主项目 `Modulus.Host.Blazor/Modulus.Host.Blazor.csproj`  
+- [X] T005 [P] 在 `src/Hosts/` 下创建 Blazor 宿主项目 `Modulus.Host.Blazor/Modulus.Host.Blazor.csproj`  
       （修改文件：`Modulus.sln`）
-- [ ] T006 [P] 在 `src/Hosts/` 下创建 Avalonia 宿主项目 `Modulus.Host.Avalonia/Modulus.Host.Avalonia.csproj`  
+- [X] T006 [P] 在 `src/Hosts/` 下创建 Avalonia 宿主项目 `Modulus.Host.Avalonia/Modulus.Host.Avalonia.csproj`  
       （修改文件：`Modulus.sln`）
-- [ ] T007 [P] 在 `src/Modules/` 下创建 Shell 模块项目 `Modulus.Modules.Shell/Modulus.Modules.Shell.csproj`  
+- [X] T007 [P] 在 `src/Modules/` 下创建 Shell 模块项目 `Modulus.Modules.Shell/Modulus.Modules.Shell.csproj`  
       （修改文件：`Modulus.sln`）
-- [ ] T008 [P] 在 `src/Modules/` 下创建示例模块项目 `Modulus.Modules.Samples/Modulus.Modules.Samples.csproj`  
+- [X] T008 [P] 在 `src/Modules/` 下创建示例模块项目 `Modulus.Modules.Samples/Modulus.Modules.Samples.csproj`  
       （修改文件：`Modulus.sln`）
-- [ ] T009 [P] 创建测试项目 `tests/Modulus.Core.Tests/Modulus.Core.Tests.csproj` 并配置到 `Modulus.sln`  
-- [ ] T010 [P] 创建测试项目 `tests/Modulus.Hosts.Tests/Modulus.Hosts.Tests.csproj` 并配置到 `Modulus.sln`  
-- [ ] T011 [P] 创建测试项目 `tests/Modulus.Modules.Tests/Modulus.Modules.Tests.csproj` 并配置到 `Modulus.sln`  
-- [ ] T012 [P] 创建测试项目 `tests/Modulus.Sdk.Tests/Modulus.Sdk.Tests.csproj` 并配置到 `Modulus.sln`  
+- [X] T009 [P] 创建测试项目 `tests/Modulus.Core.Tests/Modulus.Core.Tests.csproj` 并配置到 `Modulus.sln`  
+- [X] T010 [P] 创建测试项目 `tests/Modulus.Hosts.Tests/Modulus.Hosts.Tests.csproj` 并配置到 `Modulus.sln`  
+- [X] T011 [P] 创建测试项目 `tests/Modulus.Modules.Tests/Modulus.Modules.Tests.csproj` 并配置到 `Modulus.sln`  
+- [X] T012 [P] 创建测试项目 `tests/Modulus.Sdk.Tests/Modulus.Sdk.Tests.csproj` 并配置到 `Modulus.sln`  
 
 ---
 
@@ -59,7 +59,7 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 - [ ] T017 在 `src/Modulus.Core/Runtime/` 中集成 `MediatR`，配置模块级与跨模块请求 / 通知分发  
 - [ ] T018 在 `src/Modulus.UI.Abstractions/` 中定义 UI 抽象接口（`IUIFactory`, `IViewHost`, `INotificationService` 等）  
 - [ ] T019 在 `src/Modulus.Sdk/` 中引入基础 SDK 契约与空实现骨架（`ModuleBase`, `ToolPluginBase`, `DocumentPluginBase` 等）  
-- [ ] T020 在 `tests/Modulus.Core.Tests/` 中编写最小集成测试：验证加载一个 `.modpkg` 包能创建 `Module` 并注册到 `RuntimeContext`  
+- [X] T020 在 `tests/Modulus.Core.Tests/` 中编写最小集成测试：验证加载一个 `.modpkg` 包能创建 `Module` 并注册到 `RuntimeContext`  
 - [ ] T021 [P] 在 `tests/Modulus.Sdk.Tests/` 中为 `ModuleBase` 与 `ToolPluginBase` 添加基本契约测试（生命周期调用顺序与必需回调）  
 - [ ] T022 检查并调整解决方案引用，确保遵守 `Presentation → UI Abstraction → Application → Domain → Infrastructure` 依赖金字塔（主要修改 `*.csproj`）  
 - [ ] T023 确认 `src/Modulus.Core/` 与 `src/Modulus.Sdk/` 不引用任何具体 UI 框架命名空间（Blazor / Avalonia），必要时通过分析与重构移除  
@@ -77,14 +77,14 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 ### Implementation for User Story 1
 
-- [ ] T024 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/Domain/` 中实现示例模块的 Domain 模型与服务（例如计算器 / 简单工具）  
-- [ ] T025 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/Application/` 中实现用例与 Application 服务，依赖 Domain 模型与 `Modulus.UI.Abstractions`  
-- [ ] T026 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/UI.Blazor/` 下实现 Blazor 视图与适配层，通过 `IUIFactory` 与 Application 服务交互  
-- [ ] T027 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/UI.Avalonia/` 下实现 Avalonia 视图与适配层，通过 `IUIFactory` 与 Application 服务交互  
-- [ ] T028 [US1] 为示例模块编写 manifest 文件（例如 `src/Modules/Modulus.Modules.Samples/manifest.json`），填充模块标识、版本、支持宿主与程序集列表  
-- [ ] T029 [US1] 在 `src/Modulus.Core/Runtime/` 中接入示例模块的 manifest 与 `.modpkg` 打包，使宿主可发现并加载该模块  
-- [ ] T030 [US1] 在 `src/Hosts/Modulus.Host.Blazor/` 中添加示例模块入口（菜单 / 工具面板注册）并验证交互闭环  
-- [ ] T031 [US1] 在 `src/Hosts/Modulus.Host.Avalonia/` 中添加示例模块入口（窗口 / 面板注册）并验证交互闭环  
+- [X] T024 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/Domain/` 中实现示例模块的 Domain 模型与服务（例如计算器 / 简单工具）  
+- [X] T025 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/Application/` 中实现用例与 Application 服务，依赖 Domain 模型与 `Modulus.UI.Abstractions`  
+- [X] T026 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/UI.Blazor/` 下实现 Blazor 视图与适配层，通过 `IUIFactory` 与 Application 服务交互  
+- [X] T027 [P] [US1] 在 `src/Modules/Modulus.Modules.Samples/UI.Avalonia/` 下实现 Avalonia 视图与适配层，通过 `IUIFactory` 与 Application 服务交互  
+- [X] T028 [US1] 为示例模块编写 manifest 文件（例如 `src/Modules/Modulus.Modules.Samples/manifest.json`），填充模块标识、版本、支持宿主与程序集列表  
+- [X] T029 [US1] 在 `src/Modulus.Core/Runtime/` 中接入示例模块的 manifest 与 `.modpkg` 打包，使宿主可发现并加载该模块  
+- [X] T030 [US1] 在 `src/Hosts/Modulus.Host.Blazor/` 中添加示例模块入口（菜单 / 工具面板注册）并验证交互闭环  
+- [X] T031 [US1] 在 `src/Hosts/Modulus.Host.Avalonia/` 中添加示例模块入口（窗口 / 面板注册）并验证交互闭环  
 - [ ] T032 [P] [US1] 在 `tests/Modulus.Hosts.Tests/` 中添加端到端测试：在两种宿主下分别加载并调用示例模块，验证行为一致  
 
 **Checkpoint**: 示例模块在 Blazor 宿主与 Avalonia 宿主下均可用，且共享相同的核心业务程序集。
@@ -99,8 +99,8 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] 在 `src/Modulus.Core/Runtime/` 中扩展 `RuntimeContext` 与模块管理 API，支持 enable/disable/reload 操作  
-- [ ] T034 [US2] 在 `src/Modulus.Core/Runtime/` 中实现模块卸载时的清理逻辑（释放 ALC、注销 DI 注册等），避免资源泄漏  
+- [X] T033 [US2] 在 `src/Modulus.Core/Runtime/` 中扩展 `RuntimeContext` 与模块管理 API，支持 enable/disable/reload 操作  
+- [X] T034 [US2] 在 `src/Modulus.Core/Runtime/` 中实现模块卸载时的清理逻辑（释放 ALC、注销 DI 注册等），避免资源泄漏  
 - [ ] T035 [US2] 在 `src/Modules/Modulus.Modules.Shell/` 中实现模块管理 UI（列表 / 状态 / 操作按钮），通过 MediatR 与运行时交互  
 - [ ] T036 [P] [US2] 在 `src/Hosts/Modulus.Host.Blazor/` 中集成 Shell 模块的管理 UI（例如工具窗口或菜单）  
 - [ ] T037 [P] [US2] 在 `src/Hosts/Modulus.Host.Avalonia/` 中集成 Shell 模块的管理 UI  
@@ -118,12 +118,14 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 ### Implementation for User Story 3
 
-- [ ] T039 [US3] 在 `src/Modulus.Sdk/` 中完善 `ModuleBase`, `ToolPluginBase`, `DocumentPluginBase` 等基类的公共 API（生命周期、注册点、错误处理模式）  
-- [ ] T040 [US3] 在 `src/Modulus.Sdk/` 中添加用于生成 manifest 与 `.modpkg` 结构的辅助类型（例如 `PluginPackageBuilder`）  
-- [ ] T041 [US3] 在 `src/Modules/Modulus.Modules.Samples/` 下添加一个基于 SDK 的示例插件实现（例如 Echo 工具），严格遵循 SDK 模式  
-- [ ] T042 [P] [US3] 在 `tests/Modulus.Sdk.Tests/` 中添加契约测试：验证基于 SDK 的示例插件能够完成初始化与注册流程  
-- [ ] T043 [US3] 在 `specs/001-core-architecture/contracts/runtime-contracts.md` 中补充/更新与 SDK 相关的公共接口说明，使其与代码保持一致  
-- [ ] T044 [US3] 更新 `specs/001-core-architecture/quickstart.md`，加入“使用 SDK 创建第一个插件”的简要步骤  
+- [X] T039 [US3] 在 `src/Modulus.Sdk/` 中完善 `ModuleBase`, `ToolPluginBase`, `DocumentPluginBase` 等基类的公共 API（生命周期、注册点、错误处理模式）  
+- [X] T040 [US3] 在 `src/Modulus.Sdk/` 中添加用于生成 manifest 与 `.modpkg` 结构的辅助类型（例如 `PluginPackageBuilder`）  
+- [X] T041 [US3] 在 `src/Modules/Modulus.Modules.Samples/` 下添加一个基于 SDK 的示例插件实现（例如 Echo 工具），严格遵循 SDK 模式  
+      （实际位置：`src/Modules/EchoPlugin`）
+- [X] T042 [P] [US3] 在 `tests/Modulus.Sdk.Tests/` 中添加契约测试：验证基于 SDK 的示例插件能够完成初始化与注册流程  
+      （实际位置：`tests/Modulus.Modules.Tests/EchoPluginTests.cs`）
+- [X] T043 [US3] 在 `specs/001-core-architecture/contracts/runtime-contracts.md` 中补充/更新与 SDK 相关的公共接口说明，使其与代码保持一致  
+- [X] T044 [US3] 更新 `specs/001-core-architecture/quickstart.md`，加入“使用 SDK 创建第一个插件”的简要步骤  
 
 **Checkpoint**: 存在至少一个通过 SDK 开发的示例插件，可以作为 AI 生成插件的参考模板，并通过测试验证。
 

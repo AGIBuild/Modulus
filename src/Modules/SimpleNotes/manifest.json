@@ -1,0 +1,23 @@
+{
+  "manifestVersion": "1.0",
+  "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+  "version": "1.0.0",
+  "displayName": "Simple Notes",
+  "description": "A simple note taking module to demonstrate Modulus vertical slice architecture.",
+  "supportedHosts": [
+    "BlazorApp",
+    "AvaloniaApp"
+  ],
+  "coreAssemblies": [
+    "SimpleNotes.Core.dll"
+  ],
+  "uiAssemblies": {
+    "BlazorApp": [
+      "SimpleNotes.UI.Blazor.dll"
+    ],
+    "AvaloniaApp": [
+      "SimpleNotes.UI.Avalonia.dll"
+    ]
+  },
+  "dependencies": {}
+}

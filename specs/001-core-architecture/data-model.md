@@ -1,7 +1,8 @@
 # Data Model: Modulus 核心架构与双宿主运行时
 
 **Feature**: `001-core-architecture`  
-**Source Spec**: `specs/001-core-architecture/spec.md`
+**Source Spec**: `specs/001-core-architecture/spec.md`  
+**Last Updated**: 2025-12-03
 
 本文件从规格中提取核心概念实体，描述它们的职责、关键字段与关系，供后续实现与 SDK 设计参考。
 
@@ -14,11 +15,11 @@ Presentation / UI 实现。
 
 **关键属性（示意字段名，仅为设计参考）**:
 
-- `ModuleId`：模块唯一标识（例如 `"Modulus.Modules.Logging"`）
+- `ModuleId`：模块唯一标识（**推荐使用 GUID**，例如 `"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"`）
 - `Version`：模块版本（语义化版本）
 - `DisplayName`：模块对用户展示的名称
 - `Description`：模块描述
-- `SupportedHosts`：支持的宿主类型列表（如 `Blazor`, `Avalonia`）
+- `SupportedHosts`：支持的宿主类型列表（如 `BlazorApp`, `AvaloniaApp`）
 - `Assemblies`：该模块包含的程序集列表（含核心与 UI 程序集）
 - `Dependencies`：对其它模块或运行时能力的依赖声明
 

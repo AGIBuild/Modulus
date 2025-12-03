@@ -93,8 +93,9 @@ Domain / Application 程序集在 Blazor 风格宿主与 Avalonia 宿主下完�
 - **FR-003**: 架构必须支持至少两种一等宿主类型：Web 风格宿主与原生桌面宿主，使相同的
   Domain / Application 程序集可以在两种宿主下运行。
 
-- **FR-004**: 系统必须以垂直切片模块为主要交付单元，每个功能模块需要明确自身的
-  Domain / Application / Infrastructure 以及（可选的）Presentation / UI 程序集。
+- **FR-004**: 系统必须以垂直切片模块为主要交付单元，每个功能模块需要明确区分：
+  - **Business Module (Core)**: 包含 Domain / Application 层，**全宿主通用**，不依赖特定 UI 技术栈。
+  - **UI Adapter Module (Host-Specific)**: 包含 Presentation 层，依赖 Core 模块，并**明确标记**适配哪个宿主（Blazor, Avalonia, React 等）。宿主加载时必须仅加载匹配其类型的 UI 适配器。
 
 - **FR-005**: 运行时必须通过 MediatR（或等价的强类型进程内消息机制）处理模块之间的通信，
   禁止通过直接依赖其它模块实现类的方式进行耦合。
@@ -130,8 +131,10 @@ Domain / Application 程序集在 Blazor 风格宿主与 Avalonia 宿主下完�
 
 - **FR-013**: 必须确定插件包的具体容器格式与签名方案（例如 Zip‑based `.modpkg`、NuGet 变体等），
   并说明如何校验插件的来源可信与内容完整。
-  - **FR-013a**: System MUST support a concrete packaging and signing strategy for plugins.
-    [NEEDS CLARIFICATION: Choose final container format and signing approach.]
+  - **FR-014**: 模块加载器必须具备**宿主感知能力**。在加载模块时，除了加载核心程序集外，
+  只能加载与当前运行宿主（Current Host Type）匹配的 UI 程序集。
+  Manifest 中的 `uiAssemblies` 字段应作为查找依据。SDK 层面应提供特性（如 `[HostAffinity]`）
+  以进一步校验 UI 模块的兼容性。
 
 ### Key Entities *(include if feature involves data)*
 

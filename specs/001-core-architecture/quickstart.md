@@ -1,76 +1,62 @@
-# Quickstart: Modulus 核心架构与双宿主运行时
+## 6. 使用 SDK 创建第一个插件 (User Story 3)
 
-**Feature**: `001-core-architecture`
+Modulus SDK 提供了简化的开发体验。推荐使用 AI 辅助生成插件。
 
-本 Quickstart 面向框架维护者与模块 / 插件开发者，说明在新的核心架构下如何开始工作。
+### 6.1 基本结构
+一个标准的 SDK 插件包含：
+1. **Core 项目** (Class Library): 引用 `Modulus.Sdk` 和 `Modulus.UI.Abstractions`。包含 ViewModels 和 Module 类。
+2. **UI.Blazor 项目** (Razor Class Library): 引用 Core 和 `MudBlazor`。包含 Razor 组件。
+3. **UI.Avalonia 项目** (Class Library): 引用 Core 和 `Avalonia`。包含 UserControls。
 
----
+### 6.2 示例代码模板 (EchoPlugin)
 
-## 1. 解决方案结构预期
-
-在仓库根目录下，确保存在并逐步完善以下结构（参考 `plan.md` 中的 Project Structure）：
-
-```text
-src/
-├── Modulus.Core/
-├── Modulus.UI.Abstractions/
-├── Modulus.Sdk/
-├── Hosts/
-│   ├── Modulus.Host.Blazor/
-│   └── Modulus.Host.Avalonia/
-├── Modules/
-│   ├── Modulus.Modules.Shell/
-│   ├── Modulus.Modules.Logging/
-│   └── Modulus.Modules.Samples/
-└── Shared/
-    └── Modulus.Shared.Infrastructure/
-
-tests/
-├── Modulus.Core.Tests/
-├── Modulus.Hosts.Tests/
-├── Modulus.Modules.Tests/
-└── Modulus.Sdk.Tests/
+**ViewModel (Core):**
+```csharp
+public partial class EchoViewModel : ViewModelBase
+{
+    [ObservableProperty] private string _inputText;
+    
+    [RelayCommand]
+    private void Echo() => /* logic */
+}
 ```
 
----
+**Module Registration (Core):**
+```csharp
+public class EchoPluginModule : ModuleBase
+{
+    public override void ConfigureServices(IModuleLifecycleContext context)
+    {
+        context.Services.AddTransient<EchoViewModel>();
+    }
+}
+```
 
-## 2. 新建一个垂直切片模块的基本步骤
+**UI Registration (Host-Specific Module):**
+```csharp
+public class EchoPluginBlazorModule : ModuleBase
+{
+    public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
+    {
+        var viewRegistry = context.ServiceProvider.GetRequiredService<IViewRegistry>();
+        viewRegistry.Register<EchoViewModel, EchoView>(); // EchoView is Razor Component
+        return Task.CompletedTask;
+    }
+}
+```
 
-1. 在 `src/Modules/` 下创建新模块目录（例如 `Modulus.Modules.Calculator/`），并在解决方案中添加对应项目。  
-2. 在该模块中拆分层次（如需要）：`Domain`, `Application`, `Infrastructure`, 以及可选的
-   `UI.Blazor`, `UI.Avalonia` 项目，遵守金字塔分层依赖方向。  
-3. 在 Domain / Application 中仅依赖 `Modulus.UI.Abstractions` 与 `Modulus.Sdk`，避免任何具体 UI 引用。  
-4. 在 UI 子项目中根据宿主实现具体视图与绑定逻辑，通过 UI 抽象层与核心交互。  
-5. 为模块编写 manifest（将在后续实现中标准化位置与格式），描述模块标识、版本、支持宿主与程序集列表。  
-6. 在 `tests/Modulus.Modules.Tests/` 中为该模块添加单元测试与必要的集成测试。
-
----
-
-## 3. 运行时与宿主验证路径
-
-1. 启动 Web 风格宿主（Blazor Host），验证：
-   - 宿主能够发现并加载核心模块与示例模块；
-   - 示例模块在 UI 中可用（菜单 / 工具面板 / 命令等）。  
-2. 启动 Avalonia 宿主，重复上述验证：
-   - 使用相同的核心程序集；
-   - 使用专门的 Avalonia UI 程序集；  
-3. 使用测试项目（`Modulus.Hosts.Tests` 等）运行基础端到端测试，确保模块加载 / 卸载流程稳定。
-
----
-
-## 4. AI 辅助开发的推荐路径
-
-1. 在开始使用 AI 生成代码前，运行 `nuke StartAI` 生成最新的项目上下文，并将宪章与本特性相关文档
-   （`spec.md`, `plan.md`, `data-model.md`, `quickstart.md`）一并提供给 AI。  
-2. 在为新插件 / 模块生成代码时，优先让 AI 基于 SDK 基类（如未来的 `ToolPluginBase`、
-   `DocumentPluginBase` 等）生成骨架代码，而非随意创建项目结构。  
-3. 对 AI 生成的模块 / 插件，按照本 Quickstart 与宪章中的分层与宿主约束进行审查与调整。
-
----
-
-## 5. 后续演进
-
-- Phase 1 完成后，应有至少一个端到端示例模块在两种宿主下运行；
-- Phase 2 将在此基础上加入更完善的插件热重载、签名与市场化能力，并可能拆出更多特性级 spec 与 plan。
-
-
+### 6.3 打包与清单
+使用 `manifest.json` 描述插件：
+```json
+{
+  "id": "MyPlugin",
+  "version": "1.0.0",
+  "supportedHosts": ["BlazorApp", "AvaloniaApp"],
+  "coreAssemblies": ["MyPlugin.Core.dll"],
+  "uiAssemblies": {
+    "BlazorApp": ["MyPlugin.UI.Blazor.dll"],
+    "AvaloniaApp": ["MyPlugin.UI.Avalonia.dll"]
+  }
+}
+```
+使用 `PluginPackageBuilder` (SDK) 可以在代码中生成此清单。

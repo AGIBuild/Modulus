@@ -1,0 +1,51 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Window Background - Purple Gradient -->
+    <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#7B1FA2" Offset="0"/>
+        <GradientStop Color="#9C27B0" Offset="0.5"/>
+        <GradientStop Color="#C2185B" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <!-- Title Bar -->
+    <SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="#25000000"/>
+    <SolidColorBrush x:Key="TitleBarTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TitleBarBadgeBackgroundBrush" Color="#40FFFFFF"/>
+    
+    <!-- Sidebar / Navigation -->
+    <LinearGradientBrush x:Key="SidebarBackgroundBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Color="#18000000" Offset="0"/>
+        <GradientStop Color="#30000000" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="Transparent"/>
+    <SolidColorBrush x:Key="NavItemHoverBackgroundBrush" Color="#20FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemActiveBackgroundBrush" Color="#30FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemIconBrush" Color="#E8E8E8"/>
+    
+    <!-- Content Area - Light Purple (coordinated with sidebar) -->
+    <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#BB8BFF"/>
+    <SolidColorBrush x:Key="ContentHeaderBackgroundBrush" Color="#A876F0"/>
+    <SolidColorBrush x:Key="ContentBorderBrush" Color="#9C6AE0"/>
+    
+    <!-- Text Colors (Dark on Light Purple) -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#4A4A4A"/>
+    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#6A6A6A"/>
+    
+    <!-- Surface Colors -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#A070E0"/>
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#9060D0"/>
+    <SolidColorBrush x:Key="SurfaceActiveBrush" Color="#7B4FC0"/>
+    
+    <!-- Card Colors -->
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#C9A0FF"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#A876F0"/>
+    
+    <!-- Acrylic Material -->
+    <Color x:Key="AcrylicTintColor">#311B92</Color>
+    <x:Double x:Key="AcrylicTintOpacity">0.25</x:Double>
+    <x:Double x:Key="AcrylicMaterialOpacity">0.15</x:Double>
+    
+</ResourceDictionary>

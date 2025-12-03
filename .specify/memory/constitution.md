@@ -88,6 +88,7 @@ Sync Impact Report
   environment-specific APIs that would prevent reuse across hosts.
 - MediatR MUST be the default choice for in-process cross-module communication to avoid ad hoc
   event or static coupling.
+- ViewModel implementations MUST use `CommunityToolkit.Mvvm` (Source Generators, `ObservableObject`, `RelayCommand`) to standardize MVVM patterns and avoid boilerplate.
 - Rationale: A disciplined, modern stack reduces maintenance cost and keeps the framework
   portable.
 
@@ -186,5 +187,5 @@ Sync Impact Report
 - Governance decisions and exceptions (if any) MUST be documented alongside the affected
   features and referenced from the relevant plan and spec files.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-27 | **Last Amended**: 2025-11-27
+**Version**: 1.1.0 | **Ratified**: 2025-11-27 | **Last Amended**: 2025-12-01
 

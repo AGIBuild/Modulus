@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Modulus.Host.Avalonia.App"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Modulus.Host.Avalonia/Themes/Controls.axaml"/>
+    </Application.Styles>
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude x:Key="Light" Source="avares://Modulus.Host.Avalonia/Themes/LightTheme.axaml"/>
+                <ResourceInclude x:Key="Dark" Source="avares://Modulus.Host.Avalonia/Themes/DarkTheme.axaml"/>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <!-- Brand Colors (Theme-independent, for accent usage) -->
+            <Color x:Key="BrandPrimaryColor">#7B1FA2</Color>
+            <Color x:Key="BrandSecondaryColor">#C2185B</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

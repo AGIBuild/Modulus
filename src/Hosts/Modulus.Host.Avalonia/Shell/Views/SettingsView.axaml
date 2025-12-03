@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
+             x:Class="Modulus.Host.Avalonia.Shell.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    <ScrollViewer>
+        <StackPanel Margin="0" Spacing="24" MaxWidth="600">
+            <!-- Appearance Section -->
+            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, Auto">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Theme" FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBlock Text="Select the application color theme" 
+                                   Foreground="{DynamicResource TertiaryTextBrush}" FontSize="12"/>
+                    </StackPanel>
+                    
+                    <ComboBox Grid.Column="1" 
+                              ItemsSource="{Binding ThemeOptions}"
+                              SelectedItem="{Binding SelectedTheme}"
+                              MinWidth="180"
+                              VerticalAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ThemeOption">
+                                <TextBlock Text="{Binding DisplayName}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+            </Border>
+            
+            <!-- About Section -->
+            <Border Background="{DynamicResource CardBackgroundBrush}" 
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="About" FontWeight="SemiBold" FontSize="14"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="120, *">
+                            <TextBlock Text="Application" Foreground="{DynamicResource TertiaryTextBrush}" FontSize="12"/>
+                            <TextBlock Grid.Column="1" Text="Modulus Framework" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" FontSize="12"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="120, *">
+                            <TextBlock Text="Version" Foreground="{DynamicResource TertiaryTextBrush}" FontSize="12"/>
+                            <TextBlock Grid.Column="1" Text="1.0.0-preview" 
+                                       Foreground="{DynamicResource PrimaryTextBrush}" FontSize="12"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="120, *">
+                            <TextBlock Text="Description" Foreground="{DynamicResource TertiaryTextBrush}" FontSize="12"/>
+                            <TextBlock Grid.Column="1" Text="A modular desktop application framework" 
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

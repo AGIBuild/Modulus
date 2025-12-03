@@ -17,7 +17,7 @@ Phase 2 (v1) 在此基础上补齐 Avalonia 宿主、完善 UI 抽象层、增�
 
 ## Technical Context
 
-**Language/Version**: .NET 8 (LTS), C# (最新稳定版本；后续可评估升级到 .NET 9 Current)  
+**Language/Version**: .NET 10 (Current), C# (最新稳定版本；后续可评估 LTS 发布节奏进行调整)  
 **Primary Dependencies**: `MediatR`, `Avalonia`, `Blazor` (Hybrid / WebView 宿主), `Microsoft.Extensions.DependencyInjection`, `System.Text.Json`  
 **Storage**: N/A（本特性为框架级运行时与宿主，不绑定具体存储；业务模块可选择数据库 / 文件等）  
 **Testing**: xUnit + 集成测试（基于宿主运行时的端到端测试）+ 针对 SDK 与 manifest 的契约测试  
