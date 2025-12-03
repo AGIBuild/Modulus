@@ -1,15 +1,116 @@
+@inject Modulus.UI.Abstractions.INavigationService NavigationService
+
 <MudNavMenu Bordered="true" Color="Color.Primary">
     @foreach (var item in Items)
     {
-        <MudNavLink Href="@item.NavigationKey" Icon="@GetIcon(item.Icon)" Match="NavLinkMatch.Prefix">
-            @item.DisplayName
-        </MudNavLink>
+        @if (item.Children != null && item.Children.Count > 0)
+        {
+            <!-- Hierarchical item with children -->
+            <MudNavGroup Title="@(IsMini ? "" : item.DisplayName)" 
+                         Icon="@GetIcon(item.Icon)" 
+                         Expanded="@item.IsExpanded"
+                         ExpandedChanged="@(expanded => OnExpandedChanged(item, expanded))"
+                         Disabled="@(!item.IsEnabled)">
+                @foreach (var child in item.Children)
+                {
+                    <MudTooltip Text="@child.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
+                        <MudNavLink Href="@child.NavigationKey" 
+                                    Icon="@GetIcon(child.Icon)" 
+                                    Match="NavLinkMatch.Prefix"
+                                    Disabled="@(!child.IsEnabled)"
+                                    OnClick="@(() => OnNavClick(child))">
+                            @if (!IsMini)
+                            {
+                                <div class="nav-item-content">
+                                    <span>@child.DisplayName</span>
+                                    @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                                    {
+                                        <MudBadge Content="@child.BadgeCount" 
+                                                  Color="@GetBadgeColor(child.BadgeColor)" 
+                                                  Overlap="false"
+                                                  Class="nav-badge" />
+                                    }
+                                </div>
+                            }
+                            else if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                            {
+                                <MudBadge Dot="true" Color="@GetBadgeColor(child.BadgeColor)" Overlap="true" />
+                            }
+                        </MudNavLink>
+                    </MudTooltip>
+                }
+            </MudNavGroup>
+        }
+        else
+        {
+            <!-- Leaf item -->
+            <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
+                <MudNavLink Href="@item.NavigationKey" 
+                            Icon="@GetIcon(item.Icon)" 
+                            Match="NavLinkMatch.Prefix"
+                            Disabled="@(!item.IsEnabled)"
+                            OnClick="@(() => OnNavClick(item))">
+                    @if (!IsMini)
+                    {
+                        <div class="nav-item-content">
+                            <span>@item.DisplayName</span>
+                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                            {
+                                <MudBadge Content="@item.BadgeCount" 
+                                          Color="@GetBadgeColor(item.BadgeColor)" 
+                                          Overlap="false"
+                                          Class="nav-badge" />
+                            }
+                        </div>
+                    }
+                    else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                    {
+                        <MudBadge Dot="true" Color="@GetBadgeColor(item.BadgeColor)" Overlap="true" />
+                    }
+                </MudNavLink>
+            </MudTooltip>
+        }
     }
 </MudNavMenu>
+
+<style>
+    .nav-item-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .nav-badge {
+        margin-left: auto;
+    }
+</style>
 
 @code {
     [Parameter]
     public IEnumerable<Modulus.UI.Abstractions.MenuItem> Items { get; set; } = Enumerable.Empty<Modulus.UI.Abstractions.MenuItem>();
+
+    /// <summary>
+    /// When true, shows only icons (for mini drawer mode).
+    /// </summary>
+    [Parameter]
+    public bool IsMini { get; set; }
+
+    private async Task OnNavClick(Modulus.UI.Abstractions.MenuItem item)
+    {
+        if (!item.IsEnabled || string.IsNullOrEmpty(item.NavigationKey))
+        {
+            return;
+        }
+
+        // Use navigation service for guard support
+        await NavigationService.NavigateToAsync(item.NavigationKey);
+    }
+
+    private void OnExpandedChanged(Modulus.UI.Abstractions.MenuItem item, bool expanded)
+    {
+        item.IsExpanded = expanded;
+    }
 
     private string GetIcon(string iconName)
     {
@@ -33,8 +134,24 @@
             "calendar" => MudBlazor.Icons.Material.Filled.CalendarMonth,
             "star" => MudBlazor.Icons.Material.Filled.Star,
             "favorite" or "heart" => MudBlazor.Icons.Material.Filled.Favorite,
+            "group" or "category" => MudBlazor.Icons.Material.Filled.Category,
+            "list" => MudBlazor.Icons.Material.Filled.List,
+            "notifications" or "bell" => MudBlazor.Icons.Material.Filled.Notifications,
             _ => MudBlazor.Icons.Material.Filled.Circle
         };
     }
-}
 
+    private Color GetBadgeColor(string? colorName)
+    {
+        return colorName?.ToLower() switch
+        {
+            "error" or "red" => Color.Error,
+            "warning" or "orange" => Color.Warning,
+            "info" or "blue" => Color.Info,
+            "success" or "green" => Color.Success,
+            "primary" => Color.Primary,
+            "secondary" => Color.Secondary,
+            _ => Color.Error // Default to error (red) for badges
+        };
+    }
+}

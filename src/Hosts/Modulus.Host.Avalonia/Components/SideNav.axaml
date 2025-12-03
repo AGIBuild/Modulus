@@ -13,12 +13,14 @@
         <components:NavigationView Grid.Row="0" 
                                    Items="{Binding MainMenuItems}"
                                    SelectedItem="{Binding SelectedMainMenuItem}"
+                                   IsCollapsed="{Binding IsNavCollapsed}"
                                    Margin="0,8,0,0" />
         
         <!-- Bottom Menu -->
         <components:NavigationView Grid.Row="1" 
                                    Items="{Binding BottomMenuItems}"
                                    SelectedItem="{Binding SelectedBottomMenuItem}"
+                                   IsCollapsed="{Binding IsNavCollapsed}"
                                    Margin="0,0,0,10" />
     </Grid>
 </UserControl>

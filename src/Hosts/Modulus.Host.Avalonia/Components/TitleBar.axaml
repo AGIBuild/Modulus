@@ -3,18 +3,33 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:behaviors="using:Modulus.Host.Avalonia.Behaviors"
+             xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
              xmlns:i="using:Avalonia.Xaml.Interactivity"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="50"
-             x:Class="Modulus.Host.Avalonia.Components.TitleBar">
+             x:Class="Modulus.Host.Avalonia.Components.TitleBar"
+             x:DataType="vm:ShellViewModel">
     
-    <Grid ColumnDefinitions="Auto, *, Auto" Height="50" 
+    <Grid ColumnDefinitions="Auto, Auto, *, Auto" Height="50" 
           Background="{DynamicResource TitleBarBackgroundBrush}">
         <i:Interaction.Behaviors>
             <behaviors:WindowDragBehavior />
         </i:Interaction.Behaviors>
         
+        <!-- Nav Toggle Button -->
+        <Button Grid.Column="0" 
+                Command="{Binding ToggleNavCollapseCommand}"
+                Classes="navToggle"
+                Width="48" Height="50"
+                Background="Transparent"
+                BorderThickness="0"
+                ToolTip.Tip="Toggle Navigation">
+            <TextBlock Text="☰" FontSize="18" 
+                       Foreground="{DynamicResource TitleBarTextBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Button>
+        
         <!-- Branding -->
-        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="5,0,15,0">
             <TextBlock Text="MODULUS" FontWeight="Black" FontSize="18" 
                        Foreground="{DynamicResource TitleBarTextBrush}" 
                        VerticalAlignment="Center"/>
@@ -26,10 +41,10 @@
         </StackPanel>
         
         <!-- Spacer -->
-        <Border Grid.Column="1" />
+        <Border Grid.Column="2" />
         
         <!-- Window Controls (placeholder for future theme toggle) -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
             <!-- Theme toggle or other controls can be added here -->
         </StackPanel>
     </Grid>

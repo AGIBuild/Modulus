@@ -31,6 +31,8 @@ public class AvaloniaHostModule : ModuleBase
         
         // Shell Services
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
+        context.Services.AddSingleton<AvaloniaNavigationService>();
+        context.Services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<AvaloniaNavigationService>());
         
         // Shell ViewModels
         context.Services.AddSingleton<ShellViewModel>();

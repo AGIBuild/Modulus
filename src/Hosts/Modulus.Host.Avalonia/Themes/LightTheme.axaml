@@ -43,6 +43,10 @@
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="#C9A0FF"/>
     <SolidColorBrush x:Key="CardBorderBrush" Color="#A876F0"/>
     
+    <!-- Badge Colors -->
+    <SolidColorBrush x:Key="BadgeBackgroundBrush" Color="#E53935"/>
+    <SolidColorBrush x:Key="BadgeTextBrush" Color="#FFFFFF"/>
+    
     <!-- Acrylic Material -->
     <Color x:Key="AcrylicTintColor">#311B92</Color>
     <x:Double x:Key="AcrylicTintOpacity">0.25</x:Double>

@@ -1,26 +1,43 @@
 @inject Modulus.UI.Abstractions.IMenuRegistry MenuRegistry
+@inject Modulus.UI.Abstractions.INavigationService NavigationService
 
-<MudDrawer @bind-Open="IsOpen" ClipMode="DrawerClipMode.Always" Elevation="2" 
-           Variant="@DrawerVariant.Responsive" Breakpoint="Breakpoint.Md">
+<MudDrawer @bind-Open="IsOpen" 
+           ClipMode="DrawerClipMode.Always" 
+           Elevation="2" 
+           Variant="@(IsMini ? DrawerVariant.Mini : DrawerVariant.Responsive)"
+           MiniWidth="56px"
+           Width="220px"
+           Breakpoint="Breakpoint.Md">
     <div class="drawer-content">
         <!-- Top Section: Header + Main Menu -->
         <div class="drawer-top">
-            <MudDrawerHeader>
-                <MudText Typo="Typo.h6">Navigation</MudText>
-            </MudDrawerHeader>
+            @if (!IsMini || IsOpen)
+            {
+                <MudDrawerHeader>
+                    <MudText Typo="Typo.h6">Navigation</MudText>
+                </MudDrawerHeader>
+            }
             <MudNavMenu Bordered="true" Color="Color.Primary">
                 <!-- Static Home -->
-                <MudNavLink Href="/" Icon="@MudBlazor.Icons.Material.Filled.Home" Match="NavLinkMatch.All">
-                    Home
-                </MudNavLink>
+                <MudTooltip Text="Home" Placement="Placement.Right" Disabled="@(!IsMini || IsOpen)">
+                    <MudNavLink Href="/" Icon="@MudBlazor.Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                        @if (!IsMini || IsOpen)
+                        {
+                            <span>Home</span>
+                        }
+                    </MudNavLink>
+                </MudTooltip>
             </MudNavMenu>
-            <NavMenu Items="_mainMenuItems" />
+            <NavMenu Items="_mainMenuItems" IsMini="@(IsMini && !IsOpen)" />
         </div>
         
         <!-- Bottom Section: Bottom Menu Items -->
         <div class="drawer-bottom">
-            <MudDivider Class="mb-2" />
-            <NavMenu Items="_bottomMenuItems" />
+            @if (!IsMini || IsOpen)
+            {
+                <MudDivider Class="mb-2" />
+            }
+            <NavMenu Items="_bottomMenuItems" IsMini="@(IsMini && !IsOpen)" />
         </div>
     </div>
 </MudDrawer>
@@ -49,6 +66,12 @@
 
     [Parameter]
     public EventCallback<bool> IsOpenChanged { get; set; }
+
+    /// <summary>
+    /// When true, drawer uses Mini variant (icon-only when closed).
+    /// </summary>
+    [Parameter]
+    public bool IsMini { get; set; } = true;
 
     private List<Modulus.UI.Abstractions.MenuItem> _mainMenuItems = new();
     private List<Modulus.UI.Abstractions.MenuItem> _bottomMenuItems = new();

@@ -31,7 +31,8 @@
             <components:TitleBar Grid.Row="0" />
 
             <!-- Main Content Area -->
-            <SplitView Grid.Row="1" DisplayMode="CompactInline" IsPaneOpen="True" 
+            <SplitView Grid.Row="1" DisplayMode="CompactInline" 
+                       IsPaneOpen="{Binding IsPaneOpen}" 
                        OpenPaneLength="220" CompactPaneLength="48" 
                        Background="Transparent" 
                        PaneBackground="{DynamicResource SidebarBackgroundBrush}">

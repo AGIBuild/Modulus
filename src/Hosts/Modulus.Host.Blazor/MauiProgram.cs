@@ -34,6 +34,8 @@ public class BlazorHostModule : ModuleBase
 
         // Shell Services
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
+        context.Services.AddScoped<BlazorNavigationService>();
+        context.Services.AddScoped<INavigationService>(sp => sp.GetRequiredService<BlazorNavigationService>());
 
         // Shell ViewModels
         context.Services.AddSingleton<ShellViewModel>();
