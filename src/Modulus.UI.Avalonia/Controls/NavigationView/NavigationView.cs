@@ -6,6 +6,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
@@ -17,6 +19,7 @@ namespace Modulus.UI.Avalonia.Controls;
 /// </summary>
 public partial class NavigationView : TemplatedControl
 {
+    private static bool _stylesLoaded;
     private ItemsControl? _itemsHost;
     private ScrollViewer? _scrollViewer;
 
@@ -36,6 +39,51 @@ public partial class NavigationView : TemplatedControl
         ItemsProperty.Changed.AddClassHandler<NavigationView>((x, e) => x.OnItemsChanged(e));
         SelectedItemProperty.Changed.AddClassHandler<NavigationView>((x, e) => x.OnSelectedItemChanged(e));
         IsCollapsedProperty.Changed.AddClassHandler<NavigationView>((x, e) => x.OnIsCollapsedChanged(e));
+    }
+
+    public NavigationView()
+    {
+        // Ensure styles are loaded
+        EnsureStylesLoaded();
+    }
+
+    /// <summary>
+    /// Ensures that the control styles are loaded into the application.
+    /// This is necessary for modules that may not have access to the main app's styles.
+    /// </summary>
+    private static void EnsureStylesLoaded()
+    {
+        if (_stylesLoaded || Application.Current == null) return;
+
+        var styles = Application.Current.Styles;
+        
+        // Check if our styles are already loaded
+        var genericStyleUri = new Uri("avares://Modulus.UI.Avalonia/Themes/Generic.axaml");
+        bool hasGenericStyle = false;
+        
+        foreach (var style in styles)
+        {
+            if (style is StyleInclude si && si.Source == genericStyleUri)
+            {
+                hasGenericStyle = true;
+                break;
+            }
+        }
+
+        if (!hasGenericStyle)
+        {
+            try
+            {
+                var genericStyles = new StyleInclude(genericStyleUri) { Source = genericStyleUri };
+                styles.Add(genericStyles);
+            }
+            catch
+            {
+                // Styles might already be loaded or unavailable
+            }
+        }
+
+        _stylesLoaded = true;
     }
 
     /// <inheritdoc/>
