@@ -19,7 +19,7 @@
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto">
                         <ItemsControl x:Name="PART_ItemsHost"
-                                      ItemsSource="{TemplateBinding Items}">
+                                      ItemsSource="{Binding Items, RelativeSource={RelativeSource TemplatedParent}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel/>
