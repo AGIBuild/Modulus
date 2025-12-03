@@ -6,14 +6,16 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://Modulus.Host.Avalonia/Themes/Controls.axaml"/>
+        <!-- UI Library Control Styles -->
+        <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls.axaml"/>
     </Application.Styles>
     
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
-                <ResourceInclude x:Key="Light" Source="avares://Modulus.Host.Avalonia/Themes/LightTheme.axaml"/>
-                <ResourceInclude x:Key="Dark" Source="avares://Modulus.Host.Avalonia/Themes/DarkTheme.axaml"/>
+                <!-- UI Library Themes -->
+                <ResourceInclude x:Key="Light" Source="avares://Modulus.UI.Avalonia/Themes/LightTheme.axaml"/>
+                <ResourceInclude x:Key="Dark" Source="avares://Modulus.UI.Avalonia/Themes/DarkTheme.axaml"/>
             </ResourceDictionary.ThemeDictionaries>
 
             <!-- Brand Colors (Theme-independent, for accent usage) -->

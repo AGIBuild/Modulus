@@ -14,4 +14,3 @@
         <ContentPresenter Content="{Binding HostedContent, ElementName=Root}" Background="Transparent"/>
     </Border>
 </UserControl>
-
