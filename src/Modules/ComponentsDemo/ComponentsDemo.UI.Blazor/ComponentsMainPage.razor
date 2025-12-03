@@ -5,9 +5,9 @@
 <MudGrid>
     <!-- Demo Navigation Sidebar - Using MudBlazor native components -->
     <MudItem xs="12" sm="3">
-        <MudPaper Elevation="2" Class="pa-4" Style="height: 100%;">
+        <MudPaper Elevation="2" Class="pa-4" Style="height: 100%; overflow: visible;">
             <MudText Typo="Typo.h6" Class="mb-4">Component Demos</MudText>
-            <MudNavMenu Bordered="true" Color="Color.Primary">
+            <MudNavMenu Bordered="true" Color="Color.Primary" Style="overflow: visible;">
                 @foreach (var item in _viewModel.DemoItems)
                 {
                     @if (item.Children != null && item.Children.Count > 0)
@@ -43,16 +43,11 @@
                                                 Icon="@GetIcon(child.Icon)"
                                                 Disabled="@(!child.IsEnabled)"
                                                 Match="NavLinkMatch.All">
-                                        <div class="d-flex align-center justify-space-between" style="width:100%">
-                                            <span>@child.DisplayName</span>
-                                            @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
-                                            {
-                                                <MudBadge Content="@child.BadgeCount" 
-                                                          Color="@GetBadgeColor(child.BadgeColor)" 
-                                                          Overlap="false"
-                                                          Class="mr-2" />
-                                            }
-                                        </div>
+                                        @child.DisplayName
+                                        @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="@GetBadgeColor(child.BadgeColor)" Class="ml-2">@child.BadgeCount</MudChip>
+                                        }
                                     </MudNavLink>
                                 }
                             }
@@ -65,16 +60,11 @@
                                     Icon="@GetIcon(item.Icon)"
                                     Disabled="@(!item.IsEnabled)"
                                     Match="NavLinkMatch.All">
-                            <div class="d-flex align-center justify-space-between" style="width:100%">
-                                <span>@item.DisplayName</span>
-                                @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
-                                {
-                                    <MudBadge Content="@item.BadgeCount" 
-                                              Color="@GetBadgeColor(item.BadgeColor)" 
-                                              Overlap="false"
-                                              Class="mr-2" />
-                                }
-                            </div>
+                            @item.DisplayName
+                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="@GetBadgeColor(item.BadgeColor)" Class="ml-2">@item.BadgeCount</MudChip>
+                            }
                         </MudNavLink>
                     }
                 }

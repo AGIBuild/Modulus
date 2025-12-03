@@ -56,13 +56,11 @@
                                         Disabled="@(!item.IsEnabled)">
                                 @if (_drawerOpen)
                                 {
-                                    <div class="d-flex align-center justify-space-between" style="width:100%">
-                                        <span>@item.DisplayName</span>
-                                        @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
-                                        {
-                                            <MudBadge Content="@item.BadgeCount" Color="Color.Error" Overlap="false" Class="mr-2" />
-                                        }
-                                    </div>
+                                    <span>@item.DisplayName</span>
+                                    @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Class="ml-2">@item.BadgeCount</MudChip>
+                                    }
                                 }
                                 else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
                                 {
