@@ -1,47 +1,14 @@
 @page "/components"
 @page "/components/{DemoId}"
+@using Modulus.UI.Blazor.Components
+@using Modulus.UI.Abstractions
 
 <MudGrid>
-    <!-- Demo Navigation Sidebar -->
+    <!-- Demo Navigation Sidebar - Using UI Library NavigationMenu -->
     <MudItem xs="12" sm="3">
         <MudPaper Elevation="2" Class="pa-4" Style="height: 100%;">
             <MudText Typo="Typo.h6" Class="mb-4">Component Demos</MudText>
-            <MudNavMenu>
-                @foreach (var item in _viewModel.DemoItems)
-                {
-                    @if (item.Children != null && item.Children.Count > 0)
-                    {
-                        <MudNavGroup Title="@item.DisplayName" Icon="@GetIcon(item.Icon)" Expanded="@item.IsExpanded">
-                            @foreach (var child in item.Children)
-                            {
-                                <MudNavLink Href="@($"/components/{child.NavigationKey}")" 
-                                            Icon="@GetIcon(child.Icon)"
-                                            Disabled="@(!child.IsEnabled)"
-                                            Match="NavLinkMatch.All">
-                                    @child.DisplayName
-                                    @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
-                                    {
-                                        <MudBadge Content="@child.BadgeCount" Color="Color.Error" Overlap="false" Class="ml-2" />
-                                    }
-                                </MudNavLink>
-                            }
-                        </MudNavGroup>
-                    }
-                    else
-                    {
-                        <MudNavLink Href="@($"/components/{item.NavigationKey}")" 
-                                    Icon="@GetIcon(item.Icon)"
-                                    Disabled="@(!item.IsEnabled)"
-                                    Match="NavLinkMatch.All">
-                            @item.DisplayName
-                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
-                            {
-                                <MudBadge Content="@item.BadgeCount" Color="@GetBadgeColor(item.BadgeColor)" Overlap="false" Class="ml-2" />
-                            }
-                        </MudNavLink>
-                    }
-                }
-            </MudNavMenu>
+            <NavigationMenu Items="@_demoItems" OnItemClicked="OnDemoSelected" />
         </MudPaper>
     </MudItem>
     
@@ -90,6 +57,13 @@
 
     private ComponentsMainViewModel _viewModel = new();
     private string _currentDemoId = "nav-demo";
+    private IEnumerable<MenuItem> _demoItems = Enumerable.Empty<MenuItem>();
+
+    protected override void OnInitialized()
+    {
+        // Transform NavigationKey to full path for NavigationMenu
+        _demoItems = _viewModel.DemoItems.Select(TransformMenuItem).ToList();
+    }
 
     protected override void OnParametersSet()
     {
@@ -97,32 +71,31 @@
         _viewModel.NavigateTo(_currentDemoId);
     }
 
-    private string GetIcon(string iconName)
+    private MenuItem TransformMenuItem(MenuItem item)
     {
-        return iconName?.ToLower() switch
+        // Create new MenuItem with full navigation path
+        return new MenuItem(
+            item.Id,
+            item.DisplayName,
+            item.Icon,
+            $"/components/{item.NavigationKey}",
+            item.Location,
+            item.Order)
         {
-            "🧭" or "compass" => Icons.Material.Filled.Explore,
-            "🔢" or "notifications" or "bell" => Icons.Material.Filled.Notifications,
-            "🚫" or "block" => Icons.Material.Filled.Block,
-            "📁" or "folder" => Icons.Material.Filled.Folder,
-            "📄" or "file" => Icons.Material.Filled.InsertDriveFile,
-            "📋" or "list" => Icons.Material.Filled.List,
-            "⌨️" or "keyboard" => Icons.Material.Filled.Keyboard,
-            "🔄" or "refresh" => Icons.Material.Filled.Refresh,
-            _ => Icons.Material.Filled.Circle
+            IsEnabled = item.IsEnabled,
+            BadgeCount = item.BadgeCount,
+            BadgeColor = item.BadgeColor,
+            IsExpanded = item.IsExpanded,
+            Children = item.Children?.Select(TransformMenuItem).ToList()
         };
     }
 
-    private Color GetBadgeColor(string? colorName)
+    private void OnDemoSelected(MenuItem item)
     {
-        return colorName?.ToLower() switch
-        {
-            "error" or "red" => Color.Error,
-            "warning" or "orange" => Color.Warning,
-            "info" or "blue" => Color.Info,
-            "success" or "green" => Color.Success,
-            _ => Color.Default
-        };
+        // Extract demo ID from navigation key (remove /components/ prefix)
+        var demoId = item.NavigationKey?.Replace("/components/", "") ?? "nav-demo";
+        _currentDemoId = demoId;
+        _viewModel.NavigateTo(demoId);
     }
 }
 

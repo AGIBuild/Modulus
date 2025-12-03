@@ -45,10 +45,9 @@ public class BlazorHostModule : ModuleBase
 
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {
-        // Register built-in menu items
+        // Register built-in menu items (Components is registered by ComponentsDemo module)
         var menuRegistry = context.ServiceProvider.GetRequiredService<IMenuRegistry>();
         menuRegistry.Register(new UiMenuItem("Modules", "Modules", "extension", "/modules", MenuLocation.Main, 10));
-        menuRegistry.Register(new UiMenuItem("Components", "Components", "palette", "/components", MenuLocation.Main, 20));
         menuRegistry.Register(new UiMenuItem("Settings", "Settings", "settings", "/settings", MenuLocation.Bottom, 100));
         
         return Task.CompletedTask;
