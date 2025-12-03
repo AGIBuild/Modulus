@@ -8,8 +8,8 @@
     <!-- Surface Colors -->
     <Color x:Key="NavItemBackgroundColor">Transparent</Color>
     <Color x:Key="NavItemHoverColor">#E8E8F0</Color>
-    <Color x:Key="NavItemSelectedColor">#6366F1</Color>
-    <Color x:Key="NavItemActiveColor">#4F46E5</Color>
+    <Color x:Key="NavItemSelectedColor">#9A3DA8</Color>
+    <Color x:Key="NavItemActiveColor">#7B2F87</Color>
     
     <!-- Text Colors -->
     <Color x:Key="NavItemTextColor">#404040</Color>

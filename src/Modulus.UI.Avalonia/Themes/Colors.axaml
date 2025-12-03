@@ -38,9 +38,9 @@
     
     <!-- Navigation Specific -->
     <Color x:Key="NavItemBackgroundColor">Transparent</Color>
-    <Color x:Key="NavItemHoverColor">#353540</Color>
-    <Color x:Key="NavItemSelectedColor">#4F46E5</Color>
-    <Color x:Key="NavItemActiveColor">#4338CA</Color>
+    <Color x:Key="NavItemHoverColor">#3D3D3D</Color>
+    <Color x:Key="NavItemSelectedColor">#333230</Color>
+    <Color x:Key="NavItemActiveColor">#454340</Color>
     <Color x:Key="NavItemTextColor">#B0B0B0</Color>
     <Color x:Key="NavItemSelectedTextColor">#FFFFFF</Color>
     <Color x:Key="NavItemIconColor">#909090</Color>
