@@ -136,9 +136,8 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 **Purpose**: 面向整体架构与开发体验的收尾与跨模块优化。
 
 - [X] T045 [P] 完成对 `specs/001-core-architecture/` 下所有文档的最终对齐（spec, plan, data-model, quickstart, contracts）  
-- [ ] T046 [P] 在 `CONTRIBUTING.md` 与 `CONTRIBUTING.zh-CN.md` 中补充 Modulus 宪章与模块 / 宿主架构的简要说明  
-- [ ] T047 [P] 在 `README.md` 与 `README.zh-CN.md` 中加入对双宿主与插件化架构的简要介绍与链接  
-- [ ] T048 [P] 使用 `nuke StartAI` 更新 AI 上下文，并确保新项目结构 / 契约出现在 AI manifest 中（`nuke SyncAIManifest`）  
+- [X] T046 [P] 在 `CONTRIBUTING.md` 与 `CONTRIBUTING.zh-CN.md` 中补充 Modulus 宪章与模块 / 宿主架构的简要说明  
+- [X] T047 [P] 在 `README.md` 与 `README.zh-CN.md` 中加入对多宿主与插件化架构的简要介绍与链接  
 - [X] T049 整体代码清理与重构（命名统一、命名空间与分层依赖检查、移除临时代码）  
 - [X] T050 运行完整测试集（`dotnet test`），修复发现的问题并记录后续 Story（如需要拆分 v2 功能）  
 

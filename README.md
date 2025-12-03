@@ -68,19 +68,6 @@ dotnet test
 
 See [Quickstart Guide](./specs/001-core-architecture/quickstart.md) for detailed instructions.
 
-## 🤖 AI-Assisted Development
-Modulus includes a built-in system to bootstrap AI context for tools like GitHub Copilot:
-
-```powershell
-# Bootstrap AI context (for GitHub Copilot)
-nuke StartAI
-
-# Role-specific context
-nuke StartAI --role Backend
-nuke StartAI --role Frontend
-nuke StartAI --role Plugin
-```
-
 ## 📚 Documentation
 - [Core Architecture Spec](./specs/001-core-architecture/spec.md)
 - [Quickstart Guide](./specs/001-core-architecture/quickstart.md)
