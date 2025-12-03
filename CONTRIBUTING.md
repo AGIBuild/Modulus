@@ -2,13 +2,52 @@
 
 Thank you for your interest in contributing to Modulus! This guide will help you get started with contributing to the project.
 
+## Architecture Overview
+
+Modulus is a modular .NET desktop framework with a **dual-host architecture**:
+
+### Core Principles
+
+1. **UI-Agnostic Core**: Domain and Application code must not depend on any UI framework
+2. **Dual-Host Support**: Same business logic runs on both Blazor Hybrid and Avalonia hosts
+3. **Vertical Slice Modules**: Each feature is a self-contained module with its own layers
+4. **Dependency Pyramid**: Presentation → UI Abstraction → Application → Domain → Infrastructure
+
+### Project Structure
+
+```
+src/
+├── Modulus.Core/              # Runtime, ModuleLoader, DI, MediatR
+├── Modulus.Sdk/               # SDK base classes (ModuleBase, attributes)
+├── Modulus.UI.Abstractions/   # UI contracts (IMenuRegistry, IThemeService)
+├── Hosts/
+│   ├── Modulus.Host.Blazor/   # MAUI + MudBlazor
+│   └── Modulus.Host.Avalonia/ # Avalonia UI
+└── Modules/
+    └── <ModuleName>/
+        ├── <ModuleName>.Core/         # Domain + Application (UI-agnostic)
+        ├── <ModuleName>.UI.Avalonia/  # Avalonia views
+        └── <ModuleName>.UI.Blazor/    # Blazor components
+```
+
+### Module Development
+
+When creating a new module:
+
+1. **Core Project**: Contains ViewModels and business logic, references only `Modulus.Sdk` and `Modulus.UI.Abstractions`
+2. **UI Projects**: Host-specific views, reference Core project and UI framework
+3. **Manifest**: `manifest.json` describes module metadata and assembly mappings
+4. **Attributes**: Use `[Module]`, `[AvaloniaMenu]`, `[BlazorMenu]` for declarative registration
+
+See [Quickstart Guide](./specs/001-core-architecture/quickstart.md) for detailed instructions.
+
 ## Getting Started
 
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/your-username/modulus.git`
 3. Create a new branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
-5. Run tests: `nuke test`
+5. Run tests: `dotnet test`
 6. Commit your changes: `git commit -m "Add feature"`
 7. Push to your fork: `git push origin feature/your-feature-name`
 8. Create a pull request
@@ -93,8 +132,20 @@ After providing context to Copilot, you can use the following commands in Copilo
 
 ## Building and Running
 
+### Quick Start
+```bash
+# Run Avalonia Host
+dotnet run --project src/Hosts/Modulus.Host.Avalonia
+
+# Run Blazor Host  
+dotnet run --project src/Hosts/Modulus.Host.Blazor
+
+# Run all tests
+dotnet test
+```
+
+### Nuke Build System
 - Use the Nuke build system: `nuke --help` for available targets
-- Run the application: `nuke run`
 - Build all components: `nuke build`
 - Run tests: `nuke test`
 - Pack plugins: `nuke plugin`
