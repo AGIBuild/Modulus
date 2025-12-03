@@ -8,6 +8,17 @@
              x:Class="Modulus.Host.Avalonia.Components.NavigationView"
              x:DataType="local:NavigationView">
     
+    <UserControl.Styles>
+        <!-- Override padding when collapsed -->
+        <Style Selector="local|NavigationView[IsCollapsed=True] ListBox.navList">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="local|NavigationView[IsCollapsed=True] ListBox.navList ListBoxItem">
+            <Setter Property="Padding" Value="0,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+    
     <ListBox Classes="navList"
              ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType=local:NavigationView}}"
              SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=local:NavigationView}}">
@@ -32,8 +43,8 @@
                     </StackPanel>
                     
                     <!-- Collapsed Mode (icon only) -->
-                    <Panel IsVisible="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=local:NavigationView}}"
-                           HorizontalAlignment="Center">
+                    <Grid IsVisible="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=local:NavigationView}}"
+                          Width="40" Height="24">
                         <TextBlock Text="{Binding Icon}" FontSize="18" 
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
@@ -42,8 +53,8 @@
                                  Fill="{DynamicResource BadgeBackgroundBrush}"
                                  Width="8" Height="8"
                                  HorizontalAlignment="Right" VerticalAlignment="Top"
-                                 Margin="0,-2,-2,0"/>
-                    </Panel>
+                                 Margin="0,0,4,0"/>
+                    </Grid>
                 </Panel>
             </DataTemplate>
         </ListBox.ItemTemplate>
