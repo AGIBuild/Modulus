@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
-    <!-- Navigation ListBox Styles -->
+    <!-- Navigation ListBox Styles (legacy) -->
     <Style Selector="ListBox.navList">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -32,6 +32,45 @@
     
     <Style Selector="ListBox.navList ListBoxItem:selected TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+    </Style>
+    
+    <!-- Navigation Button Item Styles -->
+    <Style Selector="Button.navItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="Margin" Value="4,1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    
+    <Style Selector="Button.navItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource NavItemHoverBackgroundBrush}"/>
+    </Style>
+    
+    <Style Selector="Button.navItem:pressed">
+        <Setter Property="Background" Value="{DynamicResource NavItemActiveBackgroundBrush}"/>
+    </Style>
+    
+    <Style Selector="Button.navItem:disabled">
+        <Setter Property="Opacity" Value="0.4"/>
+    </Style>
+    
+    <Style Selector="Button.navItem TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
+    </Style>
+    
+    <!-- Child nav item (indented) -->
+    <Style Selector="Button.childNavItem">
+        <Setter Property="Padding" Value="8,8"/>
+        <Setter Property="Margin" Value="4,0,4,1"/>
+    </Style>
+    
+    <Style Selector="Button.childNavItem TextBlock">
+        <Setter Property="FontSize" Value="13"/>
     </Style>
     
 </Styles>

@@ -6,7 +6,10 @@
              xmlns:local="using:Modulus.Host.Avalonia.Components"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="300"
              x:Class="Modulus.Host.Avalonia.Components.NavigationView"
-             x:DataType="local:NavigationView">
+             x:DataType="local:NavigationView"
+             x:Name="Root"
+             Focusable="True"
+             KeyDown="OnKeyDown">
     
     <UserControl.Styles>
         <!-- Override padding when collapsed -->
@@ -19,51 +22,82 @@
         </Style>
     </UserControl.Styles>
     
-    <ListBox Classes="navList"
-             ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType=local:NavigationView}}"
-             SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=local:NavigationView}}">
-        <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="ui:MenuItem">
-                <Panel ToolTip.Tip="{Binding DisplayName}">
-                    <!-- Expanded Mode -->
-                    <StackPanel Orientation="Horizontal" Spacing="12"
-                                IsVisible="{Binding !IsCollapsed, RelativeSource={RelativeSource AncestorType=local:NavigationView}}">
-                        <TextBlock Text="{Binding Icon}" FontSize="16" 
-                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"
-                                   Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
-                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"
-                                   Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
-                        <!-- Badge -->
-                        <Border IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                Background="{DynamicResource BadgeBackgroundBrush}"
-                                CornerRadius="10" MinWidth="20" Padding="4,1">
-                            <TextBlock Text="{Binding BadgeCount}" FontSize="11" FontWeight="Bold"
-                                       Foreground="White" HorizontalAlignment="Center"/>
-                        </Border>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Items, ElementName=Root}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="ui:MenuItem">
+                    <StackPanel>
+                        <!-- Menu Item Row -->
+                        <Button Classes="navItem" 
+                                Command="{Binding ItemClickCommand, ElementName=Root}"
+                                CommandParameter="{Binding}"
+                                ToolTip.Tip="{Binding DisplayName}"
+                                IsEnabled="{Binding IsEnabled}"
+                                ContextMenu="{Binding ContextActions, Converter={x:Static local:NavigationView.ActionsToContextMenuConverter}}">
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                <!-- Icon -->
+                                <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" 
+                                           VerticalAlignment="Center" Width="20" TextAlignment="Center"
+                                           Margin="0,0,12,0"
+                                           Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
+                                
+                                <!-- Display Name (hidden when collapsed) -->
+                                <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding !IsCollapsed, ElementName=Root}"
+                                           Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
+                                
+                                <!-- Badge -->
+                                <Border Grid.Column="2" 
+                                        IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                        Background="{DynamicResource BadgeBackgroundBrush}"
+                                        CornerRadius="10" MinWidth="20" Padding="4,1" Margin="8,0">
+                                    <TextBlock Text="{Binding BadgeCount}" FontSize="11" FontWeight="Bold"
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                </Border>
+                                
+                                <!-- Expand/Collapse Icon for groups -->
+                                <TextBlock Grid.Column="3" 
+                                           Text="{Binding IsExpanded, Converter={x:Static local:NavigationView.ExpandedToChevronConverter}}"
+                                           FontSize="12" VerticalAlignment="Center"
+                                           IsVisible="{Binding Children, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                           Margin="4,0,0,0"/>
+                            </Grid>
+                        </Button>
+                        
+                        <!-- Children (when expanded) -->
+                        <ItemsControl Classes="childItems"
+                                      ItemsSource="{Binding Children}"
+                                      IsVisible="{Binding IsExpanded}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="ui:MenuItem">
+                                    <Button Classes="navItem childNavItem"
+                                            Command="{Binding ItemClickCommand, ElementName=Root}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="{Binding DisplayName}"
+                                            IsEnabled="{Binding IsEnabled}"
+                                            Margin="16,0,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" 
+                                                       VerticalAlignment="Center" Width="16" TextAlignment="Center"
+                                                       Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
+                                                       VerticalAlignment="Center" FontSize="13"/>
+                                            <Border Grid.Column="2" 
+                                                    IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                    Background="{DynamicResource BadgeBackgroundBrush}"
+                                                    CornerRadius="8" MinWidth="16" Padding="3,0" Margin="6,0,0,0">
+                                                <TextBlock Text="{Binding BadgeCount}" FontSize="10" FontWeight="Bold"
+                                                           Foreground="White" HorizontalAlignment="Center"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
-                    
-                    <!-- Collapsed Mode (icon only) -->
-                    <Grid IsVisible="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=local:NavigationView}}"
-                          Width="40" Height="24">
-                        <TextBlock Text="{Binding Icon}" FontSize="18" 
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
-                        <!-- Badge dot for collapsed mode -->
-                        <Ellipse IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                 Fill="{DynamicResource BadgeBackgroundBrush}"
-                                 Width="8" Height="8"
-                                 HorizontalAlignment="Right" VerticalAlignment="Top"
-                                 Margin="0,0,4,0"/>
-                    </Grid>
-                </Panel>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-        
-        <ListBox.Styles>
-            <!-- Disabled item style -->
-            <Style Selector="ListBoxItem">
-                <Setter Property="IsHitTestVisible" Value="{Binding IsEnabled}"/>
-            </Style>
-        </ListBox.Styles>
-    </ListBox>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
 </UserControl>

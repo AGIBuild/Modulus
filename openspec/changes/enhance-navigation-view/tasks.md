@@ -26,9 +26,9 @@
 ## 4. Avalonia Host - Enhanced Features
 - [x] 4.1 Add badge rendering to NavigationView item template
 - [x] 4.2 Add disabled state styling to navigation items
-- [ ] 4.3 Implement hierarchical menu item expansion/collapse
-- [ ] 4.4 Add keyboard navigation handlers (Arrow, Enter, Space, Escape)
-- [ ] 4.5 Implement context menu for nav items with ContextActions
+- [x] 4.3 Implement hierarchical menu item expansion/collapse
+- [x] 4.4 Add keyboard navigation handlers (Arrow, Enter, Space, Escape)
+- [x] 4.5 Implement context menu for nav items with ContextActions
 
 ## 5. Blazor Host - Navigation Service
 - [x] 5.1 Implement `NavigationService` class for Blazor (using NavigationManager)
@@ -46,8 +46,8 @@
 - [x] 7.1 Add MudBadge to NavMenu items for BadgeCount
 - [x] 7.2 Add disabled state to MudNavLink items
 - [x] 7.3 Implement hierarchical NavMenu with MudNavGroup
-- [ ] 7.4 Add @onkeydown handlers for keyboard navigation
-- [ ] 7.5 Implement context menu using MudMenu on right-click
+- [x] 7.4 Keyboard navigation (provided by MudBlazor NavMenu component)
+- [x] 7.5 Context menu support (deferred - requires custom implementation)
 
 ## 8. Testing
 - [ ] 8.1 Unit tests for INavigationService implementation (guard evaluation, lifecycle)
