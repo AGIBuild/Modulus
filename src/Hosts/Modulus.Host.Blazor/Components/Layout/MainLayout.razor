@@ -1,10 +1,8 @@
 ﻿@inherits LayoutComponentBase
 
-<ThemeProvider @ref="_themeProvider">
+<ThemeProvider>
     <MudLayout>
-        <AppBar IsDarkMode="@(_themeProvider?.IsDarkMode ?? false)" 
-                OnMenuToggle="@ToggleDrawer" 
-                OnThemeToggle="@ToggleTheme" />
+        <AppBar OnMenuToggle="@ToggleDrawer" />
         
         <NavDrawer @bind-IsOpen="_drawerOpen" />
         
@@ -15,16 +13,10 @@
 </ThemeProvider>
 
 @code {
-    private ThemeProvider? _themeProvider;
     private bool _drawerOpen = true;
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
-    }
-
-    private void ToggleTheme()
-    {
-        _themeProvider?.ToggleTheme();
     }
 }

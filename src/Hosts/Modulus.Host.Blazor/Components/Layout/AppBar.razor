@@ -1,5 +1,3 @@
-@inject Modulus.UI.Abstractions.IThemeService ThemeService
-
 <MudAppBar Elevation="1" Class="mud-theme-gradient">
     <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Menu" 
                    Color="Color.Inherit" 
@@ -8,9 +6,6 @@
     <MudText Typo="Typo.h5" Class="ml-3 fw-bold">MODULUS</MudText>
     <MudChip T="string" Size="Size.Small" Color="Color.Surface" Class="ml-2">HOST</MudChip>
     <MudSpacer />
-    <MudIconButton Icon="@(IsDarkMode ? MudBlazor.Icons.Material.Filled.LightMode : MudBlazor.Icons.Material.Filled.DarkMode)" 
-                   Color="Color.Inherit" 
-                   OnClick="@OnThemeToggle" />
 </MudAppBar>
 
 <style>
@@ -21,12 +16,5 @@
 
 @code {
     [Parameter]
-    public bool IsDarkMode { get; set; }
-
-    [Parameter]
     public EventCallback OnMenuToggle { get; set; }
-
-    [Parameter]
-    public EventCallback OnThemeToggle { get; set; }
 }
-
