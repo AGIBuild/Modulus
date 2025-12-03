@@ -13,6 +13,13 @@
     
     <Application.Resources>
         <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- UI Library Design Tokens -->
+                <ResourceInclude Source="avares://Modulus.UI.Avalonia/Themes/Colors.axaml"/>
+                <ResourceInclude Source="avares://Modulus.UI.Avalonia/Themes/Typography.axaml"/>
+                <ResourceInclude Source="avares://Modulus.UI.Avalonia/Themes/Resources.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
             <ResourceDictionary.ThemeDictionaries>
                 <!-- UI Library Themes -->
                 <ResourceInclude x:Key="Light" Source="avares://Modulus.UI.Avalonia/Themes/LightTheme.axaml"/>
