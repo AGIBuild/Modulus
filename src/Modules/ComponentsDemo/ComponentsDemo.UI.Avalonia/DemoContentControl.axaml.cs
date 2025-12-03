@@ -127,54 +127,55 @@ public partial class DemoContentControl : UserControl
 
     private Control CreateBadgeDemo()
     {
-        var stack = new StackPanel { Spacing = 16 };
-        stack.Children.Add(new TextBlock
+        // Create menu items with various badge counts
+        var badgeItems = new List<UiMenuItem>
         {
-            Text = "Badges can display notification counts on menu items.",
-            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
-        });
-
-        var examples = new[]
-        {
-            ("Error Badge", 5, "#E53935"),
-            ("Warning Badge", 12, "#FFA726"),
-            ("Info Badge", 3, "#29B6F6"),
-            ("Success Badge", 1, "#66BB6A")
+            new UiMenuItem("inbox", "Inbox", "📥", "inbox") { BadgeCount = 5, BadgeColor = "error" },
+            new UiMenuItem("updates", "Updates", "🔔", "updates") { BadgeCount = 12, BadgeColor = "warning" },
+            new UiMenuItem("messages", "Messages", "💬", "messages") { BadgeCount = 3, BadgeColor = "info" },
+            new UiMenuItem("completed", "Completed", "✅", "completed") { BadgeCount = 99, BadgeColor = "success" },
+            new UiMenuItem("empty", "No Badge", "📭", "empty"), // No badge
         };
 
-        foreach (var (name, count, color) in examples)
+        var navView = new NavigationView
         {
-            var row = new Border
-            {
-                Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(12),
-                Margin = new Thickness(0, 4)
-            };
-            var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*, Auto") };
-            grid.Children.Add(new TextBlock { Text = name, VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center });
-            var badge = new Border
-            {
-                Background = global::Avalonia.Media.Brush.Parse(color),
-                CornerRadius = new CornerRadius(10),
-                MinWidth = 24,
-                Padding = new Thickness(6, 2),
-                [Grid.ColumnProperty] = 1
-            };
-            badge.Child = new TextBlock
-            {
-                Text = count.ToString(),
-                Foreground = global::Avalonia.Media.Brushes.White,
-                FontSize = 12,
-                FontWeight = global::Avalonia.Media.FontWeight.Bold,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center
-            };
-            grid.Children.Add(badge);
-            row.Child = grid;
-            stack.Children.Add(row);
-        }
+            Items = badgeItems,
+            Width = 200,
+            Height = 200,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
 
-        return stack;
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Badge Indicators Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = "Badges display notification counts on menu items. Set BadgeCount and BadgeColor properties:",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
+                },
+                CreateInfoCard(new[]
+                {
+                    "• BadgeCount: Number to display (null hides badge)",
+                    "• BadgeColor: 'error', 'warning', 'info', 'success'",
+                    "• Badge auto-hides when count is null or 0"
+                })
+            }
+        };
     }
 
     private Control CreateDisabledDemo()
@@ -295,6 +296,39 @@ public partial class DemoContentControl : UserControl
 
     private Control CreateContextMenuDemo()
     {
+        var _selectedAction = new TextBlock { Text = "Right-click an item to see context menu", FontStyle = global::Avalonia.Media.FontStyle.Italic };
+
+        // Create menu items with context actions
+        var contextItems = new List<UiMenuItem>
+        {
+            new UiMenuItem("doc1", "Document 1", "📄", "doc1")
+            {
+                ContextActions = new List<Modulus.UI.Abstractions.MenuAction>
+                {
+                    new() { Label = "Open", Icon = "📂", Execute = _ => _selectedAction.Text = "Opened Document 1" },
+                    new() { Label = "Edit", Icon = "✏️", Execute = _ => _selectedAction.Text = "Editing Document 1" },
+                    new() { Label = "Delete", Icon = "🗑️", Execute = _ => _selectedAction.Text = "Deleted Document 1" },
+                }
+            },
+            new UiMenuItem("doc2", "Document 2", "📄", "doc2")
+            {
+                ContextActions = new List<Modulus.UI.Abstractions.MenuAction>
+                {
+                    new() { Label = "Open", Icon = "📂", Execute = _ => _selectedAction.Text = "Opened Document 2" },
+                    new() { Label = "Rename", Icon = "✍️", Execute = _ => _selectedAction.Text = "Renaming Document 2" },
+                }
+            },
+            new UiMenuItem("nocontext", "No Context Menu", "📝", "nocontext"),
+        };
+
+        var navView = new NavigationView
+        {
+            Items = contextItems,
+            Width = 200,
+            Height = 140,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
         return new StackPanel
         {
             Spacing = 16,
@@ -302,28 +336,61 @@ public partial class DemoContentControl : UserControl
             {
                 new TextBlock
                 {
-                    Text = "Context menus provide additional actions for menu items.",
+                    Text = "Context Menu Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = "Right-click on menu items to see context menus with custom actions:",
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
+                    CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(12),
+                    Child = _selectedAction
                 },
                 CreateInfoCard(new[]
                 {
-                    "• Define ContextActions on MenuItem",
-                    "• Right-click to show the menu",
-                    "• Each action has Label, Icon, and Execute callback"
-                }),
-                CreateTipBox("Right-click on 'Context Menu Demo' in the main navigation to see the context menu.")
+                    "• Set ContextActions property on MenuItem",
+                    "• Each MenuAction has Label, Icon, Execute",
+                    "• Execute receives the MenuItem as parameter"
+                })
             }
         };
     }
 
     private Control CreateKeyboardDemo()
     {
-        var stack = new StackPanel { Spacing = 16 };
-        stack.Children.Add(new TextBlock
+        // Create items for keyboard navigation testing
+        var keyboardItems = new List<UiMenuItem>
         {
-            Text = "Full keyboard navigation support for accessibility and power users.",
-            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
-        });
+            new UiMenuItem("item1", "Item 1 (↑↓ to move)", "1️⃣", "item1"),
+            new UiMenuItem("item2", "Item 2", "2️⃣", "item2"),
+            UiMenuItem.CreateGroup("group", "Group (→ expand, ← collapse)", "📁", new List<UiMenuItem>
+            {
+                new UiMenuItem("child1", "Child 1", "📄", "child1"),
+                new UiMenuItem("child2", "Child 2", "📄", "child2"),
+            }),
+            new UiMenuItem("item3", "Item 3 (Enter to select)", "3️⃣", "item3"),
+        };
+
+        var navView = new NavigationView
+        {
+            Items = keyboardItems,
+            Width = 240,
+            Height = 180,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
 
         var shortcuts = new[]
         {
@@ -331,8 +398,7 @@ public partial class DemoContentControl : UserControl
             ("Enter / Space", "Activate selected item"),
             ("→", "Expand group"),
             ("←", "Collapse group"),
-            ("Escape", "Collapse all groups"),
-            ("Tab", "Standard focus navigation")
+            ("Escape", "Collapse all groups")
         };
 
         var grid = new Grid
@@ -344,8 +410,8 @@ public partial class DemoContentControl : UserControl
         for (int i = 0; i < shortcuts.Length; i++)
         {
             var (key, action) = shortcuts[i];
-            var keyText = new TextBlock { Text = key, FontWeight = global::Avalonia.Media.FontWeight.Bold, Margin = new Thickness(0, 0, 16, 8) };
-            var actionText = new TextBlock { Text = action, Margin = new Thickness(0, 0, 0, 8) };
+            var keyText = new TextBlock { Text = key, FontWeight = global::Avalonia.Media.FontWeight.Bold, Margin = new Thickness(0, 0, 16, 6) };
+            var actionText = new TextBlock { Text = action, Margin = new Thickness(0, 0, 0, 6) };
             Grid.SetRow(keyText, i);
             Grid.SetColumn(keyText, 0);
             Grid.SetRow(actionText, i);
@@ -354,17 +420,38 @@ public partial class DemoContentControl : UserControl
             grid.Children.Add(actionText);
         }
 
-        var card = new Border
+        return new StackPanel
         {
-            Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(16),
-            Child = grid
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Keyboard Navigation Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = "Click the navigation below to focus it, then use keyboard shortcuts:",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(12),
+                    Child = grid
+                }
+            }
         };
-        stack.Children.Add(card);
-        stack.Children.Add(CreateTipBox("Focus the navigation panel and try the keyboard shortcuts!"));
-
-        return stack;
     }
 
     private Control CreateLifecycleDemo()
@@ -456,4 +543,5 @@ public partial class DemoContentControl : UserControl
         };
     }
 }
+
 
