@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.ContextMenuDemoPage">
+    
+    <StackPanel Spacing="16">
+        <TextBlock Text="Context Menu Demo"
+                   FontWeight="Bold"
+                   FontSize="16"/>
+        
+        <TextBlock Text="Right-click on menu items to access context menu actions:"
+                   TextWrapping="Wrap"/>
+        
+        <Border Background="#15000000"
+                CornerRadius="8"
+                Padding="8">
+            <controls:NavigationView x:Name="ContextNavView"
+                                     Width="220"
+                                     Height="200"
+                                     HorizontalAlignment="Left"/>
+        </Border>
+        
+        <Border Background="#10000000"
+                CornerRadius="6"
+                Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Context Menu Features:" FontWeight="SemiBold"/>
+                <TextBlock Text="- ContextActions property for menu actions"/>
+                <TextBlock Text="- MenuAction with Label, Icon, and Execute"/>
+                <TextBlock Text="- Right-click triggers the context menu"/>
+            </StackPanel>
+        </Border>
+        
+        <Border Background="#08000000"
+                CornerRadius="6"
+                Padding="12">
+            <TextBlock x:Name="ActionFeedback"
+                       Text="Right-click an item to see context menu"
+                       TextWrapping="Wrap"
+                       FontStyle="Italic"/>
+        </Border>
+    </StackPanel>
+</UserControl>
+

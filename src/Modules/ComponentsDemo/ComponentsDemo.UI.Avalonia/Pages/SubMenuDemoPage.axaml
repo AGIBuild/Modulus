@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.SubMenuDemoPage">
+    
+    <StackPanel Spacing="16">
+        <TextBlock Text="Sub Menu / Hierarchical Navigation Demo"
+                   FontWeight="Bold"
+                   FontSize="16"/>
+        
+        <TextBlock Text="NavigationView supports multi-level hierarchical menus with expandable groups:"
+                   TextWrapping="Wrap"/>
+        
+        <Border Background="#15000000"
+                CornerRadius="8"
+                Padding="8">
+            <controls:NavigationView x:Name="SubMenuNavView"
+                                     Width="240"
+                                     Height="320"
+                                     HorizontalAlignment="Left"/>
+        </Border>
+        
+        <Border Background="#10000000"
+                CornerRadius="6"
+                Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Hierarchy Features:" FontWeight="SemiBold"/>
+                <TextBlock Text="- MenuItem.CreateGroup() for parent items"/>
+                <TextBlock Text="- IsExpanded property controls visibility"/>
+                <TextBlock Text="- Chevron indicator for expandable groups"/>
+                <TextBlock Text="- Smooth expand/collapse animations"/>
+                <TextBlock Text="- Multi-level nesting supported"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
+

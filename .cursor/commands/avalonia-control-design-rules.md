@@ -184,4 +184,10 @@ Demo 样例：
 ### ✔ 控件必须具有一致的视觉语言与设计规范
 （与 Fluent 一样的控件库一致性）
 
+## Avalonia 推荐的数据触发器模板切换方式
+- Avalonia 推荐使用 **DataTrigger**、**MultiDataTrigger** 来基于数据动态切换模板。这是 Avalonia 与 WPF 一致的最佳实践之一。
+- 适用于多状态 UI、响应式界面、MVVM UI 模板切换。
+- 优点：声明式、可维护、性能可控、与样式系统深度集成。
+- 不适用场景：模板数量非常多或者涉及高频更新导致控件频繁重建时，可改用 DataTemplateSelector 或 VisualStateManager。
+
 ---

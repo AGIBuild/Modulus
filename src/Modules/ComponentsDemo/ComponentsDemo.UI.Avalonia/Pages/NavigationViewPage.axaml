@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+             xmlns:ui="using:Modulus.UI.Abstractions"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationViewPage">
+    
+    <StackPanel Spacing="16">
+        <TextBlock Text="NavigationView Component Demo"
+                   FontWeight="Bold"
+                   FontSize="16"/>
+        
+        <TextBlock Text="This is a live NavigationView component. Click items to select, click groups to expand/collapse:"
+                   TextWrapping="Wrap"/>
+        
+        <Border Background="#15000000"
+                CornerRadius="8"
+                Padding="8">
+            
+            <!-- NavigationView Demo -->
+            <controls:NavigationView x:Name="DemoNavView"
+                                     Width="220"
+                                     Height="280"
+                                     HorizontalAlignment="Left"/>
+        </Border>
+        
+        <Border Background="#10000000"
+                CornerRadius="6"
+                Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Features demonstrated:" FontWeight="SemiBold"/>
+                <TextBlock Text="• Hierarchical menu with expandable groups"/>
+                <TextBlock Text="• Badge indicators on menu items"/>
+                <TextBlock Text="• Disabled item state"/>
+                <TextBlock Text="• Click to select / expand"/>
+            </StackPanel>
+        </Border>
+        
+        <Border Background="#08000000"
+                CornerRadius="6"
+                Padding="12">
+            <TextBlock Text="💡 Toggle the main app navigation using the ☰ button in the title bar to see collapse mode."
+                       TextWrapping="Wrap"
+                       FontStyle="Italic"/>
+        </Border>
+    </StackPanel>
+</UserControl>
+

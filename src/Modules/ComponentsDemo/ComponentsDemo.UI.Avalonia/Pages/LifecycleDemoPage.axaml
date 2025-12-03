@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.LifecycleDemoPage">
+    
+    <StackPanel Spacing="16">
+        <TextBlock Text="Page Lifecycle Demo"
+                   FontWeight="Bold"
+                   FontSize="16"/>
+        
+        <TextBlock Text="Control how navigation targets are instantiated:"
+                   TextWrapping="Wrap"/>
+        
+        <Border Background="#15000000"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Instance ID:" FontWeight="SemiBold"/>
+                <TextBlock x:Name="InstanceIdText"
+                           Text="Loading..."
+                           FontFamily="Consolas"
+                           FontSize="14"/>
+                
+                <TextBlock Text="Created At:" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                <TextBlock x:Name="CreatedAtText"
+                           Text="Loading..."
+                           FontFamily="Consolas"
+                           FontSize="14"/>
+            </StackPanel>
+        </Border>
+        
+        <Border Background="#10000000"
+                CornerRadius="6"
+                Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock Text="PageInstanceMode Options:" FontWeight="SemiBold"/>
+                <TextBlock Text="- Default: Framework decides (usually singleton)"/>
+                <TextBlock Text="- Singleton: Same instance reused across navigations"/>
+                <TextBlock Text="- Transient: New instance created each time"/>
+            </StackPanel>
+        </Border>
+        
+        <Border Background="#08000000"
+                CornerRadius="6"
+                Padding="12">
+            <TextBlock Text="This page uses Transient mode - navigate away and back to see a new instance ID."
+                       TextWrapping="Wrap"
+                       FontStyle="Italic"/>
+        </Border>
+    </StackPanel>
+</UserControl>
+
