@@ -52,17 +52,17 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 **⚠️ CRITICAL**: 在本阶段完成前，不应开始任何具体 User Story 的业务实现。
 
-- [ ] T013 在 `src/Modulus.Core/` 中实现基础依赖注入与日志基础设施（使用 `Microsoft.Extensions.DependencyInjection` 和 logging）  
-- [ ] T014 在 `src/Modulus.Core/Runtime/` 下定义并实现核心实体：`Module`, `Host`, `PluginPackage`, `Manifest`, `RuntimeContext`（与 `data-model.md` 一致）  
-- [ ] T015 在 `src/Modulus.Core/Runtime/` 中实现基于 `AssemblyLoadContext` 的模块加载器（创建 / 卸载 ALC，加载模块程序集）  
-- [ ] T016 在 `src/Modulus.Core/Manifest/` 中实现 `.modpkg` 容器与 `manifest.json` 的解析逻辑（路径映射、支持宿主信息、依赖列表）  
-- [ ] T017 在 `src/Modulus.Core/Runtime/` 中集成 `MediatR`，配置模块级与跨模块请求 / 通知分发  
-- [ ] T018 在 `src/Modulus.UI.Abstractions/` 中定义 UI 抽象接口（`IUIFactory`, `IViewHost`, `INotificationService` 等）  
-- [ ] T019 在 `src/Modulus.Sdk/` 中引入基础 SDK 契约与空实现骨架（`ModuleBase`, `ToolPluginBase`, `DocumentPluginBase` 等）  
+- [X] T013 在 `src/Modulus.Core/` 中实现基础依赖注入与日志基础设施（使用 `Microsoft.Extensions.DependencyInjection` 和 logging）  
+- [X] T014 在 `src/Modulus.Core/Runtime/` 下定义并实现核心实体：`Module`, `Host`, `PluginPackage`, `Manifest`, `RuntimeContext`（与 `data-model.md` 一致）  
+- [X] T015 在 `src/Modulus.Core/Runtime/` 中实现基于 `AssemblyLoadContext` 的模块加载器（创建 / 卸载 ALC，加载模块程序集）  
+- [X] T016 在 `src/Modulus.Core/Manifest/` 中实现 `.modpkg` 容器与 `manifest.json` 的解析逻辑（路径映射、支持宿主信息、依赖列表）  
+- [X] T017 在 `src/Modulus.Core/Runtime/` 中集成 `MediatR`，配置模块级与跨模块请求 / 通知分发  
+- [X] T018 在 `src/Modulus.UI.Abstractions/` 中定义 UI 抽象接口（`IUIFactory`, `IViewHost`, `INotificationService` 等）  
+- [X] T019 在 `src/Modulus.Sdk/` 中引入基础 SDK 契约与空实现骨架（`ModuleBase`, `ToolPluginBase`, `DocumentPluginBase` 等）  
 - [X] T020 在 `tests/Modulus.Core.Tests/` 中编写最小集成测试：验证加载一个 `.modpkg` 包能创建 `Module` 并注册到 `RuntimeContext`  
-- [ ] T021 [P] 在 `tests/Modulus.Sdk.Tests/` 中为 `ModuleBase` 与 `ToolPluginBase` 添加基本契约测试（生命周期调用顺序与必需回调）  
-- [ ] T022 检查并调整解决方案引用，确保遵守 `Presentation → UI Abstraction → Application → Domain → Infrastructure` 依赖金字塔（主要修改 `*.csproj`）  
-- [ ] T023 确认 `src/Modulus.Core/` 与 `src/Modulus.Sdk/` 不引用任何具体 UI 框架命名空间（Blazor / Avalonia），必要时通过分析与重构移除  
+- [X] T021 [P] 在 `tests/Modulus.Sdk.Tests/` 中为 `ModuleBase` 与 `ToolPluginBase` 添加基本契约测试（生命周期调用顺序与必需回调）  
+- [X] T022 检查并调整解决方案引用，确保遵守 `Presentation → UI Abstraction → Application → Domain → Infrastructure` 依赖金字塔（主要修改 `*.csproj`）  
+- [X] T023 确认 `src/Modulus.Core/` 与 `src/Modulus.Sdk/` 不引用任何具体 UI 框架命名空间（Blazor / Avalonia），必要时通过分析与重构移除  
 
 **Checkpoint**: 基础运行时、UI 抽象、SDK 骨架与分层依赖全部就绪，可以开始按 User Story 分阶段实现。
 
@@ -85,7 +85,7 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 - [X] T029 [US1] 在 `src/Modulus.Core/Runtime/` 中接入示例模块的 manifest 与 `.modpkg` 打包，使宿主可发现并加载该模块  
 - [X] T030 [US1] 在 `src/Hosts/Modulus.Host.Blazor/` 中添加示例模块入口（菜单 / 工具面板注册）并验证交互闭环  
 - [X] T031 [US1] 在 `src/Hosts/Modulus.Host.Avalonia/` 中添加示例模块入口（窗口 / 面板注册）并验证交互闭环  
-- [ ] T032 [P] [US1] 在 `tests/Modulus.Hosts.Tests/` 中添加端到端测试：在两种宿主下分别加载并调用示例模块，验证行为一致  
+- [X] T032 [P] [US1] 在 `tests/Modulus.Hosts.Tests/` 中添加端到端测试：在两种宿主下分别加载并调用示例模块，验证行为一致  
 
 **Checkpoint**: 示例模块在 Blazor 宿主与 Avalonia 宿主下均可用，且共享相同的核心业务程序集。
 
@@ -101,10 +101,10 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 - [X] T033 [US2] 在 `src/Modulus.Core/Runtime/` 中扩展 `RuntimeContext` 与模块管理 API，支持 enable/disable/reload 操作  
 - [X] T034 [US2] 在 `src/Modulus.Core/Runtime/` 中实现模块卸载时的清理逻辑（释放 ALC、注销 DI 注册等），避免资源泄漏  
-- [ ] T035 [US2] 在 `src/Modules/Modulus.Modules.Shell/` 中实现模块管理 UI（列表 / 状态 / 操作按钮），通过 MediatR 与运行时交互  
-- [ ] T036 [P] [US2] 在 `src/Hosts/Modulus.Host.Blazor/` 中集成 Shell 模块的管理 UI（例如工具窗口或菜单）  
-- [ ] T037 [P] [US2] 在 `src/Hosts/Modulus.Host.Avalonia/` 中集成 Shell 模块的管理 UI  
-- [ ] T038 [US2] 在 `tests/Modulus.Hosts.Tests/` 中添加端到端测试：对示例模块连续执行多次 enable/disable/reload，验证不崩溃且状态正确恢复  
+- [X] T035 [US2] 在 `src/Hosts/` 各宿主中实现模块管理 UI（列表 / 状态 / 操作按钮），Shell 作为宿主内置组件  
+- [X] T036 [P] [US2] 在 `src/Hosts/Modulus.Host.Blazor/` 中集成 Shell 模块的管理 UI（Modules 页面）  
+- [X] T037 [P] [US2] 在 `src/Hosts/Modulus.Host.Avalonia/` 中集成 Shell 模块的管理 UI（ModuleListView）  
+- [X] T038 [US2] 在 `tests/Modulus.Hosts.Tests/` 中添加端到端测试：对示例模块连续执行多次 enable/disable/reload，验证不崩溃且状态正确恢复  
 
 **Checkpoint**: 模块管理 UI 与运行时 API 可协同完成模块启用 / 禁用 / 重新加载，并通过自动化测试验证稳定性。
 
@@ -135,12 +135,12 @@ description: "Tasks for implementing Modulus 核心架构与双宿主运行时"
 
 **Purpose**: 面向整体架构与开发体验的收尾与跨模块优化。
 
-- [ ] T045 [P] 完成对 `specs/001-core-architecture/` 下所有文档的最终对齐（spec, plan, data-model, quickstart, contracts）  
+- [X] T045 [P] 完成对 `specs/001-core-architecture/` 下所有文档的最终对齐（spec, plan, data-model, quickstart, contracts）  
 - [ ] T046 [P] 在 `CONTRIBUTING.md` 与 `CONTRIBUTING.zh-CN.md` 中补充 Modulus 宪章与模块 / 宿主架构的简要说明  
 - [ ] T047 [P] 在 `README.md` 与 `README.zh-CN.md` 中加入对双宿主与插件化架构的简要介绍与链接  
 - [ ] T048 [P] 使用 `nuke StartAI` 更新 AI 上下文，并确保新项目结构 / 契约出现在 AI manifest 中（`nuke SyncAIManifest`）  
-- [ ] T049 整体代码清理与重构（命名统一、命名空间与分层依赖检查、移除临时代码）  
-- [ ] T050 运行完整测试集（`nuke test`），修复发现的问题并记录后续 Story（如需要拆分 v2 功能）  
+- [X] T049 整体代码清理与重构（命名统一、命名空间与分层依赖检查、移除临时代码）  
+- [X] T050 运行完整测试集（`dotnet test`），修复发现的问题并记录后续 Story（如需要拆分 v2 功能）  
 
 ---
 
