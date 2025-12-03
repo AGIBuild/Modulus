@@ -53,7 +53,6 @@ public partial class DemoContentControl : UserControl
             "disabled-nav" => CreateDisabledDemo(),
             "sub-item-1" or "sub-item-2" or "sub-item-3" => CreateSubItemDemo(DemoId),
             "context-demo" => CreateContextMenuDemo(),
-            "keyboard-nav" => CreateKeyboardDemo(),
             "lifecycle-demo" => CreateLifecycleDemo(),
             _ => CreateNavigationDemo()
         };
@@ -365,91 +364,6 @@ public partial class DemoContentControl : UserControl
                     "• Each MenuAction has Label, Icon, Execute",
                     "• Execute receives the MenuItem as parameter"
                 })
-            }
-        };
-    }
-
-    private Control CreateKeyboardDemo()
-    {
-        // Create items for keyboard navigation testing
-        var keyboardItems = new List<UiMenuItem>
-        {
-            new UiMenuItem("item1", "Item 1 (↑↓ to move)", "1️⃣", "item1"),
-            new UiMenuItem("item2", "Item 2", "2️⃣", "item2"),
-            UiMenuItem.CreateGroup("group", "Group (→ expand, ← collapse)", "📁", new List<UiMenuItem>
-            {
-                new UiMenuItem("child1", "Child 1", "📄", "child1"),
-                new UiMenuItem("child2", "Child 2", "📄", "child2"),
-            }),
-            new UiMenuItem("item3", "Item 3 (Enter to select)", "3️⃣", "item3"),
-        };
-
-        var navView = new NavigationView
-        {
-            Items = keyboardItems,
-            Width = 240,
-            Height = 180,
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-
-        var shortcuts = new[]
-        {
-            ("↑ / ↓", "Move selection up/down"),
-            ("Enter / Space", "Activate selected item"),
-            ("→", "Expand group"),
-            ("←", "Collapse group"),
-            ("Escape", "Collapse all groups")
-        };
-
-        var grid = new Grid
-        {
-            ColumnDefinitions = ColumnDefinitions.Parse("Auto, *"),
-            RowDefinitions = RowDefinitions.Parse(string.Join(",", Enumerable.Repeat("Auto", shortcuts.Length)))
-        };
-
-        for (int i = 0; i < shortcuts.Length; i++)
-        {
-            var (key, action) = shortcuts[i];
-            var keyText = new TextBlock { Text = key, FontWeight = global::Avalonia.Media.FontWeight.Bold, Margin = new Thickness(0, 0, 16, 6) };
-            var actionText = new TextBlock { Text = action, Margin = new Thickness(0, 0, 0, 6) };
-            Grid.SetRow(keyText, i);
-            Grid.SetColumn(keyText, 0);
-            Grid.SetRow(actionText, i);
-            Grid.SetColumn(actionText, 1);
-            grid.Children.Add(keyText);
-            grid.Children.Add(actionText);
-        }
-
-        return new StackPanel
-        {
-            Spacing = 16,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = "Keyboard Navigation Demo",
-                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
-                    FontSize = 16
-                },
-                new TextBlock
-                {
-                    Text = "Click the navigation below to focus it, then use keyboard shortcuts:",
-                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
-                },
-                new Border
-                {
-                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
-                    CornerRadius = new CornerRadius(8),
-                    Padding = new Thickness(8),
-                    Child = navView
-                },
-                new Border
-                {
-                    Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
-                    CornerRadius = new CornerRadius(8),
-                    Padding = new Thickness(12),
-                    Child = grid
-                }
             }
         };
     }

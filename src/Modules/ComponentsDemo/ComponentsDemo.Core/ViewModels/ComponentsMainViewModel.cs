@@ -75,7 +75,6 @@ public partial class ComponentsMainViewModel : ObservableObject
                 new MenuItem("sub-item-2", "Sub Item 2", "file", "sub-item-2", MenuLocation.Main, 1),
                 new MenuItem("sub-item-3", "Sub Item 3 (Disabled)", "file", "sub-item-3", MenuLocation.Main, 2) { IsEnabled = false }
             }, MenuLocation.Main, 3),
-            new MenuItem("keyboard-nav", "Keyboard Navigation", "keyboard", "keyboard-nav", MenuLocation.Main, 4),
             contextDemo,
             lifecycleDemo
         }, MenuLocation.Main, 0);
@@ -100,7 +99,6 @@ public partial class ComponentsMainViewModel : ObservableObject
             "sub-item-1" => "Sub Item 1",
             "sub-item-2" => "Sub Item 2",
             "sub-item-3" => "Sub Item 3",
-            "keyboard-nav" => "Keyboard Navigation",
             "context-demo" => "Context Menu",
             "lifecycle-demo" => "Page Lifecycle",
             _ => "Basic Navigation"

@@ -7,9 +7,7 @@
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="300"
              x:Class="Modulus.UI.Avalonia.Components.NavigationView"
              x:DataType="local:NavigationView"
-             x:Name="Root"
-             Focusable="True"
-             KeyDown="OnKeyDown">
+             x:Name="Root">
     
     <UserControl.Styles>
         <!-- Override padding when collapsed -->
