@@ -7,17 +7,17 @@
     
     <!-- Surface Colors -->
     <Color x:Key="NavItemBackgroundColor">Transparent</Color>
-    <Color x:Key="NavItemHoverColor">#E8E8E8</Color>
-    <Color x:Key="NavItemSelectedColor">#E0E7FF</Color>
-    <Color x:Key="NavItemActiveColor">#D0D0D0</Color>
+    <Color x:Key="NavItemHoverColor">#E8E8F0</Color>
+    <Color x:Key="NavItemSelectedColor">#6366F1</Color>
+    <Color x:Key="NavItemActiveColor">#4F46E5</Color>
     
     <!-- Text Colors -->
     <Color x:Key="NavItemTextColor">#404040</Color>
-    <Color x:Key="NavItemSelectedTextColor">#1E1E1E</Color>
+    <Color x:Key="NavItemSelectedTextColor">#FFFFFF</Color>
     
     <!-- Icon Colors -->
     <Color x:Key="NavItemIconColor">#606060</Color>
-    <Color x:Key="NavItemSelectedIconColor">#4F46E5</Color>
+    <Color x:Key="NavItemSelectedIconColor">#FFFFFF</Color>
     
     <!-- Brushes -->
     <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="{StaticResource NavItemBackgroundColor}"/>
