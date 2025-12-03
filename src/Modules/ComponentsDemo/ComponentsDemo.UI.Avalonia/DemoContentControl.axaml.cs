@@ -1,6 +1,10 @@
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Modulus.UI.Avalonia.Components;
+using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
 
@@ -57,6 +61,34 @@ public partial class DemoContentControl : UserControl
 
     private Control CreateNavigationDemo()
     {
+        // Create sample menu items for demonstration
+        var sampleItems = new List<UiMenuItem>
+        {
+            new UiMenuItem("home", "Home", "🏠", "home") { BadgeCount = 3 },
+            new UiMenuItem("docs", "Documents", "📄", "docs"),
+            UiMenuItem.CreateGroup("settings", "Settings", "⚙️", new List<UiMenuItem>
+            {
+                new UiMenuItem("profile", "Profile", "👤", "profile"),
+                new UiMenuItem("security", "Security", "🔒", "security"),
+                new UiMenuItem("disabled", "Disabled Item", "🚫", "disabled") { IsEnabled = false }
+            }),
+            new UiMenuItem("help", "Help", "❓", "help")
+        };
+        sampleItems[2].IsExpanded = true; // Expand Settings group
+
+        // Create NavigationView instance
+        var navView = new NavigationView
+        {
+            Items = sampleItems,
+            Width = 200,
+            Height = 250,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        navView.ItemSelected += (s, item) =>
+        {
+            // Show selected item (in real app, this would navigate)
+        };
+
         return new StackPanel
         {
             Spacing = 16,
@@ -64,17 +96,31 @@ public partial class DemoContentControl : UserControl
             {
                 new TextBlock
                 {
-                    Text = "This demo showcases all navigation features including:",
+                    Text = "NavigationView Component Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = "This is a live NavigationView component. Click items to select, click groups to expand/collapse:",
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
                 },
                 CreateInfoCard(new[]
                 {
-                    "• Collapsible navigation panel",
-                    "• Icon-only mode with tooltips",
-                    "• Navigation guards (CanNavigateFrom/To)",
-                    "• Page instance lifecycle (Singleton/Transient)"
+                    "Features demonstrated:",
+                    "• Hierarchical menu with expandable groups",
+                    "• Badge indicators on menu items",
+                    "• Disabled item state",
+                    "• Click to select / expand"
                 }),
-                CreateTipBox("Toggle the main navigation using the ☰ button in the title bar to see collapse mode.")
+                CreateTipBox("Toggle the main app navigation using the ☰ button in the title bar to see collapse mode.")
             }
         };
     }

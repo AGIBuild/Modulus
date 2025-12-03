@@ -51,9 +51,10 @@
                                 <Border Grid.Column="2" 
                                         IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
                                         Background="{DynamicResource BadgeBackgroundBrush}"
-                                        CornerRadius="10" MinWidth="20" Padding="4,1" Margin="8,0">
+                                        CornerRadius="10" MinWidth="20" Padding="4,2" Margin="8,0"
+                                        VerticalAlignment="Center">
                                     <TextBlock Text="{Binding BadgeCount}" FontSize="11" FontWeight="Bold"
-                                               Foreground="White" HorizontalAlignment="Center"/>
+                                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 
                                 <!-- Expand/Collapse Icon for groups -->
@@ -86,9 +87,10 @@
                                             <Border Grid.Column="2" 
                                                     IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                     Background="{DynamicResource BadgeBackgroundBrush}"
-                                                    CornerRadius="8" MinWidth="16" Padding="3,0" Margin="6,0,0,0">
+                                                    CornerRadius="8" MinWidth="16" Padding="4,2" Margin="6,0,0,0"
+                                                    VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding BadgeCount}" FontSize="10" FontWeight="Bold"
-                                                           Foreground="White" HorizontalAlignment="Center"/>
+                                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                         </Grid>
                                     </Button>

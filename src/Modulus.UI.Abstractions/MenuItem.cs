@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Modulus.UI.Abstractions;
 
@@ -9,8 +11,13 @@ public enum MenuLocation
     Bottom
 }
 
-public class MenuItem
+public class MenuItem : INotifyPropertyChanged
 {
+    private bool _isEnabled = true;
+    private int? _badgeCount;
+    private string? _badgeColor;
+    private bool _isExpanded;
+
     // Core properties (read-only)
     public string Id { get; }
     public string DisplayName { get; }
@@ -19,21 +26,32 @@ public class MenuItem
     public string NavigationKey { get; } // View Key or Route
     public int Order { get; }
 
-    // Enhanced properties (mutable for flexibility)
     /// <summary>
     /// Whether the menu item is enabled. Disabled items are visible but not clickable.
     /// </summary>
-    public bool IsEnabled { get; set; } = true;
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set => SetField(ref _isEnabled, value);
+    }
 
     /// <summary>
     /// Badge count to display. Null or 0 hides the badge.
     /// </summary>
-    public int? BadgeCount { get; set; }
+    public int? BadgeCount
+    {
+        get => _badgeCount;
+        set => SetField(ref _badgeCount, value);
+    }
 
     /// <summary>
     /// Badge color identifier (e.g., "error", "warning", "info", "success").
     /// </summary>
-    public string? BadgeColor { get; set; }
+    public string? BadgeColor
+    {
+        get => _badgeColor;
+        set => SetField(ref _badgeColor, value);
+    }
 
     /// <summary>
     /// Controls page instance lifecycle during navigation.
@@ -53,7 +71,11 @@ public class MenuItem
     /// <summary>
     /// Whether this group item is currently expanded (for hierarchical menus).
     /// </summary>
-    public bool IsExpanded { get; set; }
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => SetField(ref _isExpanded, value);
+    }
 
     public MenuItem(string id, string displayName, string icon, string navigationKey, MenuLocation location = MenuLocation.Main, int order = 0)
     {
@@ -74,5 +96,20 @@ public class MenuItem
         {
             Children = children
         };
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }
