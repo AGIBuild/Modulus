@@ -16,6 +16,8 @@
     <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="Transparent"/>
     <SolidColorBrush x:Key="NavItemHoverBackgroundBrush" Color="#2D2D2D"/>
     <SolidColorBrush x:Key="NavItemActiveBackgroundBrush" Color="#383838"/>
+    <SolidColorBrush x:Key="NavItemSelectedBackgroundBrush" Color="#2860A0FF"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="NavItemTextBrush" Color="#B0B0B0"/>
     <SolidColorBrush x:Key="NavItemIconBrush" Color="#909090"/>
     

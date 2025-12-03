@@ -1,22 +1,23 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
-using Avalonia.Media;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Components;
 
+/// <summary>
+/// A themed navigation view component supporting hierarchical menus,
+/// badges, disabled states, and selection highlighting.
+/// </summary>
 public partial class NavigationView : UserControl
 {
-    private static readonly IBrush DefaultBackground = Brushes.Transparent;
-    private static readonly IBrush HoverBackground = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255));
-    private static readonly IBrush SelectedBackground = new SolidColorBrush(Color.FromArgb(40, 96, 160, 255));
+    #region Styled Properties
 
     public static readonly StyledProperty<IEnumerable?> ItemsProperty =
         AvaloniaProperty.Register<NavigationView, IEnumerable?>(nameof(Items));
@@ -29,8 +30,30 @@ public partial class NavigationView : UserControl
     public static readonly StyledProperty<bool> IsCollapsedProperty =
         AvaloniaProperty.Register<NavigationView, bool>(nameof(IsCollapsed));
 
+    public IEnumerable? Items
+    {
+        get => GetValue(ItemsProperty);
+        set => SetValue(ItemsProperty, value);
+    }
+
+    public UiMenuItem? SelectedItem
+    {
+        get => GetValue(SelectedItemProperty);
+        set => SetValue(SelectedItemProperty, value);
+    }
+
+    public bool IsCollapsed
+    {
+        get => GetValue(IsCollapsedProperty);
+        set => SetValue(IsCollapsedProperty, value);
+    }
+
+    #endregion
+
+    #region Converters
+
     /// <summary>
-    /// Converter for IsEnabled to Opacity (1.0 for enabled, 0.4 for disabled).
+    /// Converter for IsEnabled to Opacity.
     /// </summary>
     public static readonly IValueConverter EnabledToOpacityConverter =
         new FuncValueConverter<bool, double>(isEnabled => isEnabled ? 1.0 : 0.4);
@@ -59,12 +82,11 @@ public partial class NavigationView : UserControl
                 };
                 menuItem.Click += (s, e) =>
                 {
-                    if (s is global::Avalonia.Controls.MenuItem mi && mi.Tag is Modulus.UI.Abstractions.MenuAction ma)
+                    if (s is global::Avalonia.Controls.MenuItem mi && 
+                        mi.Tag is Modulus.UI.Abstractions.MenuAction ma &&
+                        mi.DataContext is UiMenuItem item)
                     {
-                        if (mi.DataContext is UiMenuItem item)
-                        {
-                            ma.Execute(item);
-                        }
+                        ma.Execute(item);
                     }
                 };
                 menu.Items.Add(menuItem);
@@ -72,26 +94,9 @@ public partial class NavigationView : UserControl
             return menu;
         });
 
-    public IEnumerable? Items
-    {
-        get => GetValue(ItemsProperty);
-        set => SetValue(ItemsProperty, value);
-    }
+    #endregion
 
-    public UiMenuItem? SelectedItem
-    {
-        get => GetValue(SelectedItemProperty);
-        set => SetValue(SelectedItemProperty, value);
-    }
-
-    /// <summary>
-    /// Whether the navigation is in collapsed (icon-only) mode.
-    /// </summary>
-    public bool IsCollapsed
-    {
-        get => GetValue(IsCollapsedProperty);
-        set => SetValue(IsCollapsedProperty, value);
-    }
+    #region Events
 
     /// <summary>
     /// Command executed when a nav item is clicked.
@@ -103,10 +108,17 @@ public partial class NavigationView : UserControl
     /// </summary>
     public event EventHandler<UiMenuItem>? ItemSelected;
 
+    #endregion
+
+    private Border? _selectedBorder;
+
     public NavigationView()
     {
         ItemClickCommand = new RelayCommand<UiMenuItem>(OnItemClick);
         InitializeComponent();
+        
+        // Subscribe to pointer events for nav items
+        AddHandler(PointerPressedEvent, OnPointerPressedTunneled, handledEventsToo: true);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -115,19 +127,35 @@ public partial class NavigationView : UserControl
         
         if (change.Property == SelectedItemProperty)
         {
-            UpdateSelectionVisuals();
+            UpdateSelectedClass(change.OldValue as UiMenuItem, change.NewValue as UiMenuItem);
         }
     }
 
-    private void OnItemPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnPointerPressedTunneled(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is Border border && border.Tag is UiMenuItem item)
+        // Find the nav item border that was clicked
+        if (e.Source is Control source)
         {
-            if (item.IsEnabled)
+            var border = FindParentNavItem(source);
+            if (border?.Tag is UiMenuItem item && item.IsEnabled)
             {
                 OnItemClick(item);
+                e.Handled = true;
             }
         }
+    }
+
+    private Border? FindParentNavItem(Control? control)
+    {
+        while (control != null)
+        {
+            if (control is Border border && border.Classes.Contains("navItem"))
+            {
+                return border;
+            }
+            control = control.Parent as Control;
+        }
+        return null;
     }
 
     private void OnItemClick(UiMenuItem? item)
@@ -152,45 +180,46 @@ public partial class NavigationView : UserControl
             SelectedItem = item;
             ItemSelected?.Invoke(this, item);
         }
-        
-        UpdateSelectionVisuals();
     }
 
-    private void UpdateSelectionVisuals()
+    private void UpdateSelectedClass(UiMenuItem? oldItem, UiMenuItem? newItem)
     {
-        // Find all Border elements and update their backgrounds
-        UpdateBordersRecursive(this);
+        // Remove 'selected' class from old
+        if (_selectedBorder != null)
+        {
+            _selectedBorder.Classes.Remove("selected");
+            _selectedBorder = null;
+        }
+
+        // Add 'selected' class to new
+        if (newItem != null)
+        {
+            _selectedBorder = FindBorderForItem(this, newItem);
+            if (_selectedBorder != null)
+            {
+                _selectedBorder.Classes.Add("selected");
+            }
+        }
     }
 
-    private void UpdateBordersRecursive(Control control)
+    private Border? FindBorderForItem(Visual parent, UiMenuItem item)
     {
-        if (control is Border border && border.Tag is UiMenuItem item)
+        foreach (var child in parent.GetVisualChildren())
         {
-            var isSelected = SelectedItem?.Id == item.Id;
-            border.Background = isSelected ? SelectedBackground : DefaultBackground;
-        }
+            if (child is Border border && 
+                border.Classes.Contains("navItem") && 
+                border.Tag is UiMenuItem menuItem && 
+                menuItem.Id == item.Id)
+            {
+                return border;
+            }
 
-        if (control is Panel panel)
-        {
-            foreach (var child in panel.Children)
+            if (child is Visual visualChild)
             {
-                UpdateBordersRecursive(child);
+                var found = FindBorderForItem(visualChild, item);
+                if (found != null) return found;
             }
         }
-        else if (control is ContentControl contentControl && contentControl.Content is Control contentChild)
-        {
-            UpdateBordersRecursive(contentChild);
-        }
-        else if (control is ItemsControl itemsControl)
-        {
-            foreach (var child in itemsControl.GetRealizedContainers())
-            {
-                UpdateBordersRecursive(child);
-            }
-        }
-        else if (control is Decorator decorator && decorator.Child != null)
-        {
-            UpdateBordersRecursive(decorator.Child);
-        }
+        return null;
     }
 }
