@@ -1,0 +1,180 @@
+# Modulus AI Context Manifest
+# This file provides context for AI tools like GitHub Copilot
+# Run `nuke StartAI` to generate context from this manifest
+
+projectInfo:
+  name: Modulus
+  vision: A modern, cross-platform, plugin-based desktop application framework
+  description: |
+    Modulus is a modular .NET desktop framework with dual-host architecture,
+    supporting both Blazor Hybrid (MAUI) and Avalonia UI hosts. It enables
+    developers to write UI-agnostic business logic that runs on multiple platforms.
+  languages:
+    - C#
+    - XAML
+    - Razor
+  frameworks:
+    - .NET 10
+    - Avalonia UI
+    - MAUI Blazor Hybrid
+    - MudBlazor
+    - MediatR
+    - Entity Framework Core
+
+architecture:
+  overview: |
+    Modulus follows a dual-host architecture with vertical slice modularity:
+    - Core runtime handles module discovery, loading, and lifecycle
+    - UI abstractions provide host-agnostic contracts
+    - Each module contains Domain/Application (Core) and host-specific UI projects
+    - Modules are loaded via AssemblyLoadContext for isolation
+
+  modules:
+    ModulusCore:
+      path: src/Modulus.Core
+      description: Core runtime, module loader, DI container, MediatR integration
+      responsibilities:
+        - Module discovery and loading (IModuleLoader, IModuleProvider)
+        - Runtime context management (RuntimeContext)
+        - Module lifecycle (ModuleManager, ModuleBase)
+        - Data persistence (EF Core, SQLite)
+
+    ModulusSdk:
+      path: src/Modulus.Sdk
+      description: SDK for module developers
+      responsibilities:
+        - Base classes (ModuleBase)
+        - Declarative attributes (ModuleAttribute, AvaloniaMenuAttribute, BlazorMenuAttribute)
+        - Manifest types (ModuleManifest)
+        - Package building utilities
+
+    ModulusUIAbstractions:
+      path: src/Modulus.UI.Abstractions
+      description: UI-agnostic contracts
+      responsibilities:
+        - Menu registration (IMenuRegistry, MenuItem)
+        - Theme management (IThemeService)
+        - View registry (IViewRegistry, IUIFactory)
+        - Notification service (INotificationService)
+
+    HostBlazer:
+      path: src/Hosts/Modulus.Host.Blazor
+      description: MAUI Blazor Hybrid host with MudBlazor components
+      responsibilities:
+        - Blazor component rendering
+        - MudBlazor theming
+        - Navigation routing
+
+    HostAvalonia:
+      path: src/Hosts/Modulus.Host.Avalonia
+      description: Avalonia desktop host
+      responsibilities:
+        - Native window management
+        - Avalonia theming (Light/Dark)
+        - MVVM navigation
+
+  pluginSystem:
+    description: |
+      Modules are self-contained vertical slices with:
+      - Core project (Domain + Application, UI-agnostic)
+      - UI.Avalonia project (Avalonia views)
+      - UI.Blazor project (Blazor components)
+      - manifest.json (metadata and assembly mappings)
+
+    pluginLifecycle:
+      - ConfigureServices (register DI services)
+      - PreConfigureAsync (before dependencies)
+      - ConfigureAsync (main configuration)
+      - PostConfigureAsync (after dependencies)
+      - OnApplicationInitializationAsync (register views, menus)
+      - OnApplicationShutdownAsync (cleanup)
+
+directoryStructure:
+  root:
+    src: Source code
+    tests: Unit and integration tests
+    specs: Feature specifications
+    docs: Documentation
+    build: Nuke build scripts
+
+  srcStructure:
+    Modulus.Core: Core runtime and module system
+    Modulus.Sdk: SDK base classes and attributes
+    Modulus.UI.Abstractions: UI contracts
+    Hosts/Modulus.Host.Avalonia: Avalonia desktop host
+    Hosts/Modulus.Host.Blazor: MAUI Blazor Hybrid host
+    Modules/EchoPlugin: Example echo plugin
+    Modules/SimpleNotes: Example notes module
+
+namingConventions:
+  general:
+    - Use PascalCase for class names and public members
+    - Use camelCase for local variables and parameters
+    - Prefix private fields with underscore (_privateField)
+    - Use GUID for module IDs in manifest.json
+
+  modules:
+    - Core project: <ModuleName>.Core
+    - Avalonia UI: <ModuleName>.UI.Avalonia
+    - Blazor UI: <ModuleName>.UI.Blazor
+    - Module class: <ModuleName>Module (inherits ModuleBase)
+
+  attributes:
+    - "[Module]" for module metadata
+    - "[AvaloniaMenu]" for Avalonia navigation
+    - "[BlazorMenu]" for Blazor navigation
+    - "[DependsOn]" for module dependencies
+
+roadmap:
+  current:
+    - Core runtime with dual-host support (Complete)
+    - Module loading/unloading with ALC (Complete)
+    - SQLite persistence with EF Core (Complete)
+    - Theme switching (Complete)
+    - Module management UI (Complete)
+
+  upcoming:
+    - Plugin marketplace integration
+    - AI-assisted plugin generation
+    - Process-external plugins
+    - Additional host types (React, etc.)
+
+glossary:
+  Host: Application shell that loads and manages modules (Blazor, Avalonia)
+  Module: Vertical slice feature unit with Core and UI projects
+  Manifest: JSON file describing module metadata and assemblies
+  RuntimeContext: Central state manager for loaded modules
+  ModuleLoader: Loads modules from manifest files
+  ALC: AssemblyLoadContext for module isolation
+
+faq:
+  - question: How do I create a new module?
+    answer: |
+      1. Create three projects: MyModule.Core, MyModule.UI.Avalonia, MyModule.UI.Blazor
+      2. Add [Module] attribute to Core module class
+      3. Add [AvaloniaMenu]/[BlazorMenu] to UI modules
+      4. Create manifest.json with module metadata
+      See specs/001-core-architecture/quickstart.md for details.
+
+  - question: How do I run the application?
+    answer: |
+      Avalonia: dotnet run --project src/Hosts/Modulus.Host.Avalonia
+      Blazor: dotnet run --project src/Hosts/Modulus.Host.Blazor
+
+  - question: How do I run tests?
+    answer: dotnet test
+
+teamCulture:
+  principles:
+    - UI-agnostic core (no UI dependencies in Domain/Application)
+    - Dual-host support (same logic on Blazor and Avalonia)
+    - Vertical slice modularity (features as self-contained modules)
+    - Dependency pyramid (Presentation → UI Abstraction → Application → Domain)
+    - AI-friendly contracts (strongly typed, self-describing)
+
+  codeStyle:
+    - Use CommunityToolkit.Mvvm for ViewModels
+    - Use MudBlazor components for Blazor UI
+    - Use declarative attributes over manual registration
+    - Write tests for all new functionality
+
