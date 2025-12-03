@@ -46,8 +46,10 @@
         </Setter>
     </Style>
     
-    <!-- Collapsed State -->
-    <Style Selector="controls|NavigationView:collapsed">
+    <!-- ============================================== -->
+    <!-- DataTrigger: Collapsed Mode                   -->
+    <!-- ============================================== -->
+    <Style Selector="controls|NavigationView[IsCollapsed=True]">
         <Setter Property="Width" Value="{DynamicResource NavCompactWidth}"/>
     </Style>
     

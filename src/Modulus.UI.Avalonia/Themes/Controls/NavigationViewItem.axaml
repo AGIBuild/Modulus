@@ -37,7 +37,7 @@
                                        TextAlignment="Center"
                                        Margin="{DynamicResource NavItemIconMargin}"/>
                             
-                            <!-- Display Name -->
+                            <!-- Display Name (visibility controlled by DataTrigger) -->
                             <TextBlock Grid.Column="1"
                                        x:Name="PART_DisplayName"
                                        Text="{Binding Item.DisplayName, RelativeSource={RelativeSource TemplatedParent}}"
@@ -45,7 +45,7 @@
                                        Foreground="{TemplateBinding Foreground}"
                                        VerticalAlignment="Center"/>
                             
-                            <!-- Badge -->
+                            <!-- Badge (visibility controlled by DataTrigger) -->
                             <Border Grid.Column="2"
                                     x:Name="PART_Badge"
                                     Background="{DynamicResource BadgeBackgroundBrush}"
@@ -54,7 +54,7 @@
                                     Padding="{DynamicResource NavBadgePadding}"
                                     Margin="{DynamicResource NavBadgeMargin}"
                                     VerticalAlignment="Center"
-                                    IsVisible="False">
+                                    IsVisible="{Binding Item.BadgeCount, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:NavigationViewItem.HasBadgeConverter}}">
                                 <TextBlock Text="{Binding Item.BadgeCount, RelativeSource={RelativeSource TemplatedParent}}"
                                            FontSize="{DynamicResource NavBadgeFontSize}"
                                            FontWeight="Bold"
@@ -63,7 +63,7 @@
                                            VerticalAlignment="Center"/>
                             </Border>
                             
-                            <!-- Chevron (for groups) -->
+                            <!-- Chevron (visibility controlled by DataTrigger) -->
                             <TextBlock Grid.Column="3"
                                        x:Name="PART_Chevron"
                                        Text="▶"
@@ -72,7 +72,7 @@
                                        VerticalAlignment="Center"
                                        Margin="4,0,0,0"
                                        RenderTransformOrigin="50%,50%"
-                                       IsVisible="False">
+                                       IsVisible="{Binding Item, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:NavigationViewItem.HasChildrenConverter}}">
                                 <TextBlock.RenderTransform>
                                     <RotateTransform Angle="0"/>
                                 </TextBlock.RenderTransform>
@@ -85,10 +85,10 @@
                         </Grid>
                     </Border>
                     
-                    <!-- Children Container -->
+                    <!-- Children Container (visibility controlled by DataTrigger) -->
                     <Border x:Name="PART_ChildContainer"
                             Margin="{DynamicResource NavChildIndent}"
-                            IsVisible="False"
+                            IsVisible="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                             ClipToBounds="True">
                         <Border.Transitions>
                             <Transitions>
@@ -112,7 +112,7 @@
     </Style>
     
     <!-- ============================================== -->
-    <!-- Pseudo-class States                           -->
+    <!-- DataTrigger States (Property-based Selectors) -->
     <!-- ============================================== -->
     
     <!-- Hover State -->
@@ -121,16 +121,23 @@
     </Style>
     
     <!-- Selected State -->
-    <Style Selector="controls|NavigationViewItem:selected /template/ Border#PART_RootBorder">
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ Border#PART_RootBorder">
         <Setter Property="Background" Value="{DynamicResource NavItemSelectedBrush}"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:selected /template/ TextBlock#PART_DisplayName">
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ TextBlock#PART_DisplayName">
         <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedTextBrush}"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:selected /template/ TextBlock#PART_Icon">
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ TextBlock#PART_Icon">
         <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedIconBrush}"/>
+    </Style>
+    
+    <!-- Expanded State - Rotate Chevron -->
+    <Style Selector="controls|NavigationViewItem[IsExpanded=True] /template/ TextBlock#PART_Chevron">
+        <Setter Property="RenderTransform">
+            <RotateTransform Angle="90"/>
+        </Setter>
     </Style>
     
     <!-- Disabled State -->
@@ -139,46 +146,32 @@
         <Setter Property="Cursor" Value="Arrow"/>
     </Style>
     
-    <!-- Has Badge -->
-    <Style Selector="controls|NavigationViewItem:hasbadge /template/ Border#PART_Badge">
-        <Setter Property="IsVisible" Value="True"/>
-    </Style>
+    <!-- ============================================== -->
+    <!-- Collapsed Mode (NavigationView.IsCollapsed)   -->
+    <!-- ============================================== -->
     
-    <!-- Has Children -->
-    <Style Selector="controls|NavigationViewItem:haschildren /template/ TextBlock#PART_Chevron">
-        <Setter Property="IsVisible" Value="True"/>
-    </Style>
-    
-    <!-- Expanded State -->
-    <Style Selector="controls|NavigationViewItem:expanded /template/ Border#PART_ChildContainer">
-        <Setter Property="IsVisible" Value="True"/>
-    </Style>
-    
-    <Style Selector="controls|NavigationViewItem:expanded /template/ TextBlock#PART_Chevron">
-        <Setter Property="RenderTransform">
-            <RotateTransform Angle="90"/>
-        </Setter>
-    </Style>
-    
-    <!-- Collapsed Mode (NavigationView is collapsed) -->
-    <Style Selector="controls|NavigationViewItem:collapsed /template/ TextBlock#PART_DisplayName">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_DisplayName">
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:collapsed /template/ Border#PART_Badge">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_Badge">
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:collapsed /template/ TextBlock#PART_Chevron">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_Chevron">
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:collapsed /template/ Border#PART_RootBorder">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_RootBorder">
         <Setter Property="Padding" Value="{DynamicResource NavItemCompactPadding}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem:collapsed /template/ Border#PART_ChildContainer">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_Icon">
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_ChildContainer">
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
