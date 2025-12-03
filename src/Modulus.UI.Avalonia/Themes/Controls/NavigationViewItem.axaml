@@ -11,7 +11,7 @@
         <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
-            <ControlTemplate>
+            <ControlTemplate TargetType="controls:NavigationViewItem">
                 <StackPanel>
                     <!-- Main Item Row -->
                     <Border x:Name="PART_RootBorder"
@@ -71,6 +71,7 @@
                                        Foreground="{DynamicResource NavItemIconBrush}"
                                        VerticalAlignment="Center"
                                        Margin="4,0,0,0"
+                                       RenderTransformOrigin="50%,50%"
                                        IsVisible="False">
                                 <TextBlock.RenderTransform>
                                     <RotateTransform Angle="0"/>
@@ -97,9 +98,10 @@
                         <ItemsControl x:Name="PART_ChildItemsHost">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <controls:NavigationViewItem Item="{Binding}"
-                                                                 Depth="{Binding $parent[controls:NavigationViewItem].Depth, Converter={x:Static controls:NavigationViewItem.DepthPlusOneConverter}}"
-                                                                 IsCollapsed="{Binding $parent[controls:NavigationView].IsCollapsed, FallbackValue=False}"/>
+                                    <controls:NavigationViewItem 
+                                        Item="{Binding}"
+                                        Depth="{Binding Depth, RelativeSource={RelativeSource AncestorType=controls:NavigationViewItem}, Converter={x:Static controls:NavigationViewItem.DepthPlusOneConverter}}"
+                                        IsCollapsed="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=controls:NavigationView}, FallbackValue=False}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

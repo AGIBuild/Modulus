@@ -10,7 +10,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Width" Value="{DynamicResource NavExpandedWidth}"/>
         <Setter Property="Template">
-            <ControlTemplate>
+            <ControlTemplate TargetType="controls:NavigationView">
                 <Border Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
@@ -22,13 +22,14 @@
                                       ItemsSource="{Binding Items, RelativeSource={RelativeSource TemplatedParent}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel/>
+                                    <StackPanel/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <controls:NavigationViewItem Item="{Binding}"
-                                                                 IsCollapsed="{Binding $parent[controls:NavigationView].IsCollapsed}"/>
+                                    <controls:NavigationViewItem 
+                                        Item="{Binding}"
+                                        IsCollapsed="{Binding IsCollapsed, RelativeSource={RelativeSource AncestorType=controls:NavigationView}}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

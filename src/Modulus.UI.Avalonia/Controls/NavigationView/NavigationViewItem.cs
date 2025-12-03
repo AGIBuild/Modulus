@@ -1,9 +1,9 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
@@ -12,34 +12,121 @@ namespace Modulus.UI.Avalonia.Controls;
 /// <summary>
 /// Represents an item in a NavigationView control.
 /// </summary>
-public partial class NavigationViewItem : TemplatedControl
+public class NavigationViewItem : TemplatedControl
 {
+    #region Converters
+
     /// <summary>
-    /// Converter that adds 1 to the depth value.
+    /// Converter that adds 1 to the depth value for child items.
     /// </summary>
     public static readonly IValueConverter DepthPlusOneConverter =
         new FuncValueConverter<int, int>(depth => depth + 1);
 
+    #endregion
+
+    #region Private Fields
+
     private Border? _rootBorder;
     private ItemsControl? _childItemsHost;
 
-    /// <summary>
-    /// Template part name for the root border.
-    /// </summary>
-    public const string PART_RootBorder = "PART_RootBorder";
+    #endregion
+
+    #region Styled Properties
 
     /// <summary>
-    /// Template part name for the child items host.
+    /// Defines the <see cref="Item"/> property.
     /// </summary>
-    public const string PART_ChildItemsHost = "PART_ChildItemsHost";
+    public static readonly StyledProperty<UiMenuItem?> ItemProperty =
+        AvaloniaProperty.Register<NavigationViewItem, UiMenuItem?>(nameof(Item));
+
+    /// <summary>
+    /// Defines the <see cref="Depth"/> property.
+    /// </summary>
+    public static readonly StyledProperty<int> DepthProperty =
+        AvaloniaProperty.Register<NavigationViewItem, int>(nameof(Depth));
+
+    /// <summary>
+    /// Defines the <see cref="IsSelected"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSelectedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsSelected));
+
+    /// <summary>
+    /// Defines the <see cref="IsExpanded"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsExpandedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsExpanded));
+
+    /// <summary>
+    /// Defines the <see cref="IsCollapsed"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsCollapsedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsCollapsed));
+
+    #endregion
+
+    #region Properties
+
+    /// <summary>
+    /// Gets or sets the menu item data.
+    /// </summary>
+    public UiMenuItem? Item
+    {
+        get => GetValue(ItemProperty);
+        set => SetValue(ItemProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the nesting depth of this item.
+    /// </summary>
+    public int Depth
+    {
+        get => GetValue(DepthProperty);
+        set => SetValue(DepthProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this item is selected.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => GetValue(IsSelectedProperty);
+        set => SetValue(IsSelectedProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this item's children are expanded.
+    /// </summary>
+    public bool IsExpanded
+    {
+        get => GetValue(IsExpandedProperty);
+        set => SetValue(IsExpandedProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether the parent NavigationView is collapsed.
+    /// </summary>
+    public bool IsCollapsed
+    {
+        get => GetValue(IsCollapsedProperty);
+        set => SetValue(IsCollapsedProperty, value);
+    }
+
+    #endregion
+
+    #region Constructor
 
     static NavigationViewItem()
     {
-        ItemProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnItemChanged(e));
-        IsSelectedProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnIsSelectedChanged(e));
+        ItemProperty.Changed.AddClassHandler<NavigationViewItem>((x, _) => x.OnItemChanged());
+        IsSelectedProperty.Changed.AddClassHandler<NavigationViewItem>((x, _) => x.UpdatePseudoClasses());
         IsExpandedProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnIsExpandedChanged(e));
-        IsCollapsedProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnIsCollapsedChanged(e));
+        IsCollapsedProperty.Changed.AddClassHandler<NavigationViewItem>((x, _) => x.UpdatePseudoClasses());
     }
+
+    #endregion
+
+    #region Template
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -52,8 +139,8 @@ public partial class NavigationViewItem : TemplatedControl
             _rootBorder.PointerPressed -= OnRootPointerPressed;
         }
 
-        _rootBorder = e.NameScope.Find<Border>(PART_RootBorder);
-        _childItemsHost = e.NameScope.Find<ItemsControl>(PART_ChildItemsHost);
+        _rootBorder = e.NameScope.Find<Border>("PART_RootBorder");
+        _childItemsHost = e.NameScope.Find<ItemsControl>("PART_ChildItemsHost");
 
         // Subscribe to new
         if (_rootBorder != null)
@@ -61,9 +148,13 @@ public partial class NavigationViewItem : TemplatedControl
             _rootBorder.PointerPressed += OnRootPointerPressed;
         }
 
-        UpdateVisualState();
+        UpdatePseudoClasses();
         UpdateChildItems();
     }
+
+    #endregion
+
+    #region Event Handlers
 
     private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -76,36 +167,48 @@ public partial class NavigationViewItem : TemplatedControl
         e.Handled = true;
     }
 
-    private void OnItemChanged(AvaloniaPropertyChangedEventArgs e)
+    #endregion
+
+    #region Property Changed Handlers
+
+    private void OnItemChanged()
     {
-        var item = e.NewValue as UiMenuItem;
-        if (item != null)
+        if (Item != null)
         {
-            IsExpanded = item.IsExpanded;
-            IsEnabled = item.IsEnabled;
-            
+            IsExpanded = Item.IsExpanded;
+            IsEnabled = Item.IsEnabled;
+
             // Subscribe to property changes
-            item.PropertyChanged += (s, args) =>
-            {
-                if (args.PropertyName == nameof(UiMenuItem.IsExpanded))
-                {
-                    IsExpanded = item.IsExpanded;
-                }
-            };
+            Item.PropertyChanged += OnItemPropertyChanged;
         }
-        UpdateVisualState();
+        
+        UpdatePseudoClasses();
         UpdateChildItems();
     }
 
-    private void OnIsSelectedChanged(AvaloniaPropertyChangedEventArgs e)
+    private void OnItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        PseudoClasses.Set(":selected", (bool)e.NewValue!);
+        if (Item == null) return;
+
+        if (e.PropertyName == nameof(UiMenuItem.IsExpanded))
+        {
+            IsExpanded = Item.IsExpanded;
+        }
+        else if (e.PropertyName == nameof(UiMenuItem.IsEnabled))
+        {
+            IsEnabled = Item.IsEnabled;
+            UpdatePseudoClasses();
+        }
+        else if (e.PropertyName == nameof(UiMenuItem.BadgeCount))
+        {
+            UpdatePseudoClasses();
+        }
     }
 
     private void OnIsExpandedChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        PseudoClasses.Set(":expanded", (bool)e.NewValue!);
-        
+        UpdatePseudoClasses();
+
         // Sync back to Item
         if (Item != null && Item.IsExpanded != (bool)e.NewValue!)
         {
@@ -113,20 +216,20 @@ public partial class NavigationViewItem : TemplatedControl
         }
     }
 
-    private void OnIsCollapsedChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        PseudoClasses.Set(":collapsed", (bool)e.NewValue!);
-    }
+    #endregion
 
-    private void UpdateVisualState()
+    #region Private Methods
+
+    private void UpdatePseudoClasses()
     {
         if (Item == null) return;
 
+        PseudoClasses.Set(":selected", IsSelected);
+        PseudoClasses.Set(":expanded", IsExpanded);
+        PseudoClasses.Set(":collapsed", IsCollapsed);
         PseudoClasses.Set(":haschildren", Item.Children != null && Item.Children.Count > 0);
         PseudoClasses.Set(":hasbadge", Item.BadgeCount.HasValue && Item.BadgeCount > 0);
         PseudoClasses.Set(":disabled", !Item.IsEnabled);
-        PseudoClasses.Set(":expanded", IsExpanded);
-        PseudoClasses.Set(":collapsed", IsCollapsed);
     }
 
     private void UpdateChildItems()
@@ -136,5 +239,6 @@ public partial class NavigationViewItem : TemplatedControl
             _childItemsHost.ItemsSource = Item.Children;
         }
     }
-}
 
+    #endregion
+}
