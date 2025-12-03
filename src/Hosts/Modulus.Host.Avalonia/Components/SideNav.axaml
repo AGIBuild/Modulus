@@ -2,43 +2,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:ui="using:Modulus.UI.Abstractions"
              xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
+             xmlns:components="using:Modulus.Host.Avalonia.Components"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="600"
              x:Class="Modulus.Host.Avalonia.Components.SideNav"
              x:DataType="vm:ShellViewModel">
     
     <Grid RowDefinitions="*, Auto">
-        <!-- Main Menu Items -->
-        <ListBox Grid.Row="0" Classes="navList"
-                 ItemsSource="{Binding MainMenuItems}"
-                 SelectedItem="{Binding SelectedMainMenuItem}"
-                 Margin="0,8,0,0">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="ui:MenuItem">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{Binding Icon}" FontSize="16" 
-                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"/>
-                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Main Menu -->
+        <components:NavigationView Grid.Row="0" 
+                                   Items="{Binding MainMenuItems}"
+                                   SelectedItem="{Binding SelectedMainMenuItem}"
+                                   Margin="0,8,0,0" />
         
-        <!-- Bottom Menu Items -->
-        <ListBox Grid.Row="1" Classes="navList"
-                 ItemsSource="{Binding BottomMenuItems}"
-                 SelectedItem="{Binding SelectedBottomMenuItem}"
-                 Margin="0,0,0,10">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="ui:MenuItem">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{Binding Icon}" FontSize="16" 
-                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"/>
-                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Bottom Menu -->
+        <components:NavigationView Grid.Row="1" 
+                                   Items="{Binding BottomMenuItems}"
+                                   SelectedItem="{Binding SelectedBottomMenuItem}"
+                                   Margin="0,0,0,10" />
     </Grid>
 </UserControl>
