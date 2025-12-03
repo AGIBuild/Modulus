@@ -179,6 +179,23 @@ public partial class DemoContentControl : UserControl
 
     private Control CreateDisabledDemo()
     {
+        // Create menu items with disabled states
+        var disabledItems = new List<UiMenuItem>
+        {
+            new UiMenuItem("enabled1", "Enabled Item", "✅", "enabled1"),
+            new UiMenuItem("disabled1", "Disabled Item", "🚫", "disabled1") { IsEnabled = false },
+            new UiMenuItem("enabled2", "Another Enabled", "✅", "enabled2"),
+            new UiMenuItem("disabled2", "Also Disabled", "🚫", "disabled2") { IsEnabled = false },
+        };
+
+        var navView = new NavigationView
+        {
+            Items = disabledItems,
+            Width = 200,
+            Height = 180,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
         return new StackPanel
         {
             Spacing = 16,
@@ -186,22 +203,62 @@ public partial class DemoContentControl : UserControl
             {
                 new TextBlock
                 {
-                    Text = "Menu items can be disabled to prevent interaction.",
+                    Text = "Disabled States Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = "Disabled items are visible but cannot be clicked. Try clicking the disabled items below:",
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
                 },
                 CreateInfoCard(new[]
                 {
-                    "• IsEnabled = false makes item grayed out",
+                    "• IsEnabled = false makes item grayed out (opacity 0.4)",
                     "• Disabled items don't respond to clicks",
-                    "• Keyboard navigation skips disabled items"
-                }),
-                CreateTipBox("Look at 'Sub Item 3 (Disabled)' in the Hierarchical Demo group.")
+                    "• Visual feedback shows item is not interactive"
+                })
             }
         };
     }
 
     private Control CreateSubItemDemo(string itemId)
     {
+        // Create hierarchical menu items
+        var hierarchyItems = new List<UiMenuItem>
+        {
+            UiMenuItem.CreateGroup("folder1", "📁 Folder 1", "📁", new List<UiMenuItem>
+            {
+                new UiMenuItem("file1", "File 1.txt", "📄", "file1"),
+                new UiMenuItem("file2", "File 2.txt", "📄", "file2"),
+            }),
+            UiMenuItem.CreateGroup("folder2", "📁 Folder 2", "📁", new List<UiMenuItem>
+            {
+                new UiMenuItem("file3", "File 3.txt", "📄", "file3"),
+                UiMenuItem.CreateGroup("subfolder", "📁 Subfolder", "📁", new List<UiMenuItem>
+                {
+                    new UiMenuItem("file4", "Nested File", "📄", "file4"),
+                }),
+            }),
+        };
+        hierarchyItems[0].IsExpanded = true;
+        hierarchyItems[1].IsExpanded = true;
+
+        var navView = new NavigationView
+        {
+            Items = hierarchyItems,
+            Width = 220,
+            Height = 220,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
         return new StackPanel
         {
             Spacing = 16,
@@ -209,13 +266,28 @@ public partial class DemoContentControl : UserControl
             {
                 new TextBlock
                 {
-                    Text = $"This is a sub-item of the hierarchical menu.\nItem ID: {itemId}",
+                    Text = "Sub Menu / Hierarchical Demo",
+                    FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                    FontSize = 16
+                },
+                new TextBlock
+                {
+                    Text = $"Currently viewing: {itemId}\n\nClick folder headers to expand/collapse. The NavigationView supports nested hierarchies:",
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brush.Parse("#15000000"),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(8),
+                    Child = navView
                 },
                 CreateInfoCard(new[]
                 {
-                    "This is a child item inside a hierarchical menu group.",
-                    "Click the group header to expand/collapse children."
+                    "• Use MenuItem.CreateGroup() to create expandable groups",
+                    "• Set Children property for child items",
+                    "• IsExpanded controls initial expand state",
+                    "• Click group header to toggle expand/collapse"
                 })
             }
         };
