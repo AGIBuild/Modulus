@@ -3,24 +3,24 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
-             xmlns:components="using:Modulus.Host.Avalonia.Components"
+             xmlns:ui="using:Modulus.UI.Avalonia.Components"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="600"
              x:Class="Modulus.Host.Avalonia.Components.SideNav"
              x:DataType="vm:ShellViewModel">
     
     <Grid RowDefinitions="*, Auto">
         <!-- Main Menu -->
-        <components:NavigationView Grid.Row="0" 
-                                   Items="{Binding MainMenuItems}"
-                                   SelectedItem="{Binding SelectedMainMenuItem}"
-                                   IsCollapsed="{Binding IsNavCollapsed}"
-                                   Margin="0,8,0,0" />
+        <ui:NavigationView Grid.Row="0" 
+                           Items="{Binding MainMenuItems}"
+                           SelectedItem="{Binding SelectedMainMenuItem}"
+                           IsCollapsed="{Binding IsNavCollapsed}"
+                           Margin="0,8,0,0" />
         
         <!-- Bottom Menu -->
-        <components:NavigationView Grid.Row="1" 
-                                   Items="{Binding BottomMenuItems}"
-                                   SelectedItem="{Binding SelectedBottomMenuItem}"
-                                   IsCollapsed="{Binding IsNavCollapsed}"
-                                   Margin="0,0,0,10" />
+        <ui:NavigationView Grid.Row="1" 
+                           Items="{Binding BottomMenuItems}"
+                           SelectedItem="{Binding SelectedBottomMenuItem}"
+                           IsCollapsed="{Binding IsNavCollapsed}"
+                           Margin="0,0,0,10" />
     </Grid>
 </UserControl>

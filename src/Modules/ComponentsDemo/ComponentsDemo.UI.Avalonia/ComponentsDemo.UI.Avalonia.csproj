@@ -11,10 +11,11 @@
     <ProjectReference Include="..\ComponentsDemo.Core\ComponentsDemo.Core.csproj" />
     <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
     <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.1" />
+    <PackageReference Include="Avalonia" Version="11.3.9" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
   </ItemGroup>
 

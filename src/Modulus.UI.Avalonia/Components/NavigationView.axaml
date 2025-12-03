@@ -3,9 +3,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:Modulus.UI.Abstractions"
-             xmlns:local="using:Modulus.Host.Avalonia.Components"
+             xmlns:local="using:Modulus.UI.Avalonia.Components"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="300"
-             x:Class="Modulus.Host.Avalonia.Components.NavigationView"
+             x:Class="Modulus.UI.Avalonia.Components.NavigationView"
              x:DataType="local:NavigationView"
              x:Name="Root"
              Focusable="True"
@@ -101,3 +101,4 @@
         </ItemsControl>
     </ScrollViewer>
 </UserControl>
+

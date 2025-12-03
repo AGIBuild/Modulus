@@ -3,8 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Xaml.Interactivity;
 
-namespace Modulus.Host.Avalonia.Behaviors;
+namespace Modulus.UI.Avalonia.Behaviors;
 
+/// <summary>
+/// Behavior that enables window dragging from any attached control.
+/// </summary>
 public class WindowDragBehavior : Behavior<Control>
 {
     protected override void OnAttached()

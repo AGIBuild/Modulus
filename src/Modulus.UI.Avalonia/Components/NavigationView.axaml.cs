@@ -9,7 +9,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Host.Avalonia.Components;
+namespace Modulus.UI.Avalonia.Components;
 
 public partial class NavigationView : UserControl
 {
@@ -293,3 +293,4 @@ public partial class NavigationView : UserControl
         public void Execute(object? parameter) => _execute((T?)parameter);
     }
 }
+

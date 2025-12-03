@@ -38,6 +38,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
     <ProjectReference Include="..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
     <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
   </ItemGroup>
   
