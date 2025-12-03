@@ -49,6 +49,17 @@ public partial class ComponentsMainViewModel : ObservableObject
     private void InitializeDemoItems()
     {
         // Navigation group - contains all navigation-related demos
+        var contextDemo = new MenuItem("context-demo", "Context Menu", "list", "context-demo", MenuLocation.Main, 5);
+        contextDemo.ContextActions = new[]
+        {
+            new MenuAction { Label = "Edit", Icon = "edit", Execute = _ => { } },
+            new MenuAction { Label = "Delete", Icon = "delete", Execute = _ => { } },
+            new MenuAction { Label = "Info", Icon = "info", Execute = _ => { } }
+        };
+
+        var lifecycleDemo = new MenuItem("lifecycle-demo", "Page Lifecycle", "refresh", "lifecycle-demo", MenuLocation.Main, 6);
+        lifecycleDemo.InstanceMode = PageInstanceMode.Transient;
+
         var navigationGroup = MenuItem.CreateGroup("navigation", "Navigation", "compass", new[]
         {
             new MenuItem("basic-nav", "Basic Navigation", "link", "basic-nav", MenuLocation.Main, 0),
@@ -64,25 +75,13 @@ public partial class ComponentsMainViewModel : ObservableObject
                 new MenuItem("sub-item-2", "Sub Item 2", "file", "sub-item-2", MenuLocation.Main, 1),
                 new MenuItem("sub-item-3", "Sub Item 3 (Disabled)", "file", "sub-item-3", MenuLocation.Main, 2) { IsEnabled = false }
             }, MenuLocation.Main, 3),
-            new MenuItem("keyboard-nav", "Keyboard Navigation", "keyboard", "keyboard-nav", MenuLocation.Main, 4)
+            new MenuItem("keyboard-nav", "Keyboard Navigation", "keyboard", "keyboard-nav", MenuLocation.Main, 4),
+            contextDemo,
+            lifecycleDemo
         }, MenuLocation.Main, 0);
         navigationGroup.IsExpanded = true;
 
-        // Other demos
-        var contextDemo = new MenuItem("context-demo", "Context Menu", "list", "context-demo", MenuLocation.Main, 1);
-        contextDemo.ContextActions = new[]
-        {
-            new MenuAction { Label = "Edit", Icon = "edit", Execute = _ => { } },
-            new MenuAction { Label = "Delete", Icon = "delete", Execute = _ => { } },
-            new MenuAction { Label = "Info", Icon = "info", Execute = _ => { } }
-        };
-
-        var lifecycleDemo = new MenuItem("lifecycle-demo", "Page Lifecycle", "refresh", "lifecycle-demo", MenuLocation.Main, 2);
-        lifecycleDemo.InstanceMode = PageInstanceMode.Transient;
-
         DemoItems.Add(navigationGroup);
-        DemoItems.Add(contextDemo);
-        DemoItems.Add(lifecycleDemo);
     }
 
     public void NavigateTo(string demoId)
