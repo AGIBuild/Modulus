@@ -36,10 +36,7 @@
                                             HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Left">
                                         <Button.IsVisible>
-                                            <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                                                <Binding Path="Children" Converter="{x:Static ObjectConverters.IsNull}"/>
-                                                <Binding Path="Children.Count" FallbackValue="0" Converter="{x:Static local:Converters.IsZero}"/>
-                                            </MultiBinding>
+                                            <Binding Path="Children" Converter="{x:Static local:Converters.IsLeafItem}"/>
                                         </Button.IsVisible>
                                         <ToolTip.Tip>
                                             <TextBlock Text="{Binding DisplayName}"/>
@@ -68,10 +65,7 @@
                                             HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Left">
                                         <Button.IsVisible>
-                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                                <Binding Path="Children" Converter="{x:Static ObjectConverters.IsNotNull}"/>
-                                                <Binding Path="Children.Count" FallbackValue="0" Converter="{x:Static local:Converters.IsNotZero}"/>
-                                            </MultiBinding>
+                                            <Binding Path="Children" Converter="{x:Static local:Converters.IsGroupItem}"/>
                                         </Button.IsVisible>
                                         <Grid ColumnDefinitions="24, *, Auto">
                                             <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" VerticalAlignment="Center"/>
