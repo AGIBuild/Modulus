@@ -46,12 +46,25 @@ public partial class NavigationView : TemplatedControl
         _itemsHost = e.NameScope.Find<ItemsControl>(PART_ItemsHost);
         _scrollViewer = e.NameScope.Find<ScrollViewer>(PART_ScrollViewer);
 
-        if (_itemsHost != null)
+        // Set ItemsSource after template is applied
+        if (_itemsHost != null && Items != null)
         {
             _itemsHost.ItemsSource = Items;
         }
 
         UpdateVisualState();
+    }
+
+    /// <inheritdoc/>
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        
+        // Ensure items are set when control is attached to visual tree
+        if (_itemsHost != null && Items != null)
+        {
+            _itemsHost.ItemsSource = Items;
+        }
     }
 
     /// <summary>

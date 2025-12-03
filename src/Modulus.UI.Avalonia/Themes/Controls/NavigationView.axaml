@@ -18,8 +18,7 @@
                     <ScrollViewer x:Name="PART_ScrollViewer"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto">
-                        <ItemsControl x:Name="PART_ItemsHost"
-                                      ItemsSource="{TemplateBinding Items}">
+                        <ItemsControl x:Name="PART_ItemsHost">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel/>
