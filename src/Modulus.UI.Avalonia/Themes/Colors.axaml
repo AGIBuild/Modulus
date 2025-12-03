@@ -85,4 +85,3 @@
     <SolidColorBrush x:Key="BadgeTextBrush" Color="{StaticResource BadgeTextColor}"/>
     
 </ResourceDictionary>
-

@@ -30,4 +30,3 @@
     <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="{StaticResource NavItemSelectedIconColor}"/>
     
 </ResourceDictionary>
-

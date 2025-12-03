@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Controls;
@@ -72,12 +73,28 @@ public partial class NavigationView : TemplatedControl
         var oldItem = e.OldValue as UiMenuItem;
         var newItem = e.NewValue as UiMenuItem;
 
+        // Update IsSelected on all NavigationViewItems
+        UpdateItemsSelection(newItem);
+
         if (newItem != null)
         {
             SelectionChanged?.Invoke(this, newItem);
         }
 
         UpdateVisualState();
+    }
+
+    /// <summary>
+    /// Updates the IsSelected property on all NavigationViewItems.
+    /// </summary>
+    private void UpdateItemsSelection(UiMenuItem? selectedItem)
+    {
+        foreach (var navItem in this.GetVisualDescendants().OfType<NavigationViewItem>())
+        {
+            navItem.IsSelected = navItem.Item != null && 
+                                 selectedItem != null && 
+                                 navItem.Item.Id == selectedItem.Id;
+        }
     }
 
     /// <summary>

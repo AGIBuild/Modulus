@@ -7,6 +7,7 @@
     <Application.Styles>
         <FluentTheme />
         <!-- UI Library Control Styles -->
+        <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Generic.axaml"/>
         <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls.axaml"/>
     </Application.Styles>
     
