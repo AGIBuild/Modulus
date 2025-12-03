@@ -12,10 +12,15 @@
     <!-- Sidebar / Navigation - Distinct from content -->
     <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1E1E1E"/>
     <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="Transparent"/>
+    <SolidColorBrush x:Key="NavItemHoverBrush" Color="#3D3D3D"/>
     <SolidColorBrush x:Key="NavItemHoverBackgroundBrush" Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="#333230"/>
+    <SolidColorBrush x:Key="NavItemActiveBrush" Color="#454340"/>
     <SolidColorBrush x:Key="NavItemActiveBackgroundBrush" Color="#383838"/>
     <SolidColorBrush x:Key="NavItemTextBrush" Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="NavItemIconBrush" Color="#909090"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="#FFFFFF"/>
     
     <!-- Content Area - Dark gray -->
     <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#202020"/>

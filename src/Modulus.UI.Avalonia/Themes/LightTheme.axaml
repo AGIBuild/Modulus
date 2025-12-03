@@ -19,10 +19,15 @@
         <GradientStop Color="#30000000" Offset="1"/>
     </LinearGradientBrush>
     <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="Transparent"/>
+    <SolidColorBrush x:Key="NavItemHoverBrush" Color="#20FFFFFF"/>
     <SolidColorBrush x:Key="NavItemHoverBackgroundBrush" Color="#20FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="#9A3DA8"/>
+    <SolidColorBrush x:Key="NavItemActiveBrush" Color="#7B2F87"/>
     <SolidColorBrush x:Key="NavItemActiveBackgroundBrush" Color="#30FFFFFF"/>
     <SolidColorBrush x:Key="NavItemTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="NavItemIconBrush" Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="#FFFFFF"/>
     
     <!-- Content Area - Light Purple (coordinated with sidebar) -->
     <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#BB8BFF"/>
