@@ -12,6 +12,7 @@ using Modulus.Host.Avalonia.Shell.Views;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.IO;
@@ -53,6 +54,9 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var services = new ServiceCollection();
+            
+            // Add Logging
+            services.AddLogging();
             
             // Module Providers
             var providers = new System.Collections.Generic.List<IModuleProvider>();
