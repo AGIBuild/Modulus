@@ -100,8 +100,7 @@ public partial class DemoContentControl : UserControl
         {
             var row = new Border
             {
-                Background = global::Avalonia.Media.Brushes.White,
-                Opacity = 0.1,
+                Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(12),
                 Margin = new Thickness(0, 4)
@@ -239,8 +238,7 @@ public partial class DemoContentControl : UserControl
 
         var card = new Border
         {
-            Background = global::Avalonia.Media.Brushes.White,
-            Opacity = 0.1,
+            Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(16),
             Child = grid
@@ -274,8 +272,7 @@ public partial class DemoContentControl : UserControl
                 }),
                 new Border
                 {
-                    Background = global::Avalonia.Media.Brushes.White,
-                    Opacity = 0.1,
+                    Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"),
                     CornerRadius = new CornerRadius(8),
                     Padding = new Thickness(16),
                     Child = new StackPanel
@@ -319,8 +316,7 @@ public partial class DemoContentControl : UserControl
         }
         return new Border
         {
-            Background = global::Avalonia.Media.Brushes.White,
-            Opacity = 0.1,
+            Background = global::Avalonia.Media.Brush.Parse("#20FFFFFF"), // Semi-transparent white
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(16),
             Child = stack
@@ -331,8 +327,7 @@ public partial class DemoContentControl : UserControl
     {
         return new Border
         {
-            Background = global::Avalonia.Media.Brush.Parse("#29B6F6"),
-            Opacity = 0.2,
+            Background = global::Avalonia.Media.Brush.Parse("#4029B6F6"), // Semi-transparent blue
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = new TextBlock
