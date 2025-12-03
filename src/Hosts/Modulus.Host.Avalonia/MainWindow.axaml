@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
-        xmlns:components="using:Modulus.Host.Avalonia.Components"
+        xmlns:ui="using:Modulus.UI.Avalonia.Components"
         mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
         x:Class="Modulus.Host.Avalonia.MainWindow"
         x:DataType="vm:ShellViewModel"
@@ -28,7 +28,11 @@
 
         <Grid RowDefinitions="Auto, *">
             <!-- Title Bar Component -->
-            <components:TitleBar Grid.Row="0" />
+            <ui:TitleBar Grid.Row="0" 
+                         Title="MODULUS" 
+                         Badge="HOST"
+                         ToggleCommand="{Binding ToggleNavCollapseCommand}"
+                         ShowToggle="True"/>
 
             <!-- Main Content Area -->
             <SplitView Grid.Row="1" DisplayMode="CompactInline" 
@@ -38,12 +42,16 @@
                        PaneBackground="{DynamicResource SidebarBackgroundBrush}">
                 <SplitView.Pane>
                     <!-- SideNav Component -->
-                    <components:SideNav DataContext="{Binding}" />
+                    <ui:SideNav MainItems="{Binding MainMenuItems}"
+                                BottomItems="{Binding BottomMenuItems}"
+                                MainSelectedItem="{Binding SelectedMainMenuItem}"
+                                BottomSelectedItem="{Binding SelectedBottomMenuItem}"
+                                IsCollapsed="{Binding IsNavCollapsed}"/>
                 </SplitView.Pane>
                 
                 <SplitView.Content>
                     <!-- ContentHost Component -->
-                    <components:ContentHost DataContext="{Binding}" />
+                    <ui:ContentHost HostedContent="{Binding CurrentView}"/>
                 </SplitView.Content>
             </SplitView>
         </Grid>

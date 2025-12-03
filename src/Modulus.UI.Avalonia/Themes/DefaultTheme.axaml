@@ -43,4 +43,3 @@
     <SolidColorBrush x:Key="BadgeTextBrush" Color="#FFFFFF"/>
     
 </ResourceDictionary>
-

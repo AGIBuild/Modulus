@@ -2,13 +2,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
+             xmlns:local="using:Modulus.UI.Avalonia.Components"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
-             x:Class="Modulus.Host.Avalonia.Components.ContentHost"
-             x:DataType="vm:ShellViewModel">
+             x:Class="Modulus.UI.Avalonia.Components.ContentHost"
+             x:Name="Root">
     
-    <Border CornerRadius="12,0,0,0" Padding="20" ClipToBounds="True"
+    <Border CornerRadius="{Binding ContentCornerRadius, ElementName=Root}" 
+            Padding="{Binding ContentPadding, ElementName=Root}" 
+            ClipToBounds="True"
             Background="{DynamicResource ContentBackgroundBrush}">
-        <ContentControl Content="{Binding CurrentView}" Background="Transparent"/>
+        <ContentPresenter Content="{Binding HostedContent, ElementName=Root}" Background="Transparent"/>
     </Border>
 </UserControl>
+
