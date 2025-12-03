@@ -9,95 +9,84 @@
              x:DataType="local:NavigationView"
              x:Name="Root">
     
+    <UserControl.Resources>
+        <!-- Recursive DataTemplate for multi-level nesting -->
+        <DataTemplate x:Key="MenuItemTemplate" x:DataType="ui:MenuItem">
+            <StackPanel>
+                <!-- Menu Item Row -->
+                <Border CornerRadius="6" Margin="0,2" Padding="12,8"
+                        Cursor="Hand"
+                        PointerPressed="OnItemPointerPressed"
+                        Tag="{Binding}"
+                        Background="Transparent"
+                        ToolTip.Tip="{Binding DisplayName}"
+                        Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"
+                        ContextMenu="{Binding ContextActions, Converter={x:Static local:NavigationView.ActionsToContextMenuConverter}}">
+                    
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                        <!-- Icon -->
+                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" 
+                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"
+                                   Margin="0,0,12,0"/>
+                        
+                        <!-- Display Name (hidden when collapsed) -->
+                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding !#Root.IsCollapsed}"/>
+                        
+                        <!-- Badge -->
+                        <Border Grid.Column="2" 
+                                IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                Background="{DynamicResource BadgeBackgroundBrush}"
+                                CornerRadius="10" MinWidth="20" Padding="4,2" Margin="8,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding BadgeCount}" FontSize="11" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        
+                        <!-- Expand/Collapse Icon for groups -->
+                        <TextBlock Grid.Column="3" 
+                                   Text="{Binding IsExpanded, Converter={x:Static local:NavigationView.ExpandedToChevronConverter}}"
+                                   FontSize="10" VerticalAlignment="Center"
+                                   IsVisible="{Binding Children, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   Margin="4,0,0,0"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Children (when expanded) - Recursive with animation -->
+                <Border ClipToBounds="True"
+                        IsVisible="{Binding IsExpanded}">
+                    <Border.Transitions>
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                        </Transitions>
+                    </Border.Transitions>
+                    <ItemsControl Classes="childItems"
+                                  ItemsSource="{Binding Children}"
+                                  ItemTemplate="{DynamicResource MenuItemTemplate}"
+                                  Margin="16,0,0,0"/>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+    
     <UserControl.Styles>
         <!-- Override padding when collapsed -->
-        <Style Selector="local|NavigationView[IsCollapsed=True] ListBox.navList">
-            <Setter Property="Padding" Value="0"/>
-        </Style>
-        <Style Selector="local|NavigationView[IsCollapsed=True] ListBox.navList ListBoxItem">
-            <Setter Property="Padding" Value="0,10"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Style Selector="local|NavigationView[IsCollapsed=True] Border.navItem">
+            <Setter Property="Padding" Value="8"/>
         </Style>
     </UserControl.Styles>
     
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <ItemsControl ItemsSource="{Binding Items, ElementName=Root}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="ui:MenuItem">
-                    <StackPanel>
-                        <!-- Menu Item Row -->
-                        <Button Classes="navItem" 
-                                Command="{Binding ItemClickCommand, ElementName=Root}"
-                                CommandParameter="{Binding}"
-                                ToolTip.Tip="{Binding DisplayName}"
-                                IsEnabled="{Binding IsEnabled}"
-                                ContextMenu="{Binding ContextActions, Converter={x:Static local:NavigationView.ActionsToContextMenuConverter}}">
-                            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                                <!-- Icon -->
-                                <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" 
-                                           VerticalAlignment="Center" Width="20" TextAlignment="Center"
-                                           Margin="0,0,12,0"
-                                           Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
-                                
-                                <!-- Display Name (hidden when collapsed) -->
-                                <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
-                                           VerticalAlignment="Center"
-                                           IsVisible="{Binding !IsCollapsed, ElementName=Root}"
-                                           Opacity="{Binding IsEnabled, Converter={x:Static local:NavigationView.EnabledToOpacityConverter}}"/>
-                                
-                                <!-- Badge -->
-                                <Border Grid.Column="2" 
-                                        IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                        Background="{DynamicResource BadgeBackgroundBrush}"
-                                        CornerRadius="10" MinWidth="20" Padding="4,2" Margin="8,0"
-                                        VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding BadgeCount}" FontSize="11" FontWeight="Bold"
-                                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                
-                                <!-- Expand/Collapse Icon for groups -->
-                                <TextBlock Grid.Column="3" 
-                                           Text="{Binding IsExpanded, Converter={x:Static local:NavigationView.ExpandedToChevronConverter}}"
-                                           FontSize="12" VerticalAlignment="Center"
-                                           IsVisible="{Binding Children, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                           Margin="4,0,0,0"/>
-                            </Grid>
-                        </Button>
-                        
-                        <!-- Children (when expanded) -->
-                        <ItemsControl Classes="childItems"
-                                      ItemsSource="{Binding Children}"
-                                      IsVisible="{Binding IsExpanded}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="ui:MenuItem">
-                                    <Button Classes="navItem childNavItem"
-                                            Command="{Binding ItemClickCommand, ElementName=Root}"
-                                            CommandParameter="{Binding}"
-                                            ToolTip.Tip="{Binding DisplayName}"
-                                            IsEnabled="{Binding IsEnabled}"
-                                            Margin="16,0,0,0">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" 
-                                                       VerticalAlignment="Center" Width="16" TextAlignment="Center"
-                                                       Margin="0,0,10,0"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
-                                                       VerticalAlignment="Center" FontSize="13"/>
-                                            <Border Grid.Column="2" 
-                                                    IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                                    Background="{DynamicResource BadgeBackgroundBrush}"
-                                                    CornerRadius="8" MinWidth="16" Padding="4,2" Margin="6,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding BadgeCount}" FontSize="10" FontWeight="Bold"
-                                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </Grid>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" 
+                  VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Items, ElementName=Root}"
+                      ItemTemplate="{StaticResource MenuItemTemplate}">
+            <!-- Use VirtualizingStackPanel for better performance with many items -->
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
         </ItemsControl>
     </ScrollViewer>
 </UserControl>

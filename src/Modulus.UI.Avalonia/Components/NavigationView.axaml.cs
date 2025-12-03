@@ -1,16 +1,23 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Windows.Input;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
+using Avalonia.Input;
+using Avalonia.Media;
+using CommunityToolkit.Mvvm.Input;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Components;
 
 public partial class NavigationView : UserControl
 {
+    private static readonly IBrush DefaultBackground = Brushes.Transparent;
+    private static readonly IBrush HoverBackground = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255));
+    private static readonly IBrush SelectedBackground = new SolidColorBrush(Color.FromArgb(40, 96, 160, 255));
+
     public static readonly StyledProperty<IEnumerable?> ItemsProperty =
         AvaloniaProperty.Register<NavigationView, IEnumerable?>(nameof(Items));
 
@@ -54,7 +61,6 @@ public partial class NavigationView : UserControl
                 {
                     if (s is global::Avalonia.Controls.MenuItem mi && mi.Tag is Modulus.UI.Abstractions.MenuAction ma)
                     {
-                        // Get the MenuItem from DataContext
                         if (mi.DataContext is UiMenuItem item)
                         {
                             ma.Execute(item);
@@ -90,7 +96,7 @@ public partial class NavigationView : UserControl
     /// <summary>
     /// Command executed when a nav item is clicked.
     /// </summary>
-    public ICommand ItemClickCommand { get; }
+    public IRelayCommand<UiMenuItem> ItemClickCommand { get; }
 
     /// <summary>
     /// Event raised when an item is selected/clicked.
@@ -101,6 +107,27 @@ public partial class NavigationView : UserControl
     {
         ItemClickCommand = new RelayCommand<UiMenuItem>(OnItemClick);
         InitializeComponent();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        
+        if (change.Property == SelectedItemProperty)
+        {
+            UpdateSelectionVisuals();
+        }
+    }
+
+    private void OnItemPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border border && border.Tag is UiMenuItem item)
+        {
+            if (item.IsEnabled)
+            {
+                OnItemClick(item);
+            }
+        }
     }
 
     private void OnItemClick(UiMenuItem? item)
@@ -125,25 +152,45 @@ public partial class NavigationView : UserControl
             SelectedItem = item;
             ItemSelected?.Invoke(this, item);
         }
+        
+        UpdateSelectionVisuals();
     }
 
-    /// <summary>
-    /// Simple relay command implementation.
-    /// </summary>
-    private class RelayCommand<T> : ICommand
+    private void UpdateSelectionVisuals()
     {
-        private readonly Action<T?> _execute;
+        // Find all Border elements and update their backgrounds
+        UpdateBordersRecursive(this);
+    }
 
-        public RelayCommand(Action<T?> execute)
+    private void UpdateBordersRecursive(Control control)
+    {
+        if (control is Border border && border.Tag is UiMenuItem item)
         {
-            _execute = execute;
+            var isSelected = SelectedItem?.Id == item.Id;
+            border.Background = isSelected ? SelectedBackground : DefaultBackground;
         }
 
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute((T?)parameter);
+        if (control is Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                UpdateBordersRecursive(child);
+            }
+        }
+        else if (control is ContentControl contentControl && contentControl.Content is Control contentChild)
+        {
+            UpdateBordersRecursive(contentChild);
+        }
+        else if (control is ItemsControl itemsControl)
+        {
+            foreach (var child in itemsControl.GetRealizedContainers())
+            {
+                UpdateBordersRecursive(child);
+            }
+        }
+        else if (control is Decorator decorator && decorator.Child != null)
+        {
+            UpdateBordersRecursive(decorator.Child);
+        }
     }
 }
-
