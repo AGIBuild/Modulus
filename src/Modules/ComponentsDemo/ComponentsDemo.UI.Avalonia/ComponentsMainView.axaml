@@ -24,8 +24,8 @@
                            Margin="16,16,16,8"/>
                 
                 <!-- Using our NavigationView component -->
-                <nav:NavigationView Grid.Row="1" 
-                                    Items="{Binding DemoItems}"
+                <nav:NavigationView x:Name="DemoNavView"
+                                    Grid.Row="1" 
                                     SelectionChanged="OnNavigationItemSelected"
                                     Margin="8,0"/>
             </Grid>
