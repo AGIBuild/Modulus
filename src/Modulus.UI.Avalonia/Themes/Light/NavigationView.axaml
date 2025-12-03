@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- ============================================== -->
+    <!-- NavigationView - Light Theme Overrides        -->
+    <!-- ============================================== -->
+    
+    <!-- Surface Colors -->
+    <Color x:Key="NavItemBackgroundColor">Transparent</Color>
+    <Color x:Key="NavItemHoverColor">#E8E8E8</Color>
+    <Color x:Key="NavItemSelectedColor">#E0E7FF</Color>
+    <Color x:Key="NavItemActiveColor">#D0D0D0</Color>
+    
+    <!-- Text Colors -->
+    <Color x:Key="NavItemTextColor">#404040</Color>
+    <Color x:Key="NavItemSelectedTextColor">#1E1E1E</Color>
+    
+    <!-- Icon Colors -->
+    <Color x:Key="NavItemIconColor">#606060</Color>
+    <Color x:Key="NavItemSelectedIconColor">#4F46E5</Color>
+    
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="{StaticResource NavItemBackgroundColor}"/>
+    <SolidColorBrush x:Key="NavItemHoverBrush" Color="{StaticResource NavItemHoverColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="{StaticResource NavItemSelectedColor}"/>
+    <SolidColorBrush x:Key="NavItemActiveBrush" Color="{StaticResource NavItemActiveColor}"/>
+    <SolidColorBrush x:Key="NavItemTextBrush" Color="{StaticResource NavItemTextColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="{StaticResource NavItemSelectedTextColor}"/>
+    <SolidColorBrush x:Key="NavItemIconBrush" Color="{StaticResource NavItemIconColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="{StaticResource NavItemSelectedIconColor}"/>
+    
+</ResourceDictionary>
+

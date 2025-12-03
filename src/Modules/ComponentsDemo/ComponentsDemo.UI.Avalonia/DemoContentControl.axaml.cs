@@ -3,7 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
-using Modulus.UI.Avalonia.Components;
+using Modulus.UI.Avalonia.Controls;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
@@ -83,7 +83,7 @@ public partial class DemoContentControl : UserControl
             Height = 250,
             HorizontalAlignment = HorizontalAlignment.Left
         };
-        navView.ItemSelected += (s, item) =>
+        navView.SelectionChanged += (s, item) =>
         {
             // Show selected item (in real app, this would navigate)
         };

@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Modulus.Modules.ComponentsDemo.ViewModels"
              xmlns:local="using:Modulus.Modules.ComponentsDemo.UI.Avalonia"
-             xmlns:nav="using:Modulus.UI.Avalonia.Components"
+             xmlns:nav="using:Modulus.UI.Avalonia.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.ComponentsMainView"
              x:DataType="vm:ComponentsMainViewModel"
@@ -26,7 +26,7 @@
                 <!-- Using our NavigationView component -->
                 <nav:NavigationView Grid.Row="1" 
                                     Items="{Binding DemoItems}"
-                                    ItemSelected="OnNavigationItemSelected"
+                                    SelectionChanged="OnNavigationItemSelected"
                                     Margin="8,0"/>
             </Grid>
         </Border>

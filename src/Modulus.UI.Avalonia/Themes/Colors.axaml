@@ -1,0 +1,88 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- ============================================== -->
+    <!-- Color System - Design Tokens                   -->
+    <!-- ============================================== -->
+    
+    <!-- Primary Colors -->
+    <Color x:Key="PrimaryColor">#6366F1</Color>
+    <Color x:Key="PrimaryHoverColor">#4F46E5</Color>
+    <Color x:Key="PrimaryActiveColor">#4338CA</Color>
+    <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
+    
+    <!-- Surface Colors -->
+    <Color x:Key="SurfaceColor">#1E1E1E</Color>
+    <Color x:Key="SurfaceHoverColor">#2D2D2D</Color>
+    <Color x:Key="SurfaceActiveColor">#3D3D3D</Color>
+    <Color x:Key="SurfaceSelectedColor">#3B3B5C</Color>
+    
+    <!-- Background Colors -->
+    <Color x:Key="BackgroundColor">#121212</Color>
+    <Color x:Key="BackgroundSecondaryColor">#1A1A1A</Color>
+    
+    <!-- Text Colors -->
+    <Color x:Key="TextPrimaryColor">#E8E8E8</Color>
+    <Color x:Key="TextSecondaryColor">#A0A0A0</Color>
+    <Color x:Key="TextDisabledColor">#606060</Color>
+    
+    <!-- Border Colors -->
+    <Color x:Key="BorderColor">#303030</Color>
+    <Color x:Key="BorderHoverColor">#404040</Color>
+    
+    <!-- Status Colors -->
+    <Color x:Key="ErrorColor">#EF4444</Color>
+    <Color x:Key="WarningColor">#F59E0B</Color>
+    <Color x:Key="SuccessColor">#10B981</Color>
+    <Color x:Key="InfoColor">#3B82F6</Color>
+    
+    <!-- Navigation Specific -->
+    <Color x:Key="NavItemBackgroundColor">Transparent</Color>
+    <Color x:Key="NavItemHoverColor">#2D2D2D</Color>
+    <Color x:Key="NavItemSelectedColor">#2A2A4A</Color>
+    <Color x:Key="NavItemActiveColor">#3D3D3D</Color>
+    <Color x:Key="NavItemTextColor">#B0B0B0</Color>
+    <Color x:Key="NavItemSelectedTextColor">#FFFFFF</Color>
+    <Color x:Key="NavItemIconColor">#808080</Color>
+    <Color x:Key="NavItemSelectedIconColor">#A5B4FC</Color>
+    
+    <!-- Badge Colors -->
+    <Color x:Key="BadgeBackgroundColor">#EF4444</Color>
+    <Color x:Key="BadgeTextColor">#FFFFFF</Color>
+    
+    <!-- ============================================== -->
+    <!-- Brush Resources (using Colors above)          -->
+    <!-- ============================================== -->
+    
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource PrimaryHoverColor}"/>
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}"/>
+    
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHoverColor}"/>
+    <SolidColorBrush x:Key="SurfaceActiveBrush" Color="{StaticResource SurfaceActiveColor}"/>
+    
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+    <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondaryColor}"/>
+    
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}"/>
+    
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+    
+    <!-- Navigation Brushes -->
+    <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="{StaticResource NavItemBackgroundColor}"/>
+    <SolidColorBrush x:Key="NavItemHoverBrush" Color="{StaticResource NavItemHoverColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedBrush" Color="{StaticResource NavItemSelectedColor}"/>
+    <SolidColorBrush x:Key="NavItemActiveBrush" Color="{StaticResource NavItemActiveColor}"/>
+    <SolidColorBrush x:Key="NavItemTextBrush" Color="{StaticResource NavItemTextColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="{StaticResource NavItemSelectedTextColor}"/>
+    <SolidColorBrush x:Key="NavItemIconBrush" Color="{StaticResource NavItemIconColor}"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="{StaticResource NavItemSelectedIconColor}"/>
+    
+    <SolidColorBrush x:Key="BadgeBackgroundBrush" Color="{StaticResource BadgeBackgroundColor}"/>
+    <SolidColorBrush x:Key="BadgeTextBrush" Color="{StaticResource BadgeTextColor}"/>
+    
+</ResourceDictionary>
+

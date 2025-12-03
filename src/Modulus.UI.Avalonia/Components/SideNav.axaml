@@ -2,24 +2,24 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="using:Modulus.UI.Avalonia.Components"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="600"
              x:Class="Modulus.UI.Avalonia.Components.SideNav"
              x:Name="Root">
     
     <Grid RowDefinitions="*, Auto">
         <!-- Main Menu -->
-        <local:NavigationView Grid.Row="0" 
-                              Items="{Binding MainItems, ElementName=Root}"
-                              SelectedItem="{Binding MainSelectedItem, ElementName=Root}"
-                              IsCollapsed="{Binding IsCollapsed, ElementName=Root}"
-                              Margin="0,8,0,0" />
+        <controls:NavigationView Grid.Row="0" 
+                                 Items="{Binding MainItems, ElementName=Root}"
+                                 SelectedItem="{Binding MainSelectedItem, ElementName=Root}"
+                                 IsCollapsed="{Binding IsCollapsed, ElementName=Root}"
+                                 Margin="0,8,0,0" />
         
         <!-- Bottom Menu -->
-        <local:NavigationView Grid.Row="1" 
-                              Items="{Binding BottomItems, ElementName=Root}"
-                              SelectedItem="{Binding BottomSelectedItem, ElementName=Root}"
-                              IsCollapsed="{Binding IsCollapsed, ElementName=Root}"
-                              Margin="0,0,0,10" />
+        <controls:NavigationView Grid.Row="1" 
+                                 Items="{Binding BottomItems, ElementName=Root}"
+                                 SelectedItem="{Binding BottomSelectedItem, ElementName=Root}"
+                                 IsCollapsed="{Binding IsCollapsed, ElementName=Root}"
+                                 Margin="0,0,0,10" />
     </Grid>
 </UserControl>

@@ -1,102 +1,9 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:Modulus.UI.Avalonia.Components">
-    
-    <!-- ============================================== -->
-    <!-- NavigationView Styles                          -->
-    <!-- ============================================== -->
-    
-    <!-- Nav Item Base -->
-    <Style Selector="Border.navItem">
-        <Setter Property="Background" Value="{DynamicResource NavItemBackgroundBrush}"/>
-        <Setter Property="CornerRadius" Value="6"/>
-        <Setter Property="Padding" Value="12,8"/>
-        <Setter Property="Margin" Value="0,2"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.15"/>
-            </Transitions>
-        </Setter>
-    </Style>
-    
-    <Style Selector="Border.navItem TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
-    </Style>
-    
-    <!-- Nav Item Hover -->
-    <Style Selector="Border.navItem:pointerover">
-        <Setter Property="Background" Value="{DynamicResource NavItemHoverBackgroundBrush}"/>
-    </Style>
-    
-    <!-- Nav Item Selected (via Class) -->
-    <Style Selector="Border.navItem.selected">
-        <Setter Property="Background" Value="{DynamicResource NavItemSelectedBackgroundBrush}"/>
-    </Style>
-    
-    <Style Selector="Border.navItem.selected TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedTextBrush}"/>
-    </Style>
-    
-    <!-- Nav Item Disabled -->
-    <Style Selector="Border.navItem:disabled">
-        <Setter Property="Opacity" Value="0.4"/>
-        <Setter Property="Cursor" Value="Arrow"/>
-    </Style>
-    
-    <!-- Child Nav Item (indented) -->
-    <Style Selector="Border.navItem.child">
-        <Setter Property="Padding" Value="10,6"/>
-        <Setter Property="Margin" Value="0,1"/>
-    </Style>
-    
-    <Style Selector="Border.navItem.child TextBlock.displayName">
-        <Setter Property="FontSize" Value="13"/>
-    </Style>
-    
-    <!-- NavigationView Collapsed Mode -->
-    <Style Selector="local|NavigationView[IsCollapsed=True] Border.navItem">
-        <Setter Property="Padding" Value="8"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-    </Style>
-    
-    <!-- Expand/Collapse Animation Container -->
-    <Style Selector="Border.childContainer">
-        <Setter Property="Transitions">
-            <Transitions>
-                <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
-            </Transitions>
-        </Setter>
-    </Style>
-    
-    <!-- Chevron Icon -->
-    <Style Selector="TextBlock.chevron">
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="Foreground" Value="{DynamicResource NavItemIconBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="4,0,0,0"/>
-    </Style>
-    
-    <!-- Badge -->
-    <Style Selector="Border.badge">
-        <Setter Property="Background" Value="{DynamicResource BadgeBackgroundBrush}"/>
-        <Setter Property="CornerRadius" Value="10"/>
-        <Setter Property="MinWidth" Value="20"/>
-        <Setter Property="Padding" Value="4,2"/>
-        <Setter Property="Margin" Value="8,0"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-    
-    <Style Selector="Border.badge TextBlock">
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{DynamicResource BadgeTextBrush}"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <!-- ============================================== -->
     <!-- Legacy ListBox Navigation Styles              -->
+    <!-- (For backwards compatibility)                 -->
     <!-- ============================================== -->
     
     <Style Selector="ListBox.navList">
@@ -115,45 +22,12 @@
     </Style>
     
     <Style Selector="ListBox.navList ListBoxItem:pointerover">
-        <Setter Property="Background" Value="{DynamicResource NavItemHoverBackgroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource NavItemHoverBrush}"/>
     </Style>
     
     <Style Selector="ListBox.navList ListBoxItem:selected">
-        <Setter Property="Background" Value="{DynamicResource NavItemActiveBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
-    </Style>
-    
-    <!-- ============================================== -->
-    <!-- Legacy Button Navigation Styles               -->
-    <!-- ============================================== -->
-    
-    <Style Selector="Button.navItem">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="12,10"/>
-        <Setter Property="Margin" Value="4,1"/>
-        <Setter Property="CornerRadius" Value="6"/>
-        <Setter Property="HorizontalAlignment" Value="Stretch"/>
-        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-        <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    
-    <Style Selector="Button.navItem:pointerover">
-        <Setter Property="Background" Value="{DynamicResource NavItemHoverBackgroundBrush}"/>
-    </Style>
-    
-    <Style Selector="Button.navItem:pressed">
-        <Setter Property="Background" Value="{DynamicResource NavItemActiveBackgroundBrush}"/>
-    </Style>
-    
-    <Style Selector="Button.navItem:disabled">
-        <Setter Property="Opacity" Value="0.4"/>
-    </Style>
-    
-    <Style Selector="Button.childNavItem">
-        <Setter Property="Padding" Value="8,8"/>
-        <Setter Property="Margin" Value="4,0,4,1"/>
+        <Setter Property="Background" Value="{DynamicResource NavItemSelectedBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedTextBrush}"/>
     </Style>
     
 </Styles>
