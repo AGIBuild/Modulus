@@ -1,0 +1,47 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Page instance lifecycle control determines how view instances are managed during navigation.
+</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem><strong>Default:</strong> Use host default (typically Singleton)</MudListItem>
+    <MudListItem><strong>Singleton:</strong> Same instance reused across navigations</MudListItem>
+    <MudListItem><strong>Transient:</strong> New instance created each navigation</MudListItem>
+</MudList>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Instance Information</MudText>
+    
+    <MudStack Spacing="2">
+        <div class="d-flex">
+            <MudText Class="mr-2"><strong>Instance ID:</strong></MudText>
+            <MudText Color="Color.Primary">@_instanceId</MudText>
+        </div>
+        <div class="d-flex">
+            <MudText Class="mr-2"><strong>Created At:</strong></MudText>
+            <MudText Color="Color.Primary">@_createdAt.ToString("HH:mm:ss.fff")</MudText>
+        </div>
+    </MudStack>
+    
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+        This page uses Transient mode - notice a new instance is created each time you navigate here.
+    </MudText>
+</MudPaper>
+
+<MudAlert Severity="Severity.Warning" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        Navigate away and back to see a new instance created with a new ID and timestamp!
+    </MudText>
+</MudAlert>
+
+@code {
+    private static int _instanceCounter;
+    private int _instanceId;
+    private DateTime _createdAt;
+
+    protected override void OnInitialized()
+    {
+        _instanceId = ++_instanceCounter;
+        _createdAt = DateTime.Now;
+    }
+}
+

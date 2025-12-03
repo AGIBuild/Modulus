@@ -1,0 +1,39 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Badges can display notification counts on menu items.
+</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem><strong>BadgeCount:</strong> The number to display</MudListItem>
+    <MudListItem><strong>BadgeColor:</strong> 'error', 'warning', 'info', 'success'</MudListItem>
+    <MudListItem>Badge disappears when count is 0 or null</MudListItem>
+</MudList>
+
+<MudText Typo="Typo.h6" Class="mb-3">Badge Examples</MudText>
+
+<MudStack Spacing="2">
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Error Badge</MudText>
+        <MudBadge Content="5" Color="Color.Error" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Warning Badge</MudText>
+        <MudBadge Content="12" Color="Color.Warning" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Info Badge</MudText>
+        <MudBadge Content="3" Color="Color.Info" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Success Badge</MudText>
+        <MudBadge Content="1" Color="Color.Success" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>No Badge (count = null)</MudText>
+        <MudText Color="Color.Secondary">—</MudText>
+    </MudPaper>
+</MudStack>
+

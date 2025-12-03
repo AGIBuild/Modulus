@@ -1,0 +1,128 @@
+@page "/components"
+@page "/components/{DemoId}"
+
+<MudGrid>
+    <!-- Demo Navigation Sidebar -->
+    <MudItem xs="12" sm="3">
+        <MudPaper Elevation="2" Class="pa-4" Style="height: 100%;">
+            <MudText Typo="Typo.h6" Class="mb-4">Component Demos</MudText>
+            <MudNavMenu>
+                @foreach (var item in _viewModel.DemoItems)
+                {
+                    @if (item.Children != null && item.Children.Count > 0)
+                    {
+                        <MudNavGroup Title="@item.DisplayName" Icon="@GetIcon(item.Icon)" Expanded="@item.IsExpanded">
+                            @foreach (var child in item.Children)
+                            {
+                                <MudNavLink Href="@($"/components/{child.NavigationKey}")" 
+                                            Icon="@GetIcon(child.Icon)"
+                                            Disabled="@(!child.IsEnabled)"
+                                            Match="NavLinkMatch.All">
+                                    @child.DisplayName
+                                    @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                                    {
+                                        <MudBadge Content="@child.BadgeCount" Color="Color.Error" Overlap="false" Class="ml-2" />
+                                    }
+                                </MudNavLink>
+                            }
+                        </MudNavGroup>
+                    }
+                    else
+                    {
+                        <MudNavLink Href="@($"/components/{item.NavigationKey}")" 
+                                    Icon="@GetIcon(item.Icon)"
+                                    Disabled="@(!item.IsEnabled)"
+                                    Match="NavLinkMatch.All">
+                            @item.DisplayName
+                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                            {
+                                <MudBadge Content="@item.BadgeCount" Color="@GetBadgeColor(item.BadgeColor)" Overlap="false" Class="ml-2" />
+                            }
+                        </MudNavLink>
+                    }
+                }
+            </MudNavMenu>
+        </MudPaper>
+    </MudItem>
+    
+    <!-- Demo Content Area -->
+    <MudItem xs="12" sm="9">
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudText Typo="Typo.h4" Class="mb-2">@_viewModel.CurrentDemoName</MudText>
+            <MudDivider Class="mb-4" />
+            
+            @switch (_currentDemoId)
+            {
+                case "nav-demo":
+                    <NavigationDemo />
+                    break;
+                case "badge-demo":
+                    <BadgeDemo />
+                    break;
+                case "disabled-demo":
+                    <DisabledDemo />
+                    break;
+                case "sub-item-1":
+                case "sub-item-2":
+                case "sub-item-3":
+                    <SubItemDemo ItemId="@_currentDemoId" />
+                    break;
+                case "context-demo":
+                    <ContextMenuDemo />
+                    break;
+                case "keyboard-demo":
+                    <KeyboardDemo />
+                    break;
+                case "lifecycle-demo":
+                    <LifecycleDemo />
+                    break;
+                default:
+                    <NavigationDemo />
+                    break;
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public string? DemoId { get; set; }
+
+    private ComponentsMainViewModel _viewModel = new();
+    private string _currentDemoId = "nav-demo";
+
+    protected override void OnParametersSet()
+    {
+        _currentDemoId = DemoId ?? "nav-demo";
+        _viewModel.NavigateTo(_currentDemoId);
+    }
+
+    private string GetIcon(string iconName)
+    {
+        return iconName?.ToLower() switch
+        {
+            "🧭" or "compass" => Icons.Material.Filled.Explore,
+            "🔢" or "notifications" or "bell" => Icons.Material.Filled.Notifications,
+            "🚫" or "block" => Icons.Material.Filled.Block,
+            "📁" or "folder" => Icons.Material.Filled.Folder,
+            "📄" or "file" => Icons.Material.Filled.InsertDriveFile,
+            "📋" or "list" => Icons.Material.Filled.List,
+            "⌨️" or "keyboard" => Icons.Material.Filled.Keyboard,
+            "🔄" or "refresh" => Icons.Material.Filled.Refresh,
+            _ => Icons.Material.Filled.Circle
+        };
+    }
+
+    private Color GetBadgeColor(string? colorName)
+    {
+        return colorName?.ToLower() switch
+        {
+            "error" or "red" => Color.Error,
+            "warning" or "orange" => Color.Warning,
+            "info" or "blue" => Color.Info,
+            "success" or "green" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}
+

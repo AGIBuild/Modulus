@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.ComponentsDemo.UI.Blazor</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ComponentsDemo.Core\ComponentsDemo.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="8.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
+  </ItemGroup>
+
+  <!-- Copy manifest.json to output directory -->
+  <ItemGroup>
+    <None Include="..\manifest.json" CopyToOutputDirectory="PreserveNewest" Link="manifest.json" />
+  </ItemGroup>
+
+</Project>
+

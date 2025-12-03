@@ -1,0 +1,24 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Menu items can be disabled to prevent interaction.
+</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem Icon="@Icons.Material.Filled.Block"><code>IsEnabled = false</code> makes item grayed out</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.DoNotTouch">Disabled items don't respond to clicks</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Keyboard">Keyboard navigation skips disabled items</MudListItem>
+</MudList>
+
+<MudAlert Severity="Severity.Warning" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        <strong>Try It:</strong> Look at "Sub Item 3 (Disabled)" in the Hierarchical Demo group. It appears grayed out and cannot be clicked.
+    </MudText>
+</MudAlert>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Example Buttons</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary">Enabled</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="true">Disabled</MudButton>
+    </MudStack>
+</MudPaper>
+

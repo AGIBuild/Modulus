@@ -1,0 +1,346 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
+
+public partial class DemoContentControl : UserControl
+{
+    public static readonly StyledProperty<string> DemoIdProperty =
+        AvaloniaProperty.Register<DemoContentControl, string>(nameof(DemoId), "nav-demo");
+
+    public string DemoId
+    {
+        get => GetValue(DemoIdProperty);
+        set => SetValue(DemoIdProperty, value);
+    }
+
+    private ContentControl? _contentHost;
+
+    public DemoContentControl()
+    {
+        InitializeComponent();
+        _contentHost = this.FindControl<ContentControl>("ContentHost");
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == DemoIdProperty)
+        {
+            UpdateContent();
+        }
+    }
+
+    protected override void OnAttachedToVisualTree(global::Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        UpdateContent();
+    }
+
+    private void UpdateContent()
+    {
+        if (_contentHost == null) return;
+
+        _contentHost.Content = DemoId switch
+        {
+            "nav-demo" => CreateNavigationDemo(),
+            "badge-demo" => CreateBadgeDemo(),
+            "disabled-demo" => CreateDisabledDemo(),
+            "sub-item-1" or "sub-item-2" or "sub-item-3" => CreateSubItemDemo(DemoId),
+            "context-demo" => CreateContextMenuDemo(),
+            "keyboard-demo" => CreateKeyboardDemo(),
+            "lifecycle-demo" => CreateLifecycleDemo(),
+            _ => CreateNavigationDemo()
+        };
+    }
+
+    private Control CreateNavigationDemo()
+    {
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "This demo showcases all navigation features including:",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                CreateInfoCard(new[]
+                {
+                    "• Collapsible navigation panel",
+                    "• Icon-only mode with tooltips",
+                    "• Navigation guards (CanNavigateFrom/To)",
+                    "• Page instance lifecycle (Singleton/Transient)"
+                }),
+                CreateTipBox("Toggle the main navigation using the ☰ button in the title bar to see collapse mode.")
+            }
+        };
+    }
+
+    private Control CreateBadgeDemo()
+    {
+        var stack = new StackPanel { Spacing = 16 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Badges can display notification counts on menu items.",
+            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+        });
+
+        var examples = new[]
+        {
+            ("Error Badge", 5, "#E53935"),
+            ("Warning Badge", 12, "#FFA726"),
+            ("Info Badge", 3, "#29B6F6"),
+            ("Success Badge", 1, "#66BB6A")
+        };
+
+        foreach (var (name, count, color) in examples)
+        {
+            var row = new Border
+            {
+                Background = global::Avalonia.Media.Brushes.White,
+                Opacity = 0.1,
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12),
+                Margin = new Thickness(0, 4)
+            };
+            var grid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*, Auto") };
+            grid.Children.Add(new TextBlock { Text = name, VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center });
+            var badge = new Border
+            {
+                Background = global::Avalonia.Media.Brush.Parse(color),
+                CornerRadius = new CornerRadius(10),
+                MinWidth = 24,
+                Padding = new Thickness(6, 2),
+                [Grid.ColumnProperty] = 1
+            };
+            badge.Child = new TextBlock
+            {
+                Text = count.ToString(),
+                Foreground = global::Avalonia.Media.Brushes.White,
+                FontSize = 12,
+                FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center
+            };
+            grid.Children.Add(badge);
+            row.Child = grid;
+            stack.Children.Add(row);
+        }
+
+        return stack;
+    }
+
+    private Control CreateDisabledDemo()
+    {
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Menu items can be disabled to prevent interaction.",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                CreateInfoCard(new[]
+                {
+                    "• IsEnabled = false makes item grayed out",
+                    "• Disabled items don't respond to clicks",
+                    "• Keyboard navigation skips disabled items"
+                }),
+                CreateTipBox("Look at 'Sub Item 3 (Disabled)' in the Hierarchical Demo group.")
+            }
+        };
+    }
+
+    private Control CreateSubItemDemo(string itemId)
+    {
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = $"This is a sub-item of the hierarchical menu.\nItem ID: {itemId}",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                CreateInfoCard(new[]
+                {
+                    "This is a child item inside a hierarchical menu group.",
+                    "Click the group header to expand/collapse children."
+                })
+            }
+        };
+    }
+
+    private Control CreateContextMenuDemo()
+    {
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Context menus provide additional actions for menu items.",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                CreateInfoCard(new[]
+                {
+                    "• Define ContextActions on MenuItem",
+                    "• Right-click to show the menu",
+                    "• Each action has Label, Icon, and Execute callback"
+                }),
+                CreateTipBox("Right-click on 'Context Menu Demo' in the main navigation to see the context menu.")
+            }
+        };
+    }
+
+    private Control CreateKeyboardDemo()
+    {
+        var stack = new StackPanel { Spacing = 16 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Full keyboard navigation support for accessibility and power users.",
+            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+        });
+
+        var shortcuts = new[]
+        {
+            ("↑ / ↓", "Move selection up/down"),
+            ("Enter / Space", "Activate selected item"),
+            ("→", "Expand group"),
+            ("←", "Collapse group"),
+            ("Escape", "Collapse all groups"),
+            ("Tab", "Standard focus navigation")
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = ColumnDefinitions.Parse("Auto, *"),
+            RowDefinitions = RowDefinitions.Parse(string.Join(",", Enumerable.Repeat("Auto", shortcuts.Length)))
+        };
+
+        for (int i = 0; i < shortcuts.Length; i++)
+        {
+            var (key, action) = shortcuts[i];
+            var keyText = new TextBlock { Text = key, FontWeight = global::Avalonia.Media.FontWeight.Bold, Margin = new Thickness(0, 0, 16, 8) };
+            var actionText = new TextBlock { Text = action, Margin = new Thickness(0, 0, 0, 8) };
+            Grid.SetRow(keyText, i);
+            Grid.SetColumn(keyText, 0);
+            Grid.SetRow(actionText, i);
+            Grid.SetColumn(actionText, 1);
+            grid.Children.Add(keyText);
+            grid.Children.Add(actionText);
+        }
+
+        var card = new Border
+        {
+            Background = global::Avalonia.Media.Brushes.White,
+            Opacity = 0.1,
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16),
+            Child = grid
+        };
+        stack.Children.Add(card);
+        stack.Children.Add(CreateTipBox("Focus the navigation panel and try the keyboard shortcuts!"));
+
+        return stack;
+    }
+
+    private Control CreateLifecycleDemo()
+    {
+        var instanceId = new Random().Next(1000, 9999);
+        var createdAt = DateTime.Now.ToString("HH:mm:ss.fff");
+
+        return new StackPanel
+        {
+            Spacing = 16,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Page instance lifecycle control determines how view instances are managed.",
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                CreateInfoCard(new[]
+                {
+                    "• Default: Use host default (typically Singleton)",
+                    "• Singleton: Same instance reused across navigations",
+                    "• Transient: New instance created each navigation"
+                }),
+                new Border
+                {
+                    Background = global::Avalonia.Media.Brushes.White,
+                    Opacity = 0.1,
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(16),
+                    Child = new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock { Text = "Instance Information:", FontWeight = global::Avalonia.Media.FontWeight.SemiBold },
+                            new StackPanel
+                            {
+                                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                                Children =
+                                {
+                                    new TextBlock { Text = "Instance ID: " },
+                                    new TextBlock { Text = instanceId.ToString(), FontWeight = global::Avalonia.Media.FontWeight.Bold }
+                                }
+                            },
+                            new StackPanel
+                            {
+                                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                                Children =
+                                {
+                                    new TextBlock { Text = "Created At: " },
+                                    new TextBlock { Text = createdAt, FontWeight = global::Avalonia.Media.FontWeight.Bold }
+                                }
+                            }
+                        }
+                    }
+                },
+                CreateTipBox("Navigate away and back to see a new instance created!")
+            }
+        };
+    }
+
+    private Border CreateInfoCard(string[] lines)
+    {
+        var stack = new StackPanel { Spacing = 4 };
+        foreach (var line in lines)
+        {
+            stack.Children.Add(new TextBlock { Text = line, TextWrapping = global::Avalonia.Media.TextWrapping.Wrap });
+        }
+        return new Border
+        {
+            Background = global::Avalonia.Media.Brushes.White,
+            Opacity = 0.1,
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16),
+            Child = stack
+        };
+    }
+
+    private Border CreateTipBox(string tip)
+    {
+        return new Border
+        {
+            Background = global::Avalonia.Media.Brush.Parse("#29B6F6"),
+            Opacity = 0.2,
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12),
+            Child = new TextBlock
+            {
+                Text = "💡 " + tip,
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+            }
+        };
+    }
+}
+

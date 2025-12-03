@@ -1,0 +1,142 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Modulus.Modules.ComponentsDemo.ViewModels"
+             xmlns:local="using:Modulus.Modules.ComponentsDemo.UI.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.ComponentsMainView"
+             x:DataType="vm:ComponentsMainViewModel">
+    
+    <Grid ColumnDefinitions="220, *">
+        <!-- Demo Navigation Sidebar -->
+        <Border Grid.Column="0" 
+                Background="{DynamicResource SurfaceBrush}" 
+                CornerRadius="8,0,0,8"
+                Margin="0,0,1,0">
+            <Grid RowDefinitions="Auto, *">
+                <TextBlock Grid.Row="0" 
+                           Text="Component Demos" 
+                           FontWeight="Bold" 
+                           FontSize="16"
+                           Margin="16,16,16,8"/>
+                
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding DemoItems}" Margin="8,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <!-- Main item button -->
+                                    <Button Classes="navItem"
+                                            Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                            CommandParameter="{Binding}"
+                                            IsEnabled="{Binding IsEnabled}"
+                                            Padding="12,8"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left">
+                                        <Button.IsVisible>
+                                            <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                                <Binding Path="Children" Converter="{x:Static ObjectConverters.IsNull}"/>
+                                                <Binding Path="Children.Count" FallbackValue="0" Converter="{x:Static local:Converters.IsZero}"/>
+                                            </MultiBinding>
+                                        </Button.IsVisible>
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </ToolTip.Tip>
+                                        <Grid ColumnDefinitions="24, *, Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="2"
+                                                    IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                    Background="#E53935"
+                                                    CornerRadius="10" MinWidth="20" Padding="6,2">
+                                                <TextBlock Text="{Binding BadgeCount}" 
+                                                           Foreground="White" 
+                                                           FontSize="11" 
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                    
+                                    <!-- Group header (for items with children) -->
+                                    <Button Classes="navItem"
+                                            Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).ToggleGroupCommand}"
+                                            CommandParameter="{Binding}"
+                                            Padding="12,8"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Left">
+                                        <Button.IsVisible>
+                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                <Binding Path="Children" Converter="{x:Static ObjectConverters.IsNotNull}"/>
+                                                <Binding Path="Children.Count" FallbackValue="0" Converter="{x:Static local:Converters.IsNotZero}"/>
+                                            </MultiBinding>
+                                        </Button.IsVisible>
+                                        <Grid ColumnDefinitions="24, *, Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="16" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" 
+                                                       Text="{Binding IsExpanded, Converter={x:Static local:Converters.ExpandedToChevron}}"
+                                                       FontSize="12" 
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+                                    
+                                    <!-- Children items -->
+                                    <ItemsControl ItemsSource="{Binding Children}"
+                                                  IsVisible="{Binding IsExpanded}"
+                                                  Margin="16,0,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Classes="childNavItem"
+                                                        Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding IsEnabled}"
+                                                        Padding="12,6"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Left"
+                                                        Opacity="{Binding IsEnabled, Converter={x:Static local:Converters.EnabledToOpacity}}">
+                                                    <Grid ColumnDefinitions="20, *">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+        
+        <!-- Demo Content Area -->
+        <Border Grid.Column="1" 
+                Background="{DynamicResource CardBackgroundBrush}"
+                CornerRadius="0,8,8,0"
+                Padding="24">
+            <Grid RowDefinitions="Auto, *">
+                <!-- Demo Title -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                    <TextBlock Text="{Binding CurrentDemoName}" 
+                               FontSize="24" 
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    <Border Height="2" 
+                            Background="{DynamicResource NavItemActiveBackgroundBrush}"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Width="60"/>
+                </StackPanel>
+                
+                <!-- Demo Content -->
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                    <local:DemoContentControl DemoId="{Binding CurrentDemoId}"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
+

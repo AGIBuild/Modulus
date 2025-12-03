@@ -1,0 +1,38 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Context menus provide additional actions for menu items.
+</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem Icon="@Icons.Material.Filled.Code">Define <code>ContextActions</code> on MenuItem</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Mouse">Right-click to show the menu</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Functions">Each action has Label, Icon, and Execute callback</MudListItem>
+</MudList>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Interactive Example</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Right-click on the card below to see a context menu:</MudText>
+    
+    <MudMenu ActivationEvent="@MouseEvent.RightClick">
+        <ActivatorContent>
+            <MudPaper Elevation="2" Class="pa-4" Style="cursor: context-menu; background-color: var(--mud-palette-surface);">
+                <MudText>Right-click me!</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Last action: @_lastAction</MudText>
+            </MudPaper>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OnAction("Edit"))">Edit</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => OnAction("Copy"))">Copy</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OnAction("Delete"))">Delete</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+</MudPaper>
+
+@code {
+    private string _lastAction = "None";
+
+    private void OnAction(string action)
+    {
+        _lastAction = $"{action} clicked at {DateTime.Now:HH:mm:ss}";
+    }
+}
+
