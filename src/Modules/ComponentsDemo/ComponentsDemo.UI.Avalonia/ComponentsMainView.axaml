@@ -6,7 +6,8 @@
              xmlns:local="using:Modulus.Modules.ComponentsDemo.UI.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.ComponentsMainView"
-             x:DataType="vm:ComponentsMainViewModel">
+             x:DataType="vm:ComponentsMainViewModel"
+             x:Name="Root">
     
     <Grid ColumnDefinitions="220, *">
         <!-- Demo Navigation Sidebar -->
@@ -28,7 +29,7 @@
                                 <StackPanel>
                                     <!-- Main item button -->
                                     <Button Classes="navItem"
-                                            Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                            Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
                                             CommandParameter="{Binding}"
                                             IsEnabled="{Binding IsEnabled}"
                                             Padding="12,8"
@@ -61,7 +62,7 @@
                                     
                                     <!-- Group header (for items with children) -->
                                     <Button Classes="navItem"
-                                            Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).ToggleGroupCommand}"
+                                            Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).ToggleGroupCommand}"
                                             CommandParameter="{Binding}"
                                             Padding="12,8"
                                             HorizontalAlignment="Stretch"
@@ -89,7 +90,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Classes="childNavItem"
-                                                        Command="{Binding $parent[local:ComponentsMainView].((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                                        Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
                                                         CommandParameter="{Binding}"
                                                         IsEnabled="{Binding IsEnabled}"
                                                         Padding="12,6"
@@ -139,4 +140,3 @@
         </Border>
     </Grid>
 </UserControl>
-
