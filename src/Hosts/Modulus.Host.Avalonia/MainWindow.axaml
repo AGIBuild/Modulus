@@ -3,9 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
-        xmlns:ui="using:Modulus.UI.Abstractions"
-        xmlns:behaviors="using:Modulus.Host.Avalonia.Behaviors"
-        xmlns:i="using:Avalonia.Xaml.Interactivity"
+        xmlns:components="using:Modulus.Host.Avalonia.Components"
         mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
         x:Class="Modulus.Host.Avalonia.MainWindow"
         x:DataType="vm:ShellViewModel"
@@ -29,23 +27,8 @@
         </ExperimentalAcrylicBorder>
 
         <Grid RowDefinitions="Auto, *">
-            <!-- Title Bar -->
-            <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Height="50" 
-                  Background="{DynamicResource TitleBarBackgroundBrush}">
-                <i:Interaction.Behaviors>
-                    <behaviors:WindowDragBehavior />
-                </i:Interaction.Behaviors>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
-                    <TextBlock Text="MODULUS" FontWeight="Black" FontSize="18" 
-                               Foreground="{DynamicResource TitleBarTextBrush}" 
-                               VerticalAlignment="Center"/>
-                    <Border Background="{DynamicResource TitleBarBadgeBackgroundBrush}" 
-                            CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
-                         <TextBlock Text="HOST" FontSize="10" FontWeight="Bold" 
-                                    Foreground="{DynamicResource TitleBarTextBrush}"/>
-                    </Border>
-                </StackPanel>
-            </Grid>
+            <!-- Title Bar Component -->
+            <components:TitleBar Grid.Row="0" />
 
             <!-- Main Content Area -->
             <SplitView Grid.Row="1" DisplayMode="CompactInline" IsPaneOpen="True" 
@@ -53,46 +36,13 @@
                        Background="Transparent" 
                        PaneBackground="{DynamicResource SidebarBackgroundBrush}">
                 <SplitView.Pane>
-                    <Grid RowDefinitions="*, Auto">
-                        <!-- Main Items -->
-                        <ListBox Grid.Row="0" Classes="navList"
-                                 ItemsSource="{Binding MainMenuItems}"
-                                 SelectedItem="{Binding SelectedMainMenuItem}"
-                                 Margin="0,8,0,0">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="ui:MenuItem">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding Icon}" FontSize="16" 
-                                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"/>
-                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        
-                        <!-- Bottom Items -->
-                        <ListBox Grid.Row="1" Classes="navList"
-                                 ItemsSource="{Binding BottomMenuItems}"
-                                 SelectedItem="{Binding SelectedBottomMenuItem}"
-                                 Margin="0,0,0,10">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="ui:MenuItem">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding Icon}" FontSize="16" 
-                                                   VerticalAlignment="Center" Width="20" TextAlignment="Center"/>
-                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Grid>
+                    <!-- SideNav Component -->
+                    <components:SideNav DataContext="{Binding}" />
                 </SplitView.Pane>
                 
                 <SplitView.Content>
-                    <Border x:Name="ContentBorder" CornerRadius="12,0,0,0" Margin="0" Padding="20" ClipToBounds="True"
-                            Background="{DynamicResource ContentBackgroundBrush}">
-                        <ContentControl x:Name="MainContent" Content="{Binding CurrentView}" Background="Transparent"/>
-                    </Border>
+                    <!-- ContentHost Component -->
+                    <components:ContentHost DataContext="{Binding}" />
                 </SplitView.Content>
             </SplitView>
         </Grid>
