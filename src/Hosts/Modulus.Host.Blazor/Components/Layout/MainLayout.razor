@@ -1,0 +1,206 @@
+﻿@inherits LayoutComponentBase
+@inject Modulus.UI.Abstractions.IThemeService ThemeService
+@inject Modulus.UI.Abstractions.IMenuRegistry MenuRegistry
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<MudThemeProvider @ref="_mudThemeProvider" Theme="_theme" IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Class="mud-theme-gradient">
+        <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h5" Class="ml-3 fw-bold">MODULUS</MudText>
+        <MudChip T="string" Size="Size.Small" Color="Color.Surface" Class="ml-2">HOST</MudChip>
+        <MudSpacer />
+        <MudIconButton Icon="@(_isDarkMode ? MudBlazor.Icons.Material.Filled.LightMode : MudBlazor.Icons.Material.Filled.DarkMode)" 
+                       Color="Color.Inherit" OnClick="@ToggleTheme" />
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="@DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md">
+        <div class="drawer-content">
+            <!-- Top Section: Header + Main Menu -->
+            <div class="drawer-top">
+                <MudDrawerHeader>
+                    <MudText Typo="Typo.h6">Navigation</MudText>
+                </MudDrawerHeader>
+                <MudNavMenu Bordered="true" Color="Color.Primary">
+                    <!-- Static Home -->
+                    <MudNavLink Href="/" Icon="@MudBlazor.Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                        Home
+                    </MudNavLink>
+                    
+                    <!-- Dynamic Main Menu Items -->
+                    @foreach (var item in _mainMenuItems)
+                    {
+                        <MudNavLink Href="@item.NavigationKey" Icon="@GetIcon(item.Icon)" Match="NavLinkMatch.Prefix">
+                            @item.DisplayName
+                        </MudNavLink>
+                    }
+                </MudNavMenu>
+            </div>
+            
+            <!-- Bottom Section: Bottom Menu Items -->
+            <div class="drawer-bottom">
+                <MudDivider Class="mb-2" />
+                <MudNavMenu Bordered="true" Color="Color.Primary">
+                    @foreach (var item in _bottomMenuItems)
+                    {
+                        <MudNavLink Href="@item.NavigationKey" Icon="@GetIcon(item.Icon)" Match="NavLinkMatch.Prefix">
+                            @item.DisplayName
+                        </MudNavLink>
+                    }
+                </MudNavMenu>
+            </div>
+        </div>
+    </MudDrawer>
+    
+    <MudMainContent Class="pt-16">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<style>
+    .mud-theme-gradient {
+        background: linear-gradient(135deg, #7B1FA2 0%, #9C27B0 50%, #C2185B 100%) !important;
+    }
+    
+    .drawer-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .drawer-top {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .drawer-bottom {
+        flex-shrink: 0;
+        padding-bottom: 8px;
+    }
+</style>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode;
+    private MudThemeProvider? _mudThemeProvider;
+    private List<Modulus.UI.Abstractions.MenuItem> _mainMenuItems = new();
+    private List<Modulus.UI.Abstractions.MenuItem> _bottomMenuItems = new();
+    
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#9C27B0",
+            Secondary = "#E91E63",
+            AppbarBackground = "#7B1FA2",
+            Background = "#F5F0FF",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#F8F4FF",
+            AppbarText = "#FFFFFF",
+            TextPrimary = "#1A1A1A",
+            TextSecondary = "#4A4A4A",
+            DrawerText = "#424242",
+            DrawerIcon = "#7B1FA2"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#CE93D8",
+            Secondary = "#F48FB1",
+            AppbarBackground = "#242424",
+            Background = "#121212",
+            Surface = "#1E1E1E",
+            DrawerBackground = "#1A1A1A",
+            TextPrimary = "#E8E8E8",
+            TextSecondary = "#A0A0A0",
+            DrawerText = "#B0B0B0",
+            DrawerIcon = "#CE93D8"
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to theme changes
+        ThemeService.ThemeChanged += OnThemeChanged;
+        _isDarkMode = ThemeService.CurrentTheme == UiAppTheme.Dark;
+        
+        // Load menu items
+        RefreshMenuItems();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _mudThemeProvider != null)
+        {
+            // Only set from system if not already set
+            if (ThemeService.CurrentTheme == UiAppTheme.System)
+            {
+                _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+                ThemeService.SetTheme(_isDarkMode ? UiAppTheme.Dark : UiAppTheme.Light);
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void RefreshMenuItems()
+    {
+        _mainMenuItems = MenuRegistry.GetItems(Modulus.UI.Abstractions.MenuLocation.Main).ToList();
+        _bottomMenuItems = MenuRegistry.GetItems(Modulus.UI.Abstractions.MenuLocation.Bottom).ToList();
+    }
+
+    private void OnThemeChanged(object? sender, UiAppTheme theme)
+    {
+        _isDarkMode = theme == UiAppTheme.Dark;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleTheme()
+    {
+        _isDarkMode = !_isDarkMode;
+        ThemeService.SetTheme(_isDarkMode ? UiAppTheme.Dark : UiAppTheme.Light);
+    }
+
+    private string GetIcon(string iconName)
+    {
+        // Map icon names to MudBlazor icons
+        return iconName?.ToLower() switch
+        {
+            "extension" or "modules" => MudBlazor.Icons.Material.Filled.Extension,
+            "settings" or "gear" => MudBlazor.Icons.Material.Filled.Settings,
+            "home" => MudBlazor.Icons.Material.Filled.Home,
+            "note" or "notes" => MudBlazor.Icons.Material.Filled.Note,
+            "echo" or "voice" => MudBlazor.Icons.Material.Filled.RecordVoiceOver,
+            "dashboard" => MudBlazor.Icons.Material.Filled.Dashboard,
+            "person" or "user" => MudBlazor.Icons.Material.Filled.Person,
+            "search" => MudBlazor.Icons.Material.Filled.Search,
+            "info" => MudBlazor.Icons.Material.Filled.Info,
+            "help" => MudBlazor.Icons.Material.Filled.Help,
+            "folder" => MudBlazor.Icons.Material.Filled.Folder,
+            "file" => MudBlazor.Icons.Material.Filled.InsertDriveFile,
+            "code" => MudBlazor.Icons.Material.Filled.Code,
+            "chat" => MudBlazor.Icons.Material.Filled.Chat,
+            "mail" or "email" => MudBlazor.Icons.Material.Filled.Mail,
+            "calendar" => MudBlazor.Icons.Material.Filled.CalendarMonth,
+            "star" => MudBlazor.Icons.Material.Filled.Star,
+            "favorite" or "heart" => MudBlazor.Icons.Material.Filled.Favorite,
+            _ => MudBlazor.Icons.Material.Filled.Circle
+        };
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+}

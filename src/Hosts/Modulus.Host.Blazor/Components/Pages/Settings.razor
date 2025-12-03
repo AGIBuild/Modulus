@@ -1,0 +1,102 @@
+@page "/settings"
+@inject Modulus.UI.Abstractions.IThemeService ThemeService
+@implements IDisposable
+
+<MudText Typo="Typo.h4" GutterBottom="true">Settings</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">Customize your application preferences</MudText>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudStack Spacing="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.Palette" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">Appearance</MudText>
+                </MudStack>
+                <MudText Typo="Typo.body2">Choose your preferred theme</MudText>
+                
+                <MudSelect T="UiAppTheme" Label="Theme" Value="_selectedTheme" ValueChanged="OnThemeSelected"
+                           Variant="Variant.Outlined"
+                           AdornmentIcon="@MudBlazor.Icons.Material.Filled.ColorLens" Adornment="Adornment.Start">
+                    <MudSelectItem Value="UiAppTheme.System">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@MudBlazor.Icons.Material.Filled.SettingsBrightness" Size="Size.Small" />
+                            <MudText>System Default</MudText>
+                        </MudStack>
+                    </MudSelectItem>
+                    <MudSelectItem Value="UiAppTheme.Light">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@MudBlazor.Icons.Material.Filled.LightMode" Size="Size.Small" />
+                            <MudText>Light</MudText>
+                        </MudStack>
+                    </MudSelectItem>
+                    <MudSelectItem Value="UiAppTheme.Dark">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@MudBlazor.Icons.Material.Filled.DarkMode" Size="Size.Small" />
+                            <MudText>Dark</MudText>
+                        </MudStack>
+                    </MudSelectItem>
+                </MudSelect>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudStack Spacing="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.Info" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">About</MudText>
+                </MudStack>
+                
+                <MudList T="string" Dense="true">
+                    <MudListItem Icon="@MudBlazor.Icons.Material.Filled.Apps">
+                        <MudText Typo="Typo.body1"><strong>Modulus Framework</strong></MudText>
+                    </MudListItem>
+                    <MudListItem Icon="@MudBlazor.Icons.Material.Filled.Tag">
+                        <MudText Typo="Typo.body2">Version 1.0.0-preview</MudText>
+                    </MudListItem>
+                    <MudListItem Icon="@MudBlazor.Icons.Material.Filled.Code">
+                        <MudText Typo="Typo.body2">Blazor Hybrid Host (MAUI)</MudText>
+                    </MudListItem>
+                </MudList>
+                
+                <MudDivider />
+                
+                <MudText Typo="Typo.body2">
+                    A modular desktop application framework supporting Blazor Hybrid and Avalonia UI.
+                </MudText>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private UiAppTheme _selectedTheme;
+
+    protected override void OnInitialized()
+    {
+        _selectedTheme = ThemeService.CurrentTheme;
+        ThemeService.ThemeChanged += OnThemeServiceChanged;
+    }
+
+    private void OnThemeServiceChanged(object? sender, UiAppTheme theme)
+    {
+        _selectedTheme = theme;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnThemeSelected(UiAppTheme theme)
+    {
+        if (_selectedTheme != theme)
+        {
+            _selectedTheme = theme;
+            ThemeService.SetTheme(theme);
+        }
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeServiceChanged;
+    }
+}

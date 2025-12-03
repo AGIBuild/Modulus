@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.EchoPlugin.UI.Avalonia</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EchoPlugin.Core\EchoPlugin.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.1" />
+  </ItemGroup>
+
+  <!-- Copy manifest.json to output directory -->
+  <ItemGroup>
+    <None Include="..\manifest.json" CopyToOutputDirectory="PreserveNewest" Link="manifest.json" />
+  </ItemGroup>
+
+</Project>

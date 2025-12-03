@@ -1,8 +1,0 @@
-{
-  "ContractVersion": "2.0.0",
-  "Settings": {
-    "ExampleSetting1": "value1",
-    "ExampleSetting2": 123,
-    "ExampleSetting3": true
-  }
-}

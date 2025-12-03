@@ -1,0 +1,41 @@
+namespace Modulus.Sdk;
+
+/// <summary>
+/// Declares a navigation menu item for Avalonia UI module.
+/// Applied to the UI.Avalonia module class.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public class AvaloniaMenuAttribute : Attribute
+{
+    /// <summary>
+    /// Display name shown in navigation.
+    /// </summary>
+    public string DisplayName { get; }
+
+    /// <summary>
+    /// Icon (emoji or icon key, e.g., "🗒️", "📢").
+    /// </summary>
+    public string Icon { get; set; } = "📦";
+
+    /// <summary>
+    /// ViewModel type to navigate to.
+    /// </summary>
+    public Type ViewModelType { get; }
+
+    /// <summary>
+    /// Menu location: Main or Bottom.
+    /// </summary>
+    public string Location { get; set; } = "Main";
+
+    /// <summary>
+    /// Sort order (lower = higher priority).
+    /// </summary>
+    public int Order { get; set; } = 50;
+
+    public AvaloniaMenuAttribute(string displayName, Type viewModelType)
+    {
+        DisplayName = displayName;
+        ViewModelType = viewModelType;
+    }
+}
+

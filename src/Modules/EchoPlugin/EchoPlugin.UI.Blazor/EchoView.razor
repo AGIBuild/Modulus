@@ -1,0 +1,28 @@
+@using Modulus.Modules.EchoPlugin.ViewModels
+@using MudBlazor 
+@inherits ComponentBase
+
+<MudCard Class="ma-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5">@ViewModel.Title</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTextField @bind-Value="ViewModel.InputText" Label="Input Text" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        
+        @if (!string.IsNullOrEmpty(ViewModel.OutputText))
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">@ViewModel.OutputText</MudAlert>
+        }
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ViewModel.EchoCommand.ExecuteAsync(null))">Echo</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public EchoViewModel ViewModel { get; set; } = default!;
+}
+

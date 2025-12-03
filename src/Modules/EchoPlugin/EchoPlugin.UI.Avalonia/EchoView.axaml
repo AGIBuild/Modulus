@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Modulus.Modules.EchoPlugin.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Modulus.Modules.EchoPlugin.UI.Avalonia.EchoView"
+             x:DataType="vm:EchoViewModel">
+  <Border CornerRadius="8" Background="{DynamicResource SystemChromeLowColor}" BoxShadow="0 4 10 0 #20000000" Margin="20" Padding="20">
+      <StackPanel Spacing="15">
+          <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Light" Foreground="{DynamicResource SystemBaseHighColor}"/>
+          
+          <StackPanel>
+              <TextBlock Text="Input Text" Margin="0,0,0,5" Opacity="0.8"/>
+              <TextBox Text="{Binding InputText}" Watermark="Enter something..." />
+          </StackPanel>
+          
+          <Button Content="Echo" Command="{Binding EchoCommand}" HorizontalAlignment="Left" Classes="accent"/>
+          
+          <Border Background="#200078D7" BorderBrush="{DynamicResource SystemAccentColor}" BorderThickness="1" CornerRadius="4" Padding="10" IsVisible="{Binding OutputText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <TextBlock Text="{Binding OutputText}" Foreground="{DynamicResource SystemAccentColor}"/>
+          </Border>
+      </StackPanel>
+  </Border>
+</UserControl>

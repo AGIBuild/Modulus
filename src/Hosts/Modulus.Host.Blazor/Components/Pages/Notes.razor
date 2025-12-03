@@ -1,0 +1,171 @@
+@page "/notes"
+@using SimpleNotes.Core.Domain
+
+<MudText Typo="Typo.h4" GutterBottom="true">Simple Notes</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    A lightweight note-taking module for quick thoughts and ideas.
+</MudText>
+
+<MudGrid Spacing="3">
+    <!-- Notes List -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="2" Class="pa-3" Style="height: 500px; overflow-y: auto;">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                <MudText Typo="Typo.h6">My Notes</MudText>
+                <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Add" 
+                               Color="Color.Primary" 
+                               Size="Size.Small"
+                               OnClick="@AddNewNote" />
+            </MudStack>
+            
+            <MudList T="Note" @bind-SelectedValue="_selectedNote" Dense="true" Class="py-0">
+                @foreach (var note in _notes)
+                {
+                    <MudListItem Value="@note" 
+                                 Icon="@MudBlazor.Icons.Material.Filled.Note"
+                                 IconColor="@(_selectedNote == note ? Color.Primary : Color.Default)">
+                        <div class="d-flex flex-column">
+                            <MudText Typo="Typo.body2" Style="font-weight: 500;">@note.Title</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @note.ModifiedAt.ToString("MMM dd, yyyy HH:mm")
+                            </MudText>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+            
+            @if (!_notes.Any())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">
+                    No notes yet. Click + to create one.
+                </MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+    
+    <!-- Note Editor -->
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="2" Class="pa-4" Style="height: 500px;">
+            @if (_selectedNote != null)
+            {
+                <MudStack Spacing="3" Style="height: 100%;">
+                    <MudTextField @bind-Value="_selectedNote.Title" 
+                                  Label="Title" 
+                                  Variant="Variant.Outlined" 
+                                  Margin="Margin.Dense" />
+                    
+                    <MudTextField @bind-Value="_selectedNote.Content" 
+                                  Label="Content" 
+                                  Variant="Variant.Outlined" 
+                                  Lines="12"
+                                  Style="flex-grow: 1;" />
+                    
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Created: @_selectedNote.CreatedAt.ToString("g")
+                        </MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Error" 
+                                       StartIcon="@MudBlazor.Icons.Material.Filled.Delete"
+                                       OnClick="@DeleteNote">
+                                Delete
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@MudBlazor.Icons.Material.Filled.Save"
+                                       OnClick="@SaveNote">
+                                Save
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center" style="height: 100%;">
+                    <MudIcon Icon="@MudBlazor.Icons.Material.Filled.NoteAlt" 
+                             Size="Size.Large" 
+                             Color="Color.Secondary" 
+                             Style="font-size: 4rem; opacity: 0.3;" />
+                    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-3">
+                        Select a note to view or edit
+                    </MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<Note> _notes = new();
+    private Note? _selectedNote;
+
+    protected override void OnInitialized()
+    {
+        // Initialize with some sample notes
+        _notes = new List<Note>
+        {
+            new Note 
+            { 
+                Id = Guid.NewGuid(), 
+                Title = "Welcome to Simple Notes", 
+                Content = "This is a sample note to demonstrate the Simple Notes module.\n\nYou can:\n- Create new notes\n- Edit existing notes\n- Delete notes you no longer need",
+                CreatedAt = DateTime.Now.AddDays(-7),
+                ModifiedAt = DateTime.Now.AddDays(-1)
+            },
+            new Note 
+            { 
+                Id = Guid.NewGuid(), 
+                Title = "Meeting Notes", 
+                Content = "Discuss project timeline\nReview module architecture\nPlan next sprint",
+                CreatedAt = DateTime.Now.AddDays(-3),
+                ModifiedAt = DateTime.Now.AddHours(-5)
+            },
+            new Note 
+            { 
+                Id = Guid.NewGuid(), 
+                Title = "Ideas", 
+                Content = "- Add markdown support\n- Implement search\n- Cloud sync feature",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                ModifiedAt = DateTime.Now.AddMinutes(-30)
+            }
+        };
+        
+        // Select first note by default
+        _selectedNote = _notes.FirstOrDefault();
+    }
+
+    private void AddNewNote()
+    {
+        var newNote = new Note
+        {
+            Id = Guid.NewGuid(),
+            Title = "New Note",
+            Content = "",
+            CreatedAt = DateTime.Now,
+            ModifiedAt = DateTime.Now
+        };
+        _notes.Insert(0, newNote);
+        _selectedNote = newNote;
+    }
+
+    private void SaveNote()
+    {
+        if (_selectedNote != null)
+        {
+            _selectedNote.ModifiedAt = DateTime.Now;
+            StateHasChanged();
+        }
+    }
+
+    private void DeleteNote()
+    {
+        if (_selectedNote != null)
+        {
+            _notes.Remove(_selectedNote);
+            _selectedNote = _notes.FirstOrDefault();
+        }
+    }
+}
+
