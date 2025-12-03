@@ -1,0 +1,66 @@
+@inject Modulus.UI.Abstractions.IMenuRegistry MenuRegistry
+
+<MudDrawer @bind-Open="IsOpen" ClipMode="DrawerClipMode.Always" Elevation="2" 
+           Variant="@DrawerVariant.Responsive" Breakpoint="Breakpoint.Md">
+    <div class="drawer-content">
+        <!-- Top Section: Header + Main Menu -->
+        <div class="drawer-top">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Navigation</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu Bordered="true" Color="Color.Primary">
+                <!-- Static Home -->
+                <MudNavLink Href="/" Icon="@MudBlazor.Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                    Home
+                </MudNavLink>
+            </MudNavMenu>
+            <NavMenu Items="_mainMenuItems" />
+        </div>
+        
+        <!-- Bottom Section: Bottom Menu Items -->
+        <div class="drawer-bottom">
+            <MudDivider Class="mb-2" />
+            <NavMenu Items="_bottomMenuItems" />
+        </div>
+    </div>
+</MudDrawer>
+
+<style>
+    .drawer-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .drawer-top {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .drawer-bottom {
+        flex-shrink: 0;
+        padding-bottom: 8px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    private List<Modulus.UI.Abstractions.MenuItem> _mainMenuItems = new();
+    private List<Modulus.UI.Abstractions.MenuItem> _bottomMenuItems = new();
+
+    protected override void OnInitialized()
+    {
+        RefreshMenuItems();
+    }
+
+    private void RefreshMenuItems()
+    {
+        _mainMenuItems = MenuRegistry.GetItems(Modulus.UI.Abstractions.MenuLocation.Main).ToList();
+        _bottomMenuItems = MenuRegistry.GetItems(Modulus.UI.Abstractions.MenuLocation.Bottom).ToList();
+    }
+}

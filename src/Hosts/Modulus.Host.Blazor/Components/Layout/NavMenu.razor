@@ -1,0 +1,40 @@
+<MudNavMenu Bordered="true" Color="Color.Primary">
+    @foreach (var item in Items)
+    {
+        <MudNavLink Href="@item.NavigationKey" Icon="@GetIcon(item.Icon)" Match="NavLinkMatch.Prefix">
+            @item.DisplayName
+        </MudNavLink>
+    }
+</MudNavMenu>
+
+@code {
+    [Parameter]
+    public IEnumerable<Modulus.UI.Abstractions.MenuItem> Items { get; set; } = Enumerable.Empty<Modulus.UI.Abstractions.MenuItem>();
+
+    private string GetIcon(string iconName)
+    {
+        return iconName?.ToLower() switch
+        {
+            "extension" or "modules" => MudBlazor.Icons.Material.Filled.Extension,
+            "settings" or "gear" => MudBlazor.Icons.Material.Filled.Settings,
+            "home" => MudBlazor.Icons.Material.Filled.Home,
+            "note" or "notes" => MudBlazor.Icons.Material.Filled.Note,
+            "echo" or "voice" => MudBlazor.Icons.Material.Filled.RecordVoiceOver,
+            "dashboard" => MudBlazor.Icons.Material.Filled.Dashboard,
+            "person" or "user" => MudBlazor.Icons.Material.Filled.Person,
+            "search" => MudBlazor.Icons.Material.Filled.Search,
+            "info" => MudBlazor.Icons.Material.Filled.Info,
+            "help" => MudBlazor.Icons.Material.Filled.Help,
+            "folder" => MudBlazor.Icons.Material.Filled.Folder,
+            "file" => MudBlazor.Icons.Material.Filled.InsertDriveFile,
+            "code" => MudBlazor.Icons.Material.Filled.Code,
+            "chat" => MudBlazor.Icons.Material.Filled.Chat,
+            "mail" or "email" => MudBlazor.Icons.Material.Filled.Mail,
+            "calendar" => MudBlazor.Icons.Material.Filled.CalendarMonth,
+            "star" => MudBlazor.Icons.Material.Filled.Star,
+            "favorite" or "heart" => MudBlazor.Icons.Material.Filled.Favorite,
+            _ => MudBlazor.Icons.Material.Filled.Circle
+        };
+    }
+}
+
