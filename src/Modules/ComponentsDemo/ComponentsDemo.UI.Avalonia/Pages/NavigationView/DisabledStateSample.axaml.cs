@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
-public partial class DisabledDemoPage : UserControl
+public partial class DisabledStateSample : UserControl
 {
-    public DisabledDemoPage()
+    public DisabledStateSample()
     {
         InitializeComponent();
         InitializeDemo();

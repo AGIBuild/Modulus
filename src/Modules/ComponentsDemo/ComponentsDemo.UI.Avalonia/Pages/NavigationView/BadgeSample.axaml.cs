@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
-public partial class BadgeDemoPage : UserControl
+public partial class BadgeSample : UserControl
 {
-    public BadgeDemoPage()
+    public BadgeSample()
     {
         InitializeComponent();
         InitializeDemo();

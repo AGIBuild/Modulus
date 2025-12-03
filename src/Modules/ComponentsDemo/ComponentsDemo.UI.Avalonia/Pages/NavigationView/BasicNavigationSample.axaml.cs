@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
-public partial class NavigationViewPage : UserControl
+public partial class BasicNavigationSample : UserControl
 {
-    public NavigationViewPage()
+    public BasicNavigationSample()
     {
         InitializeComponent();
         InitializeDemo();
@@ -14,7 +14,6 @@ public partial class NavigationViewPage : UserControl
 
     private void InitializeDemo()
     {
-        // Create sample menu items
         var items = new List<UiMenuItem>
         {
             new UiMenuItem("home", "Home", "🏠", "home") { BadgeCount = 3 },
@@ -28,16 +27,11 @@ public partial class NavigationViewPage : UserControl
             new UiMenuItem("help", "Help", "❓", "help")
         };
         
-        // Expand Settings group by default
         items[2].IsExpanded = true;
-
-        // Set items on the NavigationView
         DemoNavView.Items = items;
         
-        // Handle selection
         DemoNavView.SelectionChanged += (s, item) =>
         {
-            // In a real app, this would trigger navigation
             System.Diagnostics.Debug.WriteLine($"Selected: {item.DisplayName}");
         };
     }

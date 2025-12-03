@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+using Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
 namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
 
@@ -46,16 +46,16 @@ public partial class DemoContentControl : UserControl
     {
         if (_contentHost == null) return;
 
-        // Use XAML-based demo pages (following control design guidelines)
+        // Use NavigationView samples from the control library
         _contentHost.Content = DemoId switch
         {
-            "basic-nav" => new NavigationViewPage(),
-            "badge-nav" => new BadgeDemoPage(),
-            "disabled-nav" => new DisabledDemoPage(),
-            "sub-item-1" or "sub-item-2" or "sub-item-3" or "sub-menu" => new SubMenuDemoPage(),
-            "context-demo" => new ContextMenuDemoPage(),
-            "lifecycle-demo" => new LifecycleDemoPage(),
-            _ => new NavigationViewPage()
+            "basic-nav" => new BasicNavigationSample(),
+            "badge-nav" => new BadgeSample(),
+            "disabled-nav" => new DisabledStateSample(),
+            "sub-item-1" or "sub-item-2" or "sub-item-3" or "sub-menu" => new SubMenuSample(),
+            "context-demo" => new ContextMenuSample(),
+            "lifecycle-demo" => new LifecycleSample(),
+            _ => new BasicNavigationSample()
         };
     }
 }

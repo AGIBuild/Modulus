@@ -3,11 +3,11 @@ using Avalonia.Controls;
 using Modulus.UI.Abstractions;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
-public partial class ContextMenuDemoPage : UserControl
+public partial class ContextMenuSample : UserControl
 {
-    public ContextMenuDemoPage()
+    public ContextMenuSample()
     {
         InitializeComponent();
         InitializeDemo();

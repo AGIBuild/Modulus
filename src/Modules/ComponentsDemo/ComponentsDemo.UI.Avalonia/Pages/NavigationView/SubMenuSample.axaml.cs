@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
-namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages;
+namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
 
-public partial class SubMenuDemoPage : UserControl
+public partial class SubMenuSample : UserControl
 {
-    public SubMenuDemoPage()
+    public SubMenuSample()
     {
         InitializeComponent();
         InitializeDemo();
@@ -36,9 +36,7 @@ public partial class SubMenuDemoPage : UserControl
             new UiMenuItem("logout", "Logout", "🚪", "logout")
         };
         
-        // Expand first group by default
         items[1].IsExpanded = true;
-
         SubMenuNavView.Items = items;
     }
 }
