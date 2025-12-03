@@ -29,7 +29,7 @@
                                 <StackPanel>
                                     <!-- Main item button -->
                                     <Button Classes="navItem"
-                                            Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                            Command="{Binding #Root.DataContext.NavigateCommand}"
                                             CommandParameter="{Binding}"
                                             IsEnabled="{Binding IsEnabled}"
                                             Padding="12,8"
@@ -62,7 +62,7 @@
                                     
                                     <!-- Group header (for items with children) -->
                                     <Button Classes="navItem"
-                                            Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).ToggleGroupCommand}"
+                                            Command="{Binding #Root.DataContext.ToggleGroupCommand}"
                                             CommandParameter="{Binding}"
                                             Padding="12,8"
                                             HorizontalAlignment="Stretch"
@@ -90,7 +90,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Classes="childNavItem"
-                                                        Command="{Binding #Root.((vm:ComponentsMainViewModel)DataContext).NavigateCommand}"
+                                                        Command="{Binding #Root.DataContext.NavigateCommand}"
                                                         CommandParameter="{Binding}"
                                                         IsEnabled="{Binding IsEnabled}"
                                                         Padding="12,6"
