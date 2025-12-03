@@ -1,22 +1,47 @@
-﻿@inherits LayoutComponentBase
+﻿@using Modulus.UI.Blazor.Components
+@using Modulus.UI.Abstractions
+@inherits LayoutComponentBase
+@inject IThemeService ThemeService
+@inject IMenuRegistry MenuRegistry
+@inject INavigationService NavigationService
 
-<ThemeProvider>
+<Modulus.UI.Blazor.Components.ThemeProvider ThemeService="ThemeService">
     <MudLayout>
-        <AppBar OnMenuToggle="@ToggleDrawer" />
+        <Modulus.UI.Blazor.Components.TitleBar Title="MODULUS" Badge="HOST" OnMenuToggle="@ToggleDrawer" />
         
-        <NavDrawer @bind-IsOpen="_drawerOpen" IsMini="true" />
+        <Modulus.UI.Blazor.Components.SideDrawer @bind-IsOpen="_drawerOpen" 
+                                                  IsMini="true"
+                                                  MainItems="_mainMenuItems"
+                                                  BottomItems="_bottomMenuItems"
+                                                  OnItemClicked="OnMenuItemClicked" />
         
-        <ContentHost>
+        <Modulus.UI.Blazor.Components.ContentArea>
             @Body
-        </ContentHost>
+        </Modulus.UI.Blazor.Components.ContentArea>
     </MudLayout>
-</ThemeProvider>
+</Modulus.UI.Blazor.Components.ThemeProvider>
 
 @code {
     private bool _drawerOpen = true;
+    private List<MenuItem> _mainMenuItems = new();
+    private List<MenuItem> _bottomMenuItems = new();
+
+    protected override void OnInitialized()
+    {
+        _mainMenuItems = MenuRegistry.GetItems(MenuLocation.Main).ToList();
+        _bottomMenuItems = MenuRegistry.GetItems(MenuLocation.Bottom).ToList();
+    }
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task OnMenuItemClicked(MenuItem item)
+    {
+        if (!string.IsNullOrEmpty(item.NavigationKey))
+        {
+            await NavigationService.NavigateToAsync(item.NavigationKey);
+        }
     }
 }

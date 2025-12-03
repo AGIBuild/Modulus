@@ -1,4 +1,5 @@
-@inject Modulus.UI.Abstractions.IThemeService ThemeService
+@using Modulus.UI.Abstractions
+@using AppTheme = Modulus.UI.Abstractions.AppTheme
 @implements IDisposable
 
 <MudThemeProvider @ref="_mudThemeProvider" Theme="_theme" IsDarkMode="@IsDarkMode" />
@@ -13,6 +14,18 @@
 @code {
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Theme service for theme management.
+    /// </summary>
+    [Parameter]
+    public IThemeService? ThemeService { get; set; }
+
+    /// <summary>
+    /// Custom MudBlazor theme. If not provided, uses default theme.
+    /// </summary>
+    [Parameter]
+    public MudTheme? CustomTheme { get; set; }
 
     public bool IsDarkMode { get; private set; }
 
@@ -51,18 +64,26 @@
 
     protected override void OnInitialized()
     {
-        ThemeService.ThemeChanged += OnThemeChanged;
-        IsDarkMode = ThemeService.CurrentTheme == UiAppTheme.Dark;
+        if (CustomTheme != null)
+        {
+            _theme = CustomTheme;
+        }
+
+        if (ThemeService != null)
+        {
+            ThemeService.ThemeChanged += OnThemeChanged;
+            IsDarkMode = ThemeService.CurrentTheme == AppTheme.Dark;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && _mudThemeProvider != null)
+        if (firstRender && _mudThemeProvider != null && ThemeService != null)
         {
-            if (ThemeService.CurrentTheme == UiAppTheme.System)
+            if (ThemeService.CurrentTheme == AppTheme.System)
             {
                 IsDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
-                ThemeService.SetTheme(IsDarkMode ? UiAppTheme.Dark : UiAppTheme.Light);
+                ThemeService.SetTheme(IsDarkMode ? AppTheme.Dark : AppTheme.Light);
             }
             await InvokeAsync(StateHasChanged);
         }
@@ -71,18 +92,21 @@
     public void ToggleTheme()
     {
         IsDarkMode = !IsDarkMode;
-        ThemeService.SetTheme(IsDarkMode ? UiAppTheme.Dark : UiAppTheme.Light);
+        ThemeService?.SetTheme(IsDarkMode ? AppTheme.Dark : AppTheme.Light);
     }
 
-    private void OnThemeChanged(object? sender, UiAppTheme theme)
+    private void OnThemeChanged(object? sender, AppTheme theme)
     {
-        IsDarkMode = theme == UiAppTheme.Dark;
+        IsDarkMode = theme == AppTheme.Dark;
         InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        ThemeService.ThemeChanged -= OnThemeChanged;
+        if (ThemeService != null)
+        {
+            ThemeService.ThemeChanged -= OnThemeChanged;
+        }
     }
 }
 

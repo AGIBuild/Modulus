@@ -67,7 +67,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
       <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
-      <ProjectReference Include="..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+      <ProjectReference Include="..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
       <!-- Module references for static page routing -->
       <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.Core\SimpleNotes.Core.csproj" />
     </ItemGroup>

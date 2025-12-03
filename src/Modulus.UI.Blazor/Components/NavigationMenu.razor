@@ -1,4 +1,4 @@
-@inject Modulus.UI.Abstractions.INavigationService NavigationService
+@using Modulus.UI.Abstractions
 
 <MudNavMenu Bordered="true" Color="Color.Primary">
     @foreach (var item in Items)
@@ -18,7 +18,7 @@
                                     Icon="@GetIcon(child.Icon)" 
                                     Match="NavLinkMatch.Prefix"
                                     Disabled="@(!child.IsEnabled)"
-                                    OnClick="@(() => OnNavClick(child))">
+                                    OnClick="@(() => OnItemClick(child))">
                             @if (!IsMini)
                             {
                                 <div class="nav-item-content">
@@ -49,7 +49,7 @@
                             Icon="@GetIcon(item.Icon)" 
                             Match="NavLinkMatch.Prefix"
                             Disabled="@(!item.IsEnabled)"
-                            OnClick="@(() => OnNavClick(item))">
+                            OnClick="@(() => OnItemClick(item))">
                     @if (!IsMini)
                     {
                         <div class="nav-item-content">
@@ -88,7 +88,7 @@
 
 @code {
     [Parameter]
-    public IEnumerable<Modulus.UI.Abstractions.MenuItem> Items { get; set; } = Enumerable.Empty<Modulus.UI.Abstractions.MenuItem>();
+    public IEnumerable<MenuItem> Items { get; set; } = Enumerable.Empty<MenuItem>();
 
     /// <summary>
     /// When true, shows only icons (for mini drawer mode).
@@ -96,18 +96,23 @@
     [Parameter]
     public bool IsMini { get; set; }
 
-    private async Task OnNavClick(Modulus.UI.Abstractions.MenuItem item)
+    /// <summary>
+    /// Callback when an item is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<MenuItem> OnItemClicked { get; set; }
+
+    private async Task OnItemClick(MenuItem item)
     {
         if (!item.IsEnabled || string.IsNullOrEmpty(item.NavigationKey))
         {
             return;
         }
 
-        // Use navigation service for guard support
-        await NavigationService.NavigateToAsync(item.NavigationKey);
+        await OnItemClicked.InvokeAsync(item);
     }
 
-    private void OnExpandedChanged(Modulus.UI.Abstractions.MenuItem item, bool expanded)
+    private void OnExpandedChanged(MenuItem item, bool expanded)
     {
         item.IsExpanded = expanded;
     }
@@ -116,29 +121,29 @@
     {
         return iconName?.ToLower() switch
         {
-            "extension" or "modules" => MudBlazor.Icons.Material.Filled.Extension,
-            "settings" or "gear" => MudBlazor.Icons.Material.Filled.Settings,
-            "home" => MudBlazor.Icons.Material.Filled.Home,
-            "note" or "notes" => MudBlazor.Icons.Material.Filled.Note,
-            "echo" or "voice" => MudBlazor.Icons.Material.Filled.RecordVoiceOver,
-            "dashboard" => MudBlazor.Icons.Material.Filled.Dashboard,
-            "person" or "user" => MudBlazor.Icons.Material.Filled.Person,
-            "search" => MudBlazor.Icons.Material.Filled.Search,
-            "info" => MudBlazor.Icons.Material.Filled.Info,
-            "help" => MudBlazor.Icons.Material.Filled.Help,
-            "folder" => MudBlazor.Icons.Material.Filled.Folder,
-            "file" => MudBlazor.Icons.Material.Filled.InsertDriveFile,
-            "code" => MudBlazor.Icons.Material.Filled.Code,
-            "chat" => MudBlazor.Icons.Material.Filled.Chat,
-            "mail" or "email" => MudBlazor.Icons.Material.Filled.Mail,
-            "calendar" => MudBlazor.Icons.Material.Filled.CalendarMonth,
-            "star" => MudBlazor.Icons.Material.Filled.Star,
-            "favorite" or "heart" => MudBlazor.Icons.Material.Filled.Favorite,
-            "group" or "category" => MudBlazor.Icons.Material.Filled.Category,
-            "list" => MudBlazor.Icons.Material.Filled.List,
-            "notifications" or "bell" => MudBlazor.Icons.Material.Filled.Notifications,
-            "palette" or "components" => MudBlazor.Icons.Material.Filled.Palette,
-            _ => MudBlazor.Icons.Material.Filled.Circle
+            "extension" or "modules" => Icons.Material.Filled.Extension,
+            "settings" or "gear" => Icons.Material.Filled.Settings,
+            "home" => Icons.Material.Filled.Home,
+            "note" or "notes" => Icons.Material.Filled.Note,
+            "echo" or "voice" => Icons.Material.Filled.RecordVoiceOver,
+            "dashboard" => Icons.Material.Filled.Dashboard,
+            "person" or "user" => Icons.Material.Filled.Person,
+            "search" => Icons.Material.Filled.Search,
+            "info" => Icons.Material.Filled.Info,
+            "help" => Icons.Material.Filled.Help,
+            "folder" => Icons.Material.Filled.Folder,
+            "file" => Icons.Material.Filled.InsertDriveFile,
+            "code" => Icons.Material.Filled.Code,
+            "chat" => Icons.Material.Filled.Chat,
+            "mail" or "email" => Icons.Material.Filled.Mail,
+            "calendar" => Icons.Material.Filled.CalendarMonth,
+            "star" => Icons.Material.Filled.Star,
+            "favorite" or "heart" => Icons.Material.Filled.Favorite,
+            "group" or "category" => Icons.Material.Filled.Category,
+            "list" => Icons.Material.Filled.List,
+            "notifications" or "bell" => Icons.Material.Filled.Notifications,
+            "palette" or "components" => Icons.Material.Filled.Palette,
+            _ => Icons.Material.Filled.Circle
         };
     }
 
@@ -152,7 +157,8 @@
             "success" or "green" => Color.Success,
             "primary" => Color.Primary,
             "secondary" => Color.Secondary,
-            _ => Color.Error // Default to error (red) for badges
+            _ => Color.Error
         };
     }
 }
+
