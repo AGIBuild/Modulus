@@ -7,7 +7,7 @@ namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
 public partial class DemoContentControl : UserControl
 {
     public static readonly StyledProperty<string> DemoIdProperty =
-        AvaloniaProperty.Register<DemoContentControl, string>(nameof(DemoId), "nav-demo");
+        AvaloniaProperty.Register<DemoContentControl, string>(nameof(DemoId), "basic-nav");
 
     public string DemoId
     {
@@ -44,12 +44,12 @@ public partial class DemoContentControl : UserControl
 
         _contentHost.Content = DemoId switch
         {
-            "nav-demo" => CreateNavigationDemo(),
-            "badge-demo" => CreateBadgeDemo(),
-            "disabled-demo" => CreateDisabledDemo(),
+            "basic-nav" => CreateNavigationDemo(),
+            "badge-nav" => CreateBadgeDemo(),
+            "disabled-nav" => CreateDisabledDemo(),
             "sub-item-1" or "sub-item-2" or "sub-item-3" => CreateSubItemDemo(DemoId),
             "context-demo" => CreateContextMenuDemo(),
-            "keyboard-demo" => CreateKeyboardDemo(),
+            "keyboard-nav" => CreateKeyboardDemo(),
             "lifecycle-demo" => CreateLifecycleDemo(),
             _ => CreateNavigationDemo()
         };

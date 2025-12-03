@@ -83,19 +83,78 @@
                                                   Margin="16,0,0,0">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Button Classes="childNavItem"
-                                                        Command="{Binding #Root.DataContext.NavigateCommand}"
-                                                        CommandParameter="{Binding}"
-                                                        IsEnabled="{Binding IsEnabled}"
-                                                        Padding="12,6"
-                                                        HorizontalAlignment="Stretch"
-                                                        HorizontalContentAlignment="Left"
-                                                        Opacity="{Binding IsEnabled, Converter={x:Static local:Converters.EnabledToOpacity}}">
-                                                    <Grid ColumnDefinitions="20, *">
-                                                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" VerticalAlignment="Center"/>
-                                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                                    </Grid>
-                                                </Button>
+                                                <StackPanel>
+                                                    <!-- Leaf child item -->
+                                                    <Button Classes="childNavItem"
+                                                            Command="{Binding #Root.DataContext.NavigateCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            IsEnabled="{Binding IsEnabled}"
+                                                            Padding="12,6"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left"
+                                                            Opacity="{Binding IsEnabled, Converter={x:Static local:Converters.EnabledToOpacity}}">
+                                                        <Button.IsVisible>
+                                                            <Binding Path="Children" Converter="{x:Static local:Converters.IsLeafItem}"/>
+                                                        </Button.IsVisible>
+                                                        <Grid ColumnDefinitions="20, *, Auto">
+                                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" VerticalAlignment="Center"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                            <Border Grid.Column="2"
+                                                                    IsVisible="{Binding BadgeCount, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                                    Background="#E53935"
+                                                                    CornerRadius="8" MinWidth="18" Padding="5,1">
+                                                                <TextBlock Text="{Binding BadgeCount}" 
+                                                                           Foreground="White" 
+                                                                           FontSize="10" 
+                                                                           FontWeight="Bold"
+                                                                           HorizontalAlignment="Center"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Button>
+                                                    
+                                                    <!-- Nested group header -->
+                                                    <Button Classes="childNavItem"
+                                                            Command="{Binding #Root.DataContext.ToggleGroupCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="12,6"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left">
+                                                        <Button.IsVisible>
+                                                            <Binding Path="Children" Converter="{x:Static local:Converters.IsGroupItem}"/>
+                                                        </Button.IsVisible>
+                                                        <Grid ColumnDefinitions="20, *, Auto">
+                                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="14" VerticalAlignment="Center"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Grid.Column="2" 
+                                                                       Text="{Binding IsExpanded, Converter={x:Static local:Converters.ExpandedToChevron}}"
+                                                                       FontSize="10" 
+                                                                       VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Button>
+                                                    
+                                                    <!-- Nested children (3rd level) -->
+                                                    <ItemsControl ItemsSource="{Binding Children}"
+                                                                  IsVisible="{Binding IsExpanded}"
+                                                                  Margin="16,0,0,0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Classes="childNavItem"
+                                                                        Command="{Binding #Root.DataContext.NavigateCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        IsEnabled="{Binding IsEnabled}"
+                                                                        Padding="12,4"
+                                                                        HorizontalAlignment="Stretch"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        Opacity="{Binding IsEnabled, Converter={x:Static local:Converters.EnabledToOpacity}}">
+                                                                    <Grid ColumnDefinitions="16, *">
+                                                                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="12" VerticalAlignment="Center"/>
+                                                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                                    </Grid>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
