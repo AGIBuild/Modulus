@@ -1,0 +1,47 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    MudBlazor provides built-in keyboard navigation support for accessibility.
+</MudText>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Keyboard Shortcuts</MudText>
+    
+    <MudSimpleTable Dense="true" Hover="true">
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><MudChip T="string" Size="Size.Small">Tab</MudChip></td>
+                <td>Move focus between navigation items</td>
+            </tr>
+            <tr>
+                <td><MudChip T="string" Size="Size.Small">Enter</MudChip> / <MudChip T="string" Size="Size.Small">Space</MudChip></td>
+                <td>Activate the focused link</td>
+            </tr>
+            <tr>
+                <td><MudChip T="string" Size="Size.Small">↑</MudChip> / <MudChip T="string" Size="Size.Small">↓</MudChip></td>
+                <td>Navigate within MudNavMenu</td>
+            </tr>
+        </tbody>
+    </MudSimpleTable>
+</MudPaper>
+
+<MudAlert Severity="Severity.Info" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        <strong>Accessibility:</strong> MudBlazor components follow WAI-ARIA guidelines and support screen readers.
+    </MudText>
+</MudAlert>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Try Keyboard Navigation</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Use Tab to focus items in this menu:</MudText>
+    <MudNavMenu Bordered="true">
+        <MudNavLink Href="#" Icon="@Icons.Material.Filled.Home">Item 1</MudNavLink>
+        <MudNavLink Href="#" Icon="@Icons.Material.Filled.Star">Item 2</MudNavLink>
+        <MudNavLink Href="#" Icon="@Icons.Material.Filled.Settings">Item 3</MudNavLink>
+    </MudNavMenu>
+</MudPaper>
+

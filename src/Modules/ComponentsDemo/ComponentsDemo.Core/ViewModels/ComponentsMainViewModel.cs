@@ -48,49 +48,40 @@ public partial class ComponentsMainViewModel : ObservableObject
 
     private void InitializeDemoItems()
     {
-        // Navigation Demo - showcases all navigation features
-        var navDemo = new MenuItem("nav-demo", "Navigation Demo", "🧭", "nav-demo", MenuLocation.Main, 0);
-        navDemo.BadgeCount = 3;
-        navDemo.BadgeColor = "info";
-
-        // Badge Demo
-        var badgeDemo = new MenuItem("badge-demo", "Badge Demo", "🔢", "badge-demo", MenuLocation.Main, 1);
-        badgeDemo.BadgeCount = 99;
-        badgeDemo.BadgeColor = "error";
-
-        // Disabled State Demo
-        var disabledDemo = new MenuItem("disabled-demo", "Disabled Demo", "🚫", "disabled-demo", MenuLocation.Main, 2);
-
-        // Hierarchical Menu Demo
-        var hierarchyDemo = MenuItem.CreateGroup("hierarchy-demo", "Hierarchical Demo", "📁", new[]
+        // Navigation group - contains all navigation-related demos
+        var navigationGroup = MenuItem.CreateGroup("navigation", "Navigation", "compass", new[]
         {
-            new MenuItem("sub-item-1", "Sub Item 1", "📄", "sub-item-1", MenuLocation.Main, 0),
-            new MenuItem("sub-item-2", "Sub Item 2", "📄", "sub-item-2", MenuLocation.Main, 1),
-            new MenuItem("sub-item-3", "Sub Item 3 (Disabled)", "📄", "sub-item-3", MenuLocation.Main, 2) { IsEnabled = false }
-        }, MenuLocation.Main, 3);
+            new MenuItem("basic-nav", "Basic Navigation", "link", "basic-nav", MenuLocation.Main, 0),
+            new MenuItem("badge-nav", "Badge Indicators", "notifications", "badge-nav", MenuLocation.Main, 1) 
+            { 
+                BadgeCount = 5, 
+                BadgeColor = "error" 
+            },
+            new MenuItem("disabled-nav", "Disabled States", "block", "disabled-nav", MenuLocation.Main, 2),
+            MenuItem.CreateGroup("sub-menu", "Sub Menu Demo", "folder", new[]
+            {
+                new MenuItem("sub-item-1", "Sub Item 1", "file", "sub-item-1", MenuLocation.Main, 0),
+                new MenuItem("sub-item-2", "Sub Item 2", "file", "sub-item-2", MenuLocation.Main, 1),
+                new MenuItem("sub-item-3", "Sub Item 3 (Disabled)", "file", "sub-item-3", MenuLocation.Main, 2) { IsEnabled = false }
+            }, MenuLocation.Main, 3),
+            new MenuItem("keyboard-nav", "Keyboard Navigation", "keyboard", "keyboard-nav", MenuLocation.Main, 4)
+        }, MenuLocation.Main, 0);
+        navigationGroup.IsExpanded = true;
 
-        // Context Menu Demo
-        var contextDemo = new MenuItem("context-demo", "Context Menu Demo", "📋", "context-demo", MenuLocation.Main, 4);
+        // Other demos
+        var contextDemo = new MenuItem("context-demo", "Context Menu", "list", "context-demo", MenuLocation.Main, 1);
         contextDemo.ContextActions = new[]
         {
-            new MenuAction { Label = "Action 1", Icon = "✏️", Execute = _ => { } },
-            new MenuAction { Label = "Action 2", Icon = "🗑️", Execute = _ => { } },
-            new MenuAction { Label = "Action 3", Icon = "ℹ️", Execute = _ => { } }
+            new MenuAction { Label = "Edit", Icon = "edit", Execute = _ => { } },
+            new MenuAction { Label = "Delete", Icon = "delete", Execute = _ => { } },
+            new MenuAction { Label = "Info", Icon = "info", Execute = _ => { } }
         };
 
-        // Keyboard Nav Demo
-        var keyboardDemo = new MenuItem("keyboard-demo", "Keyboard Navigation", "⌨️", "keyboard-demo", MenuLocation.Main, 5);
-
-        // Page Lifecycle Demo
-        var lifecycleDemo = new MenuItem("lifecycle-demo", "Page Lifecycle", "🔄", "lifecycle-demo", MenuLocation.Main, 6);
+        var lifecycleDemo = new MenuItem("lifecycle-demo", "Page Lifecycle", "refresh", "lifecycle-demo", MenuLocation.Main, 2);
         lifecycleDemo.InstanceMode = PageInstanceMode.Transient;
 
-        DemoItems.Add(navDemo);
-        DemoItems.Add(badgeDemo);
-        DemoItems.Add(disabledDemo);
-        DemoItems.Add(hierarchyDemo);
+        DemoItems.Add(navigationGroup);
         DemoItems.Add(contextDemo);
-        DemoItems.Add(keyboardDemo);
         DemoItems.Add(lifecycleDemo);
     }
 
@@ -104,16 +95,16 @@ public partial class ComponentsMainViewModel : ObservableObject
     {
         return demoId switch
         {
-            "nav-demo" => "Navigation Demo",
-            "badge-demo" => "Badge Demo",
-            "disabled-demo" => "Disabled Demo",
+            "basic-nav" => "Basic Navigation",
+            "badge-nav" => "Badge Indicators",
+            "disabled-nav" => "Disabled States",
             "sub-item-1" => "Sub Item 1",
             "sub-item-2" => "Sub Item 2",
             "sub-item-3" => "Sub Item 3",
-            "context-demo" => "Context Menu Demo",
-            "keyboard-demo" => "Keyboard Navigation",
+            "keyboard-nav" => "Keyboard Navigation",
+            "context-demo" => "Context Menu",
             "lifecycle-demo" => "Page Lifecycle",
-            _ => "Navigation Demo"
+            _ => "Basic Navigation"
         };
     }
 }

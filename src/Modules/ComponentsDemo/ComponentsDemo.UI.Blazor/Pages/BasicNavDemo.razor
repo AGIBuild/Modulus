@@ -1,0 +1,43 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    This demo showcases basic navigation features using MudBlazor's native components.
+</MudText>
+
+<MudText Typo="Typo.h6" Class="mb-3">MudBlazor Navigation Components</MudText>
+
+<MudList T="string">
+    <MudListItem Icon="@Icons.Material.Filled.Menu"><code>MudNavMenu</code> - Container for navigation items</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Link"><code>MudNavLink</code> - Single navigation link with icon support</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Folder"><code>MudNavGroup</code> - Collapsible group for hierarchical navigation</MudListItem>
+</MudList>
+
+<MudAlert Severity="Severity.Info" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        <strong>Try it:</strong> Click the menu button (☰) in the top bar to toggle the navigation drawer between expanded and mini modes.
+    </MudText>
+</MudAlert>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Key Features:</MudText>
+    <MudText Typo="Typo.body2">• <code>MudDrawer</code> with Mini variant for collapsed mode</MudText>
+    <MudText Typo="Typo.body2">• <code>MudNavLink</code> with Href for routing</MudText>
+    <MudText Typo="Typo.body2">• Icon-only display with tooltips in mini mode</MudText>
+</MudPaper>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Example Code:</MudText>
+    <MudMarkdown Value="@_codeExample" />
+</MudPaper>
+
+@code {
+    private string _codeExample = @"```razor
+<MudNavMenu Bordered=""true"" Color=""Color.Primary"">
+    <MudNavLink Href=""/"" Icon=""@Icons.Material.Filled.Home"">Home</MudNavLink>
+    <MudNavLink Href=""/settings"" Icon=""@Icons.Material.Filled.Settings"">Settings</MudNavLink>
+    <MudNavGroup Title=""Reports"" Icon=""@Icons.Material.Filled.Assessment"" Expanded=""true"">
+        <MudNavLink Href=""/reports/daily"">Daily</MudNavLink>
+        <MudNavLink Href=""/reports/weekly"">Weekly</MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>
+```";
+}
+
