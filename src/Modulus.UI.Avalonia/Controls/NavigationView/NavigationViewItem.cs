@@ -1,10 +1,12 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Controls;
@@ -15,6 +17,8 @@ namespace Modulus.UI.Avalonia.Controls;
 /// </summary>
 public class NavigationViewItem : HeaderedItemsControl
 {
+    protected override Type StyleKeyOverride => typeof(NavigationViewItem);
+
     #region Static Converters
 
     /// <summary>
@@ -260,6 +264,36 @@ public class NavigationViewItem : HeaderedItemsControl
         if (Item != null && Item.IsExpanded != (bool)e.NewValue!)
         {
             Item.IsExpanded = (bool)e.NewValue!;
+        }
+    }
+
+    #endregion
+
+    #region Internal Methods
+
+    /// <summary>
+    /// Updates selection state recursively for this item and all children.
+    /// </summary>
+    internal void UpdateSelectionRecursive(UiMenuItem? selectedItem)
+    {
+        IsSelected = Item != null && selectedItem != null && Item.Id == selectedItem.Id;
+
+        foreach (var childNavItem in this.GetVisualDescendants().OfType<NavigationViewItem>())
+        {
+            childNavItem.UpdateSelectionRecursive(selectedItem);
+        }
+    }
+
+    /// <summary>
+    /// Updates collapsed state recursively for this item and all children.
+    /// </summary>
+    internal void UpdateCollapsedStateRecursive(bool isCollapsed)
+    {
+        IsCollapsed = isCollapsed;
+
+        foreach (var childNavItem in this.GetVisualDescendants().OfType<NavigationViewItem>())
+        {
+            childNavItem.UpdateCollapsedStateRecursive(isCollapsed);
         }
     }
 

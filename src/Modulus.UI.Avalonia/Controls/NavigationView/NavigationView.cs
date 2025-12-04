@@ -14,6 +14,8 @@ namespace Modulus.UI.Avalonia.Controls;
 /// </summary>
 public class NavigationView : ItemsControl
 {
+    protected override Type StyleKeyOverride => typeof(NavigationView);
+
     #region Styled Properties
 
     /// <summary>
@@ -72,9 +74,21 @@ public class NavigationView : ItemsControl
         IsCollapsedProperty.Changed.AddClassHandler<NavigationView>((x, e) => x.OnIsCollapsedChanged(e));
     }
 
+    public NavigationView()
+    {
+        // Debug
+        // System.Diagnostics.Debug.WriteLine("NavigationView Constructor");
+    }
+
     #endregion
 
     #region ItemsControl Overrides
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        // System.Diagnostics.Debug.WriteLine("NavigationView OnApplyTemplate");
+    }
 
     /// <summary>
     /// Determines if the item is its own container.
