@@ -28,7 +28,7 @@ public partial class BasicNavigationSample : UserControl
         };
         
         items[2].IsExpanded = true;
-        DemoNavView.Items = items;
+        DemoNavView.ItemsSource = items;
         
         DemoNavView.SelectionChanged += (s, item) =>
         {

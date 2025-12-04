@@ -1,31 +1,21 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
-using Avalonia.VisualTree;
+using Avalonia.Interactivity;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Controls;
 
 /// <summary>
 /// Represents an item in a NavigationView control.
+/// Inherits from HeaderedItemsControl to support hierarchical child menus.
 /// </summary>
-public partial class NavigationViewItem : TemplatedControl
+public class NavigationViewItem : HeaderedItemsControl
 {
-    #region Converters
-
-    /// <summary>
-    /// Converter that adds 1 to the depth value for child items.
-    /// </summary>
-    public static readonly IValueConverter DepthPlusOneConverter =
-        new FuncValueConverter<int, int>(depth => depth + 1);
-
-    /// <summary>
-    /// Converter that checks if item has children.
-    /// </summary>
-    public static readonly IValueConverter HasChildrenConverter =
-        new FuncValueConverter<UiMenuItem?, bool>(item => item?.Children != null && item.Children.Count > 0);
+    #region Static Converters
 
     /// <summary>
     /// Converter that checks if badge should be visible.
@@ -35,14 +25,158 @@ public partial class NavigationViewItem : TemplatedControl
 
     #endregion
 
-    #region Private Fields
+    #region Styled Properties
 
-    private Border? _rootBorder;
-    private ItemsControl? _childItemsHost;
+    /// <summary>
+    /// Defines the <see cref="Item"/> property.
+    /// </summary>
+    public static readonly StyledProperty<UiMenuItem?> ItemProperty =
+        AvaloniaProperty.Register<NavigationViewItem, UiMenuItem?>(nameof(Item));
+
+    /// <summary>
+    /// Defines the <see cref="Depth"/> property.
+    /// </summary>
+    public static readonly StyledProperty<int> DepthProperty =
+        AvaloniaProperty.Register<NavigationViewItem, int>(nameof(Depth), defaultValue: 0);
+
+    /// <summary>
+    /// Defines the <see cref="IsSelected"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSelectedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsSelected), defaultValue: false);
+
+    /// <summary>
+    /// Defines the <see cref="IsExpanded"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsExpandedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsExpanded), defaultValue: false);
+
+    /// <summary>
+    /// Defines the <see cref="IsCollapsed"/> property (inherited from parent NavigationView).
+    /// </summary>
+    public static readonly StyledProperty<bool> IsCollapsedProperty =
+        AvaloniaProperty.Register<NavigationViewItem, bool>(nameof(IsCollapsed), defaultValue: false);
+
+    /// <summary>
+    /// Gets or sets the menu item data.
+    /// </summary>
+    public UiMenuItem? Item
+    {
+        get => GetValue(ItemProperty);
+        set => SetValue(ItemProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the nesting depth of this item.
+    /// </summary>
+    public int Depth
+    {
+        get => GetValue(DepthProperty);
+        set => SetValue(DepthProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this item is selected.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => GetValue(IsSelectedProperty);
+        set => SetValue(IsSelectedProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this item's children are expanded.
+    /// </summary>
+    public bool IsExpanded
+    {
+        get => GetValue(IsExpandedProperty);
+        set => SetValue(IsExpandedProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether the parent NavigationView is collapsed.
+    /// </summary>
+    public bool IsCollapsed
+    {
+        get => GetValue(IsCollapsedProperty);
+        set => SetValue(IsCollapsedProperty, value);
+    }
 
     #endregion
 
-    #region Template
+    #region Internal Properties
+
+    /// <summary>
+    /// Reference to the parent NavigationView.
+    /// </summary>
+    internal NavigationView? ParentNavigationView { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private Border? _rootBorder;
+
+    #endregion
+
+    #region Constructor
+
+    static NavigationViewItem()
+    {
+        ItemProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnItemChanged(e));
+        IsExpandedProperty.Changed.AddClassHandler<NavigationViewItem>((x, e) => x.OnIsExpandedChanged(e));
+    }
+
+    #endregion
+
+    #region HeaderedItemsControl Overrides
+
+    /// <summary>
+    /// Determines if the item is its own container.
+    /// </summary>
+    protected override bool NeedsContainerOverride(object? item, int index, out object? recycleKey)
+    {
+        recycleKey = null;
+        return item is not NavigationViewItem;
+    }
+
+    /// <summary>
+    /// Creates a container for child items.
+    /// </summary>
+    protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
+    {
+        return new NavigationViewItem();
+    }
+
+    /// <summary>
+    /// Prepares the container for child items.
+    /// </summary>
+    protected override void PrepareContainerForItemOverride(Control container, object? item, int index)
+    {
+        base.PrepareContainerForItemOverride(container, item, index);
+
+        if (container is NavigationViewItem childNavItem)
+        {
+            // Pass down parent reference and depth
+            childNavItem.ParentNavigationView = ParentNavigationView;
+            childNavItem.Depth = Depth + 1;
+            childNavItem.IsCollapsed = IsCollapsed;
+
+            // Bind to MenuItem data
+            if (item is UiMenuItem menuItem)
+            {
+                childNavItem.Item = menuItem;
+                childNavItem.IsExpanded = menuItem.IsExpanded;
+                childNavItem.IsEnabled = menuItem.IsEnabled;
+
+                // Update selection state
+                if (ParentNavigationView != null)
+                {
+                    childNavItem.IsSelected = ParentNavigationView.SelectedItem?.Id == menuItem.Id;
+                }
+            }
+        }
+    }
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -56,7 +190,6 @@ public partial class NavigationViewItem : TemplatedControl
         }
 
         _rootBorder = e.NameScope.Find<Border>("PART_RootBorder");
-        _childItemsHost = e.NameScope.Find<ItemsControl>("PART_ChildItemsHost");
 
         // Subscribe to new
         if (_rootBorder != null)
@@ -64,6 +197,7 @@ public partial class NavigationViewItem : TemplatedControl
             _rootBorder.PointerPressed += OnRootPointerPressed;
         }
 
+        // Set ItemsSource from Item.Children
         UpdateChildItems();
     }
 
@@ -75,10 +209,7 @@ public partial class NavigationViewItem : TemplatedControl
     {
         if (Item == null || !Item.IsEnabled) return;
 
-        // Find parent NavigationView
-        var navView = this.FindAncestorOfType<NavigationView>();
-        navView?.OnItemClicked(Item);
-
+        ParentNavigationView?.OnItemClicked(this, Item);
         e.Handled = true;
     }
 
@@ -86,21 +217,26 @@ public partial class NavigationViewItem : TemplatedControl
 
     #region Property Changed Handlers
 
-    private void OnItemChanged(UiMenuItem? newItem)
+    private void OnItemChanged(AvaloniaPropertyChangedEventArgs e)
     {
+        var newItem = e.NewValue as UiMenuItem;
+
         if (newItem != null)
         {
+            // Sync properties
             IsExpanded = newItem.IsExpanded;
             IsEnabled = newItem.IsEnabled;
 
             // Subscribe to property changes
-            newItem.PropertyChanged += OnItemPropertyChanged;
+            newItem.PropertyChanged -= OnMenuItemPropertyChanged;
+            newItem.PropertyChanged += OnMenuItemPropertyChanged;
         }
 
+        // Update child items
         UpdateChildItems();
     }
 
-    private void OnItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnMenuItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (Item == null) return;
 
@@ -112,15 +248,18 @@ public partial class NavigationViewItem : TemplatedControl
             case nameof(UiMenuItem.IsEnabled):
                 IsEnabled = Item.IsEnabled;
                 break;
+            case nameof(UiMenuItem.BadgeCount):
+                // Badge is bound directly in template, but we can force re-render if needed
+                break;
         }
     }
 
-    private void OnIsExpandedChanged(bool newValue)
+    private void OnIsExpandedChanged(AvaloniaPropertyChangedEventArgs e)
     {
         // Sync back to Item
-        if (Item != null && Item.IsExpanded != newValue)
+        if (Item != null && Item.IsExpanded != (bool)e.NewValue!)
         {
-            Item.IsExpanded = newValue;
+            Item.IsExpanded = (bool)e.NewValue!;
         }
     }
 
@@ -130,9 +269,14 @@ public partial class NavigationViewItem : TemplatedControl
 
     private void UpdateChildItems()
     {
-        if (_childItemsHost != null && Item?.Children != null)
+        // Set ItemsSource to Children collection
+        if (Item?.Children != null && Item.Children.Count > 0)
         {
-            _childItemsHost.ItemsSource = Item.Children;
+            ItemsSource = Item.Children;
+        }
+        else
+        {
+            ItemsSource = null;
         }
     }
 

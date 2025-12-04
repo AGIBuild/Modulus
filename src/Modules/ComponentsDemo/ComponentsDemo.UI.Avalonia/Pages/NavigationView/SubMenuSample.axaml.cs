@@ -37,7 +37,7 @@ public partial class SubMenuSample : UserControl
         };
         
         items[1].IsExpanded = true;
-        SubMenuNavView.Items = items;
+        SubMenuNavView.ItemsSource = items;
     }
 }
 

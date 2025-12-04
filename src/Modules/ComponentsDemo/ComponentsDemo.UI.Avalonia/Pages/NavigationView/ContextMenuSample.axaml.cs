@@ -31,7 +31,7 @@ public partial class ContextMenuSample : UserControl
             new UiMenuItem("file4", "Notes.md", "📝", "file4") { ContextActions = contextActions }
         };
 
-        ContextNavView.Items = items;
+        ContextNavView.ItemsSource = items;
     }
 
     private void ShowFeedback(string message)

@@ -23,7 +23,7 @@ public partial class BadgeSample : UserControl
             new UiMenuItem("spam", "Spam", "🚫", "spam") { BadgeCount = 99 }
         };
 
-        BadgeNavView.Items = items;
+        BadgeNavView.ItemsSource = items;
     }
 }
 

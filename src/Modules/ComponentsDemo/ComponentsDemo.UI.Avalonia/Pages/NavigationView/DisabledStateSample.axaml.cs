@@ -23,7 +23,7 @@ public partial class DisabledStateSample : UserControl
             new UiMenuItem("active3", "Clickable Item", "✅", "active3")
         };
 
-        DisabledNavView.Items = items;
+        DisabledNavView.ItemsSource = items;
     }
 }
 

@@ -26,7 +26,7 @@
                 <!-- Using our NavigationView component -->
                 <nav:NavigationView x:Name="DemoNavView"
                                     Grid.Row="1" 
-                                    Items="{Binding DemoItems}"
+                                    ItemsSource="{Binding DemoItems}"
                                     SelectionChanged="OnNavigationItemSelected"
                                     Margin="8,0"/>
             </Grid>
