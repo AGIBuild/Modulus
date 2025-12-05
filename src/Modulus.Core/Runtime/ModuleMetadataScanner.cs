@@ -62,7 +62,7 @@ public class ModuleMetadataScanner
             {
                 Id = attr.ViewModelType.Name,
                 DisplayName = attr.DisplayName,
-                Icon = attr.Icon,
+                Icon = attr.Icon,  // Now IconKind type
                 ViewModelType = attr.ViewModelType.FullName,
                 Location = attr.Location == "Bottom" ? MenuLocation.Bottom : MenuLocation.Main,
                 Order = attr.Order
@@ -86,7 +86,7 @@ public class ModuleMetadataScanner
             {
                 Id = attr.Route,
                 DisplayName = attr.DisplayName,
-                Icon = attr.Icon,
+                Icon = ParseBlazorIcon(attr.Icon),  // Map Blazor icon string to IconKind
                 Route = attr.Route,
                 Location = attr.Location == "Bottom" ? MenuLocation.Bottom : MenuLocation.Main,
                 Order = attr.Order
@@ -94,6 +94,31 @@ public class ModuleMetadataScanner
         }
 
         return menus;
+    }
+
+    /// <summary>
+    /// Maps Blazor/MudBlazor icon strings to IconKind enum.
+    /// </summary>
+    private static IconKind ParseBlazorIcon(string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(icon))
+            return IconKind.Grid;
+
+        // Try direct enum parse first
+        if (Enum.TryParse<IconKind>(icon, ignoreCase: true, out var result))
+            return result;
+
+        // Map common MudBlazor icon names
+        return icon.ToLowerInvariant() switch
+        {
+            "note" => IconKind.Document,
+            "notes" => IconKind.Document,
+            "palette" => IconKind.Grid,
+            "echo" => IconKind.Terminal,
+            "extension" => IconKind.Grid,
+            "circle" => IconKind.Grid,
+            _ => IconKind.Grid
+        };
     }
 }
 
@@ -114,7 +139,7 @@ public class ModuleMenuMetadata
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public string Icon { get; set; } = "circle";
+    public IconKind Icon { get; set; } = IconKind.Grid;
     public string? ViewModelType { get; set; }
     public string? Route { get; set; }
     public MenuLocation Location { get; set; } = MenuLocation.Main;

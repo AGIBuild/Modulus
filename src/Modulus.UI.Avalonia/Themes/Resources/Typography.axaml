@@ -1,0 +1,36 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- ============================================== -->
+    <!-- Typography System - Design Tokens             -->
+    <!-- ============================================== -->
+    
+    <!-- Font Families -->
+    <FontFamily x:Key="DefaultFontFamily">Segoe UI, San Francisco, Helvetica, Arial, sans-serif</FontFamily>
+    <FontFamily x:Key="MonospaceFontFamily">Cascadia Code, Consolas, monospace</FontFamily>
+    
+    <!-- Font Sizes -->
+    <x:Double x:Key="FontSizeXSmall">10</x:Double>
+    <x:Double x:Key="FontSizeSmall">12</x:Double>
+    <x:Double x:Key="FontSizeDefault">14</x:Double>
+    <x:Double x:Key="FontSizeMedium">16</x:Double>
+    <x:Double x:Key="FontSizeLarge">20</x:Double>
+    <x:Double x:Key="FontSizeXLarge">24</x:Double>
+    <x:Double x:Key="FontSizeXXLarge">32</x:Double>
+    
+    <!-- Font Weights -->
+    <FontWeight x:Key="FontWeightLight">Light</FontWeight>
+    <FontWeight x:Key="FontWeightNormal">Normal</FontWeight>
+    <FontWeight x:Key="FontWeightMedium">Medium</FontWeight>
+    <FontWeight x:Key="FontWeightSemiBold">SemiBold</FontWeight>
+    <FontWeight x:Key="FontWeightBold">Bold</FontWeight>
+    
+    <!-- Navigation Typography -->
+    <x:Double x:Key="NavItemFontSize">14</x:Double>
+    <x:Double x:Key="NavItemIconSize">18</x:Double>
+    <x:Double x:Key="NavItemChildFontSize">13</x:Double>
+    <x:Double x:Key="NavItemChildIconSize">16</x:Double>
+    <x:Double x:Key="NavBadgeFontSize">11</x:Double>
+    <x:Double x:Key="NavChevronFontSize">10</x:Double>
+    
+</ResourceDictionary>

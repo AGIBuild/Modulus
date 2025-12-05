@@ -1,0 +1,30 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+    
+    <!-- SideNav Default Style -->
+    <Style Selector="controls|SideNav">
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:SideNav">
+                <Grid RowDefinitions="*, Auto">
+                    <!-- Main Menu -->
+                    <controls:NavigationView x:Name="PART_MainNavigationView"
+                                             Grid.Row="0" 
+                                             ItemsSource="{TemplateBinding MainItems}"
+                                             SelectedItem="{TemplateBinding MainSelectedItem, Mode=TwoWay}"
+                                             IsCollapsed="{TemplateBinding IsCollapsed}"
+                                             Margin="0,8,0,0" />
+                    
+                    <!-- Bottom Menu -->
+                    <controls:NavigationView x:Name="PART_BottomNavigationView"
+                                             Grid.Row="1" 
+                                             ItemsSource="{TemplateBinding BottomItems}"
+                                             SelectedItem="{TemplateBinding BottomSelectedItem, Mode=TwoWay}"
+                                             IsCollapsed="{TemplateBinding IsCollapsed}"
+                                             Margin="0,0,0,10" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+</Styles>

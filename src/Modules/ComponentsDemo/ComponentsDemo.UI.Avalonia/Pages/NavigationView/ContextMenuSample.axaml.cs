@@ -15,20 +15,22 @@ public partial class ContextMenuSample : UserControl
 
     private void InitializeDemo()
     {
+        // Use IconKind enum for context menu actions
         var contextActions = new List<MenuAction>
         {
-            new MenuAction { Label = "Edit", Icon = "✏️", Execute = item => ShowFeedback($"Edit: {item.DisplayName}") },
-            new MenuAction { Label = "Rename", Icon = "📝", Execute = item => ShowFeedback($"Rename: {item.DisplayName}") },
-            new MenuAction { Label = "Delete", Icon = "🗑️", Execute = item => ShowFeedback($"Delete: {item.DisplayName}") },
-            new MenuAction { Label = "Info", Icon = "ℹ️", Execute = item => ShowFeedback($"Info: {item.DisplayName}") }
+            new MenuAction { Label = "Edit", Icon = IconKind.Edit, Execute = item => ShowFeedback($"Edit: {item.DisplayName}") },
+            new MenuAction { Label = "Rename", Icon = IconKind.Document, Execute = item => ShowFeedback($"Rename: {item.DisplayName}") },
+            new MenuAction { Label = "Delete", Icon = IconKind.Delete, Execute = item => ShowFeedback($"Delete: {item.DisplayName}") },
+            new MenuAction { Label = "Info", Icon = IconKind.Info, Execute = item => ShowFeedback($"Info: {item.DisplayName}") }
         };
 
+        // Use IconKind enum for type-safe icons
         var items = new List<UiMenuItem>
         {
-            new UiMenuItem("file1", "Document.txt", "📄", "file1") { ContextActions = contextActions },
-            new UiMenuItem("file2", "Image.png", "🖼️", "file2") { ContextActions = contextActions },
-            new UiMenuItem("file3", "Project.zip", "📦", "file3") { ContextActions = contextActions },
-            new UiMenuItem("file4", "Notes.md", "📝", "file4") { ContextActions = contextActions }
+            new UiMenuItem("file1", "Document.txt", IconKind.File, "file1") { ContextActions = contextActions },
+            new UiMenuItem("file2", "Image.png", IconKind.Image, "file2") { ContextActions = contextActions },
+            new UiMenuItem("file3", "Project.zip", IconKind.Archive, "file3") { ContextActions = contextActions },
+            new UiMenuItem("file4", "Notes.md", IconKind.Document, "file4") { ContextActions = contextActions }
         };
 
         ContextNavView.ItemsSource = items;

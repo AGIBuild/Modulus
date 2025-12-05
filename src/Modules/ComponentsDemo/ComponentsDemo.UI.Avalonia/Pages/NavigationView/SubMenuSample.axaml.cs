@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Avalonia.Controls;
+using Modulus.UI.Abstractions;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView;
@@ -14,26 +15,27 @@ public partial class SubMenuSample : UserControl
 
     private void InitializeDemo()
     {
+        // Use IconKind enum for type-safe icons
         var items = new List<UiMenuItem>
         {
-            new UiMenuItem("dashboard", "Dashboard", "📊", "dashboard"),
-            UiMenuItem.CreateGroup("settings", "Settings", "⚙️", new List<UiMenuItem>
+            new UiMenuItem("dashboard", "Dashboard", IconKind.Dashboard, "dashboard"),
+            UiMenuItem.CreateGroup("settings", "Settings", IconKind.Settings, new List<UiMenuItem>
             {
-                new UiMenuItem("general", "General", "🔧", "general"),
-                new UiMenuItem("appearance", "Appearance", "🎨", "appearance"),
-                UiMenuItem.CreateGroup("advanced", "Advanced", "🔬", new List<UiMenuItem>
+                new UiMenuItem("general", "General", IconKind.Grid, "general"),
+                new UiMenuItem("appearance", "Appearance", IconKind.Image, "appearance"),
+                UiMenuItem.CreateGroup("advanced", "Advanced", IconKind.Code, new List<UiMenuItem>
                 {
-                    new UiMenuItem("debug", "Debug", "🐛", "debug"),
-                    new UiMenuItem("experimental", "Experimental", "🧪", "experimental")
+                    new UiMenuItem("debug", "Debug", IconKind.Terminal, "debug"),
+                    new UiMenuItem("experimental", "Experimental", IconKind.Globe, "experimental")
                 })
             }),
-            UiMenuItem.CreateGroup("help", "Help", "❓", new List<UiMenuItem>
+            UiMenuItem.CreateGroup("help", "Help", IconKind.Question, new List<UiMenuItem>
             {
-                new UiMenuItem("docs", "Documentation", "📚", "docs"),
-                new UiMenuItem("support", "Support", "💬", "support"),
-                new UiMenuItem("about", "About", "ℹ️", "about")
+                new UiMenuItem("docs", "Documentation", IconKind.Document, "docs"),
+                new UiMenuItem("support", "Support", IconKind.Chat, "support"),
+                new UiMenuItem("about", "About", IconKind.Info, "about")
             }),
-            new UiMenuItem("logout", "Logout", "🚪", "logout")
+            new UiMenuItem("logout", "Logout", IconKind.ArrowRight, "logout")
         };
         
         items[1].IsExpanded = true;

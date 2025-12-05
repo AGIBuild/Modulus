@@ -13,9 +13,9 @@ public class MenuAction
     public required string Label { get; init; }
 
     /// <summary>
-    /// Optional icon identifier for the action.
+    /// Icon for this action. Default is None (no icon).
     /// </summary>
-    public string? Icon { get; init; }
+    public IconKind Icon { get; init; } = IconKind.None;
 
     /// <summary>
     /// Callback executed when the action is triggered.

@@ -7,7 +7,7 @@
         {
             <!-- Hierarchical item with children -->
             <MudNavGroup Title="@(IsMini ? "" : item.DisplayName)" 
-                         Icon="@GetIcon(item.Icon)" 
+                         Icon="@GetIcon(item.Icon.ToString())" 
                          Expanded="@item.IsExpanded"
                          ExpandedChanged="@(expanded => OnExpandedChanged(item, expanded))"
                          Disabled="@(!item.IsEnabled)">
@@ -15,7 +15,7 @@
                 {
                     <MudTooltip Text="@child.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
                         <MudNavLink Href="@child.NavigationKey" 
-                                    Icon="@GetIcon(child.Icon)" 
+                                    Icon="@GetIcon(child.Icon.ToString())" 
                                     Match="NavLinkMatch.Prefix"
                                     Disabled="@(!child.IsEnabled)"
                                     OnClick="@(() => OnItemClick(child))">
@@ -46,7 +46,7 @@
             <!-- Leaf item -->
             <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
                 <MudNavLink Href="@item.NavigationKey" 
-                            Icon="@GetIcon(item.Icon)" 
+                            Icon="@GetIcon(item.Icon.ToString())" 
                             Match="NavLinkMatch.Prefix"
                             Disabled="@(!item.IsEnabled)"
                             OnClick="@(() => OnItemClick(item))">

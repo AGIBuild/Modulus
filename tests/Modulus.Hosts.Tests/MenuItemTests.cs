@@ -11,12 +11,12 @@ public class MenuItemTests
     public void MenuItem_DefaultValues_AreCorrect()
     {
         // Arrange & Act
-        var item = new MenuItem("id", "Display", "icon", "/route");
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
 
         // Assert
         Assert.Equal("id", item.Id);
         Assert.Equal("Display", item.DisplayName);
-        Assert.Equal("icon", item.Icon);
+        Assert.Equal(IconKind.Home, item.Icon);
         Assert.Equal("/route", item.NavigationKey);
         Assert.Equal(MenuLocation.Main, item.Location);
         Assert.Equal(0, item.Order);
@@ -33,7 +33,7 @@ public class MenuItemTests
     public void MenuItem_WithLocation_SetsCorrectly()
     {
         // Arrange & Act
-        var item = new MenuItem("id", "Display", "icon", "/route", MenuLocation.Bottom, 10);
+        var item = new MenuItem("id", "Display", IconKind.Settings, "/route", MenuLocation.Bottom, 10);
 
         // Assert
         Assert.Equal(MenuLocation.Bottom, item.Location);
@@ -44,7 +44,7 @@ public class MenuItemTests
     public void MenuItem_IsEnabled_CanBeModified()
     {
         // Arrange
-        var item = new MenuItem("id", "Display", "icon", "/route");
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
 
         // Act
         item.IsEnabled = false;
@@ -57,7 +57,7 @@ public class MenuItemTests
     public void MenuItem_BadgeCount_CanBeSet()
     {
         // Arrange
-        var item = new MenuItem("id", "Display", "icon", "/route");
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
 
         // Act
         item.BadgeCount = 5;
@@ -72,7 +72,7 @@ public class MenuItemTests
     public void MenuItem_InstanceMode_CanBeModified()
     {
         // Arrange
-        var item = new MenuItem("id", "Display", "icon", "/route");
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
 
         // Act
         item.InstanceMode = PageInstanceMode.Transient;
@@ -85,9 +85,9 @@ public class MenuItemTests
     public void MenuItem_Children_CanBeAssigned()
     {
         // Arrange
-        var parent = new MenuItem("parent", "Parent", "folder", "");
-        var child1 = new MenuItem("child1", "Child 1", "file", "/child1");
-        var child2 = new MenuItem("child2", "Child 2", "file", "/child2");
+        var parent = new MenuItem("parent", "Parent", IconKind.Folder, "");
+        var child1 = new MenuItem("child1", "Child 1", IconKind.File, "/child1");
+        var child2 = new MenuItem("child2", "Child 2", IconKind.File, "/child2");
 
         // Act
         parent.Children = new List<MenuItem> { child1, child2 };
@@ -103,8 +103,8 @@ public class MenuItemTests
     public void MenuItem_IsExpanded_CanBeToggled()
     {
         // Arrange
-        var item = new MenuItem("id", "Display", "icon", "/route");
-        item.Children = new List<MenuItem> { new MenuItem("child", "Child", "icon", "/child") };
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
+        item.Children = new List<MenuItem> { new MenuItem("child", "Child", IconKind.File, "/child") };
 
         // Act & Assert
         Assert.False(item.IsExpanded);
@@ -118,7 +118,7 @@ public class MenuItemTests
     public void MenuItem_ContextActions_CanBeAssigned()
     {
         // Arrange
-        var item = new MenuItem("id", "Display", "icon", "/route");
+        var item = new MenuItem("id", "Display", IconKind.Home, "/route");
         var actionExecuted = false;
 
         var actions = new List<MenuAction>
@@ -126,13 +126,13 @@ public class MenuItemTests
             new MenuAction
             {
                 Label = "Edit",
-                Icon = "edit",
+                Icon = IconKind.Edit,
                 Execute = _ => actionExecuted = true
             },
             new MenuAction
             {
                 Label = "Delete",
-                Icon = "delete",
+                Icon = IconKind.Delete,
                 Execute = _ => { }
             }
         };
@@ -153,17 +153,17 @@ public class MenuItemTests
         // Arrange
         var children = new List<MenuItem>
         {
-            new MenuItem("c1", "Child 1", "icon", "/c1"),
-            new MenuItem("c2", "Child 2", "icon", "/c2")
+            new MenuItem("c1", "Child 1", IconKind.File, "/c1"),
+            new MenuItem("c2", "Child 2", IconKind.File, "/c2")
         };
 
         // Act
-        var group = MenuItem.CreateGroup("grp", "Group", "folder", children, MenuLocation.Main, 5);
+        var group = MenuItem.CreateGroup("grp", "Group", IconKind.Folder, children, MenuLocation.Main, 5);
 
         // Assert
         Assert.Equal("grp", group.Id);
         Assert.Equal("Group", group.DisplayName);
-        Assert.Equal("folder", group.Icon);
+        Assert.Equal(IconKind.Folder, group.Icon);
         Assert.Equal(string.Empty, group.NavigationKey);
         Assert.Equal(MenuLocation.Main, group.Location);
         Assert.Equal(5, group.Order);

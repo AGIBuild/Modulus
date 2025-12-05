@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleNotes.Core\SimpleNotes.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,3 +1,5 @@
+using Modulus.UI.Abstractions;
+
 namespace Modulus.Sdk;
 
 /// <summary>
@@ -13,9 +15,9 @@ public class AvaloniaMenuAttribute : Attribute
     public string DisplayName { get; }
 
     /// <summary>
-    /// Icon (emoji or icon key, e.g., "🗒️", "📢").
+    /// Icon for this menu item.
     /// </summary>
-    public string Icon { get; set; } = "📦";
+    public IconKind Icon { get; set; } = IconKind.Grid;
 
     /// <summary>
     /// ViewModel type to navigate to.

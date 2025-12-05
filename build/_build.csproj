@@ -10,7 +10,7 @@
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>  <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="10.0.1" />
+    <PackageReference Include="Nuke.Common" Version="10.1.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>

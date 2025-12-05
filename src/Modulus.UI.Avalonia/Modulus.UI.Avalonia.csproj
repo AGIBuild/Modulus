@@ -11,13 +11,16 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.9" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.9" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
     <PackageReference Include="Avalonia.Xaml.Behaviors" Version="11.3.0.6" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.1.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\Modulus.Sdk\Modulus.Sdk.csproj" />
   </ItemGroup>
 
 </Project>

@@ -23,11 +23,11 @@
                            FontSize="16"
                            Margin="16,16,16,8"/>
                 
-                <!-- Using our NavigationView component -->
+                <!-- Using our NavigationView component with MVVM binding -->
                 <nav:NavigationView x:Name="DemoNavView"
                                     Grid.Row="1" 
                                     ItemsSource="{Binding DemoItems}"
-                                    SelectionChanged="OnNavigationItemSelected"
+                                    SelectedItem="{Binding SelectedDemoItem, Mode=TwoWay}"
                                     Margin="8,0"/>
             </Grid>
         </Border>

@@ -47,8 +47,8 @@ public class BlazorHostModule : ModuleBase
     {
         // Register built-in menu items (Components is registered by ComponentsDemo module)
         var menuRegistry = context.ServiceProvider.GetRequiredService<IMenuRegistry>();
-        menuRegistry.Register(new UiMenuItem("Modules", "Modules", "extension", "/modules", MenuLocation.Main, 10));
-        menuRegistry.Register(new UiMenuItem("Settings", "Settings", "settings", "/settings", MenuLocation.Bottom, 100));
+        menuRegistry.Register(new UiMenuItem("Modules", "Modules", IconKind.AppsAddIn, "/modules", MenuLocation.Main, 10));
+        menuRegistry.Register(new UiMenuItem("Settings", "Settings", IconKind.Settings, "/settings", MenuLocation.Bottom, 100));
         
         return Task.CompletedTask;
     }

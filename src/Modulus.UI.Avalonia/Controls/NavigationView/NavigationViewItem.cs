@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -7,6 +8,8 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using Modulus.UI.Abstractions;
+using Modulus.UI.Avalonia.Icons;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.UI.Avalonia.Controls;
@@ -26,6 +29,11 @@ public class NavigationViewItem : HeaderedItemsControl
     /// </summary>
     public static readonly IValueConverter HasBadgeConverter =
         new FuncValueConverter<int?, bool>(count => count.HasValue && count > 0);
+
+    /// <summary>
+    /// Converter that transforms IconKind to Geometry for rendering.
+    /// </summary>
+    public static readonly IValueConverter IconToGeometryConverter = IconHelper.IconKindToGeometryConverter;
 
     #endregion
 
@@ -120,6 +128,7 @@ public class NavigationViewItem : HeaderedItemsControl
     #region Private Fields
 
     private Border? _rootBorder;
+    private ContextMenu? _contextMenu;
 
     #endregion
 
@@ -191,6 +200,7 @@ public class NavigationViewItem : HeaderedItemsControl
         if (_rootBorder != null)
         {
             _rootBorder.PointerPressed -= OnRootPointerPressed;
+            _rootBorder.PointerReleased -= OnRootPointerReleased;
         }
 
         _rootBorder = e.NameScope.Find<Border>("PART_RootBorder");
@@ -199,10 +209,14 @@ public class NavigationViewItem : HeaderedItemsControl
         if (_rootBorder != null)
         {
             _rootBorder.PointerPressed += OnRootPointerPressed;
+            _rootBorder.PointerReleased += OnRootPointerReleased;
         }
 
         // Set ItemsSource from Item.Children
         UpdateChildItems();
+        
+        // Build context menu if needed
+        UpdateContextMenu();
     }
 
     #endregion
@@ -213,8 +227,27 @@ public class NavigationViewItem : HeaderedItemsControl
     {
         if (Item == null || !Item.IsEnabled) return;
 
-        ParentNavigationView?.OnItemClicked(this, Item);
-        e.Handled = true;
+        var props = e.GetCurrentPoint(this).Properties;
+        
+        // Handle right-click for context menu
+        if (props.IsRightButtonPressed && _contextMenu != null)
+        {
+            _contextMenu.Open(this);
+            e.Handled = true;
+            return;
+        }
+
+        // Handle left-click for selection/expansion
+        if (props.IsLeftButtonPressed)
+        {
+            ParentNavigationView?.OnItemClicked(this, Item);
+            e.Handled = true;
+        }
+    }
+
+    private void OnRootPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        // Additional handling if needed
     }
 
     #endregion
@@ -238,6 +271,9 @@ public class NavigationViewItem : HeaderedItemsControl
 
         // Update child items
         UpdateChildItems();
+        
+        // Update context menu
+        UpdateContextMenu();
     }
 
     private void OnMenuItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -312,6 +348,51 @@ public class NavigationViewItem : HeaderedItemsControl
         {
             ItemsSource = null;
         }
+    }
+
+    private void UpdateContextMenu()
+    {
+        // Clear existing context menu
+        _contextMenu = null;
+
+        if (Item?.ContextActions == null || Item.ContextActions.Count == 0)
+            return;
+
+        // Build context menu from actions
+        var contextMenu = new ContextMenu();
+        var menuItems = new List<global::Avalonia.Controls.MenuItem>();
+
+        foreach (var action in Item.ContextActions)
+        {
+            var menuItem = new global::Avalonia.Controls.MenuItem
+            {
+                Header = action.Label
+            };
+
+            // Add icon if available
+            var iconGeometry = IconHelper.GetGeometry(action.Icon);
+            if (iconGeometry != null)
+            {
+                menuItem.Icon = new global::Avalonia.Controls.Shapes.Path
+                {
+                    Data = iconGeometry,
+                    Width = 16,
+                    Height = 16,
+                    Stretch = global::Avalonia.Media.Stretch.Uniform,
+                    Fill = global::Avalonia.Media.Brushes.Gray
+                };
+            }
+
+            // Capture for closure
+            var capturedAction = action;
+            var capturedItem = Item;
+            menuItem.Click += (s, e) => capturedAction.Execute?.Invoke(capturedItem);
+
+            menuItems.Add(menuItem);
+        }
+
+        contextMenu.ItemsSource = menuItems;
+        _contextMenu = contextMenu;
     }
 
     #endregion

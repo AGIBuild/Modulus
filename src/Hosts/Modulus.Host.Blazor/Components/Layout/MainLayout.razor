@@ -51,7 +51,7 @@
                     {
                         <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
                             <MudNavLink Href="@item.NavigationKey" 
-                                        Icon="@GetIcon(item.Icon)" 
+                                        Icon="@GetIcon(item.Icon.ToString())" 
                                         Match="NavLinkMatch.Prefix"
                                         Disabled="@(!item.IsEnabled)">
                                 @if (_drawerOpen)
@@ -81,7 +81,7 @@
                     {
                         <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
                             <MudNavLink Href="@item.NavigationKey" 
-                                        Icon="@GetIcon(item.Icon)" 
+                                        Icon="@GetIcon(item.Icon.ToString())" 
                                         Match="NavLinkMatch.Prefix"
                                         Disabled="@(!item.IsEnabled)">
                                 @if (_drawerOpen) { <span>@item.DisplayName</span> }

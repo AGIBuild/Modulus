@@ -26,7 +26,12 @@ public partial class MenuItem : ObservableObject
     // Core properties (read-only)
     public string Id { get; }
     public string DisplayName { get; }
-    public string Icon { get; }
+    
+    /// <summary>
+    /// Icon for this menu item.
+    /// </summary>
+    public IconKind Icon { get; }
+    
     public MenuLocation Location { get; }
     public string NavigationKey { get; } // View Key or Route
     public int Order { get; }
@@ -46,7 +51,10 @@ public partial class MenuItem : ObservableObject
     /// </summary>
     public IReadOnlyList<MenuAction>? ContextActions { get; set; }
 
-    public MenuItem(string id, string displayName, string icon, string navigationKey, MenuLocation location = MenuLocation.Main, int order = 0)
+    /// <summary>
+    /// Creates a menu item.
+    /// </summary>
+    public MenuItem(string id, string displayName, IconKind icon, string navigationKey, MenuLocation location = MenuLocation.Main, int order = 0)
     {
         Id = id;
         DisplayName = displayName;
@@ -59,7 +67,7 @@ public partial class MenuItem : ObservableObject
     /// <summary>
     /// Creates a group menu item with children.
     /// </summary>
-    public static MenuItem CreateGroup(string id, string displayName, string icon, IReadOnlyList<MenuItem> children, MenuLocation location = MenuLocation.Main, int order = 0)
+    public static MenuItem CreateGroup(string id, string displayName, IconKind icon, IReadOnlyList<MenuItem> children, MenuLocation location = MenuLocation.Main, int order = 0)
     {
         return new MenuItem(id, displayName, icon, string.Empty, location, order)
         {

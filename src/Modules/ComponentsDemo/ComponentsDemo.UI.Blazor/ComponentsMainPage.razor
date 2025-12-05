@@ -13,7 +13,7 @@
                     @if (item.Children != null && item.Children.Count > 0)
                     {
                         <MudNavGroup Title="@item.DisplayName" 
-                                     Icon="@GetIcon(item.Icon)" 
+                                     Icon="@GetIcon(item.Icon.ToString())" 
                                      Expanded="@item.IsExpanded"
                                      ExpandedChanged="@(expanded => item.IsExpanded = expanded)">
                             @foreach (var child in item.Children)
@@ -22,13 +22,13 @@
                                 {
                                     <!-- Nested sub-menu -->
                                     <MudNavGroup Title="@child.DisplayName" 
-                                                 Icon="@GetIcon(child.Icon)" 
+                                                 Icon="@GetIcon(child.Icon.ToString())" 
                                                  Expanded="@child.IsExpanded"
                                                  ExpandedChanged="@(expanded => child.IsExpanded = expanded)">
                                         @foreach (var subChild in child.Children)
                                         {
                                             <MudNavLink Href="@($"/components/{subChild.NavigationKey}")"
-                                                        Icon="@GetIcon(subChild.Icon)"
+                                                        Icon="@GetIcon(subChild.Icon.ToString())"
                                                         Disabled="@(!subChild.IsEnabled)"
                                                         Match="NavLinkMatch.All">
                                                 @subChild.DisplayName
@@ -40,7 +40,7 @@
                                 {
                                     <!-- Child item -->
                                     <MudNavLink Href="@($"/components/{child.NavigationKey}")"
-                                                Icon="@GetIcon(child.Icon)"
+                                                Icon="@GetIcon(child.Icon.ToString())"
                                                 Disabled="@(!child.IsEnabled)"
                                                 Match="NavLinkMatch.All">
                                         <div class="d-flex align-center" style="gap: 8px;">
@@ -59,7 +59,7 @@
                     {
                         <!-- Top-level item -->
                         <MudNavLink Href="@($"/components/{item.NavigationKey}")"
-                                    Icon="@GetIcon(item.Icon)"
+                                    Icon="@GetIcon(item.Icon.ToString())"
                                     Disabled="@(!item.IsEnabled)"
                                     Match="NavLinkMatch.All">
                             <div class="d-flex align-center" style="gap: 8px;">

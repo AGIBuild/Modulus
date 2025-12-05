@@ -5,6 +5,7 @@
     <!-- ============================================== -->
     <!-- NavigationViewItem Control Template           -->
     <!-- Inherits from HeaderedItemsControl            -->
+    <!-- Uses Fluent System Icons via Path geometry    -->
     <!-- ============================================== -->
     
     <Style Selector="controls|NavigationViewItem">
@@ -32,16 +33,16 @@
                         </ToolTip.Tip>
                         
                         <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                            <!-- Icon -->
-                            <TextBlock Grid.Column="0"
-                                       x:Name="PART_Icon"
-                                       Text="{Binding Item.Icon, RelativeSource={RelativeSource TemplatedParent}}"
-                                       FontSize="{DynamicResource NavItemIconSize}"
-                                       Foreground="{DynamicResource NavItemIconBrush}"
-                                       VerticalAlignment="Center"
-                                       Width="{DynamicResource NavItemIconWidth}"
-                                       TextAlignment="Center"
-                                       Margin="{DynamicResource NavItemIconMargin}"/>
+                            <!-- Icon (Path-based using Fluent Icons) -->
+                            <Path Grid.Column="0"
+                                  x:Name="PART_Icon"
+                                  Data="{Binding Item.Icon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:NavigationViewItem.IconToGeometryConverter}}"
+                                  Fill="{DynamicResource NavItemIconBrush}"
+                                  Stretch="Uniform"
+                                  Width="20"
+                                  Height="20"
+                                  VerticalAlignment="Center"
+                                  Margin="{DynamicResource NavItemIconMargin}"/>
                             
                             <!-- Display Name -->
                             <TextBlock Grid.Column="1"
@@ -70,24 +71,26 @@
                             </Border>
                             
                             <!-- Chevron (for groups with children) -->
-                            <TextBlock Grid.Column="3"
-                                       x:Name="PART_Chevron"
-                                       Text="▶"
-                                       FontSize="{DynamicResource NavChevronFontSize}"
-                                       Foreground="{DynamicResource NavItemIconBrush}"
-                                       VerticalAlignment="Center"
-                                       Margin="4,0,0,0"
-                                       RenderTransformOrigin="50%,50%"
-                                       IsVisible="False">
-                                <TextBlock.RenderTransform>
+                            <Path Grid.Column="3"
+                                  x:Name="PART_Chevron"
+                                  Data="{DynamicResource Icon.ChevronRight}"
+                                  Fill="{DynamicResource NavItemIconBrush}"
+                                  Stretch="Uniform"
+                                  Width="12"
+                                  Height="12"
+                                  VerticalAlignment="Center"
+                                  Margin="4,0,0,0"
+                                  RenderTransformOrigin="50%,50%"
+                                  IsVisible="False">
+                                <Path.RenderTransform>
                                     <RotateTransform Angle="0"/>
-                                </TextBlock.RenderTransform>
-                                <TextBlock.Transitions>
+                                </Path.RenderTransform>
+                                <Path.Transitions>
                                     <Transitions>
                                         <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15"/>
                                     </Transitions>
-                                </TextBlock.Transitions>
-                            </TextBlock>
+                                </Path.Transitions>
+                            </Path>
                         </Grid>
                     </Border>
                     
@@ -134,17 +137,17 @@
         <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedTextBrush}"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ TextBlock#PART_Icon">
-        <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedIconBrush}"/>
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ Path#PART_Icon">
+        <Setter Property="Fill" Value="{DynamicResource NavItemSelectedIconBrush}"/>
     </Style>
     
     <!-- Has Children - Show Chevron -->
-    <Style Selector="controls|NavigationViewItem:not(:empty) /template/ TextBlock#PART_Chevron">
+    <Style Selector="controls|NavigationViewItem:not(:empty) /template/ Path#PART_Chevron">
         <Setter Property="IsVisible" Value="True"/>
     </Style>
     
     <!-- Expanded State - Rotate Chevron and Show Children -->
-    <Style Selector="controls|NavigationViewItem[IsExpanded=True] /template/ TextBlock#PART_Chevron">
+    <Style Selector="controls|NavigationViewItem[IsExpanded=True] /template/ Path#PART_Chevron">
         <Setter Property="RenderTransform">
             <RotateTransform Angle="90"/>
         </Setter>
@@ -172,7 +175,7 @@
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_Chevron">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Path#PART_Chevron">
         <Setter Property="IsVisible" Value="False"/>
     </Style>
     
@@ -181,7 +184,7 @@
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
     
-    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_Icon">
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Path#PART_Icon">
         <Setter Property="Margin" Value="0"/>
     </Style>
     
