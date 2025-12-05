@@ -50,6 +50,6 @@
 - [x] 7.5 Context menu support (deferred - requires custom implementation)
 
 ## 8. Testing
-- [ ] 8.1 Unit tests for INavigationService implementation (guard evaluation, lifecycle)
-- [ ] 8.2 Unit tests for MenuItem enhanced properties
-- [ ] 8.3 Integration tests for navigation flow with guards
+- [x] 8.1 Unit tests for INavigationService implementation (guard evaluation, lifecycle)
+- [x] 8.2 Unit tests for MenuItem enhanced properties
+- [x] 8.3 Integration tests for navigation flow with guards
