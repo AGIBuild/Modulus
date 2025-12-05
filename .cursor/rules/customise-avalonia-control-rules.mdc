@@ -1,6 +1,54 @@
 ---
-description: follow the rules when implement a avalonia control
+description: Avalonia control design rules - triggered when implementing UI controls
 alwaysApply: false
+globs:
+  - "**/Controls/**/*.cs"
+  - "**/Themes/**/*.xaml"
+  - "**/*.axaml"
 ---
 
-you should follow `@.cursor\commands\avalonia-control-design-rules.md` to design new control or components.
+## Avalonia UI Control Design Rules
+
+### 1. Directory Structure
+```
+Controls/
+  └── [ControlName]/
+        ├── MyControl.cs
+        └── MyControl.Properties.cs
+Themes/
+  ├── Generic.xaml
+  ├── Controls/[ControlName].xaml
+  ├── Light/[ControlName].xaml
+  ├── Dark/[ControlName].xaml
+  ├── Colors.xaml
+  ├── Typography.xaml
+  └── Resources.xaml
+```
+
+### 2. Control Implementation
+- Use `TemplatedControl` as base class
+- All properties MUST use `AvaloniaProperty`
+- Separate properties into `*.Properties.cs` file
+- Include XML documentation comments
+
+### 3. Template Rules
+- Use `{TemplateBinding Property}` for bindings
+- Use `PART_` prefix for template parts
+- Keep logic in C#, appearance in XAML
+- Never build UI in C# code
+
+### 4. Theme System
+- Provide Light and Dark themes
+- Use `{DynamicResource}` for colors
+- Design tokens in separate files (Colors, Typography, Resources)
+
+### 5. Required Outputs per Control
+- Control class (*.cs)
+- Properties file (*.Properties.cs)
+- Default style (XAML)
+- Light/Dark theme styles
+- Demo usage example
+
+### 6. Data Triggers
+- Use DataTrigger/MultiDataTrigger for state-based template switching
+- Consider DataTemplateSelector for many templates or high-frequency updates
