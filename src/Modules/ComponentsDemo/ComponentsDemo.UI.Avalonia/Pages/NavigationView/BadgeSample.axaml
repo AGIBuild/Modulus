@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.Pages.NavigationView.BadgeSample">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="Badge Indicators Demo"
+                   FontWeight="Bold"
+                   FontSize="16"/>
+        
+        <TextBlock Text="NavigationView supports badge indicators to show notification counts:"
+                   TextWrapping="Wrap"/>
+        
+        <Border Background="#15000000"
+                CornerRadius="8"
+                Padding="8">
+            <controls:NavigationView x:Name="BadgeNavView"
+                                     Width="220"
+                                     Height="200"
+                                     HorizontalAlignment="Left"/>
+        </Border>
+        
+        <Border Background="#10000000"
+                CornerRadius="6"
+                Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Badge Features:" FontWeight="SemiBold"/>
+                <TextBlock Text="- BadgeCount property for notification count"/>
+                <TextBlock Text="- Automatic hiding when count is 0 or null"/>
+                <TextBlock Text="- Compact badge display in collapsed mode"/>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

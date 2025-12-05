@@ -1,3 +1,5 @@
+using Modulus.UI.Abstractions;
+
 namespace Modulus.Sdk;
 
 /// <summary>
@@ -18,14 +20,14 @@ public class BlazorMenuAttribute : Attribute
     public string Route { get; }
 
     /// <summary>
-    /// Icon name for MudBlazor (e.g., "note", "echo", "settings").
+    /// Icon for the menu item.
     /// </summary>
-    public string Icon { get; set; } = "circle";
+    public IconKind Icon { get; set; } = IconKind.Grid;
 
     /// <summary>
     /// Menu location: Main or Bottom.
     /// </summary>
-    public string Location { get; set; } = "Main";
+    public MenuLocation Location { get; set; } = MenuLocation.Main;
 
     /// <summary>
     /// Sort order (lower = higher priority).

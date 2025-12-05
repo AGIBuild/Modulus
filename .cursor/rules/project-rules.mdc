@@ -1,0 +1,6 @@
+---
+description: add package or update solution file.
+alwaysApply: false
+---
+## Core rules
+- 必须使用dotnet 命令来添加nuget包和项目solution文件维护. 

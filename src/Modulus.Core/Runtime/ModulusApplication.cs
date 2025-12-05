@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,11 @@ public interface IModulusApplication : IDisposable
     /// Gets all scanned module metadata (from declarative attributes).
     /// </summary>
     IReadOnlyList<ModuleMetadata> ModuleMetadataList { get; }
+    
+    /// <summary>
+    /// Gets all loaded module assemblies (Core + UI modules).
+    /// </summary>
+    IReadOnlyList<Assembly> LoadedModuleAssemblies { get; }
 }
 
 public class ModulusApplication : IModulusApplication
@@ -36,6 +42,11 @@ public class ModulusApplication : IModulusApplication
 
     public IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("Application not initialized.");
     public IReadOnlyList<ModuleMetadata> ModuleMetadataList => _moduleMetadataList;
+    
+    public IReadOnlyList<Assembly> LoadedModuleAssemblies => _moduleManager.GetSortedModules()
+        .Select(m => m.GetType().Assembly)
+        .Distinct()
+        .ToList();
 
     internal ModulusApplication(IServiceCollection services, ModuleManager moduleManager, ILogger<ModulusApplication> logger)
     {

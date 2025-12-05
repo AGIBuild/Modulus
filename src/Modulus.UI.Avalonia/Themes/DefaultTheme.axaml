@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Default Theme - Dark Gray (can be overridden by host) -->
+    
+    <!-- Window Background -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#1A1A1A"/>
+    
+    <!-- Title Bar -->
+    <SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="#242424"/>
+    <SolidColorBrush x:Key="TitleBarTextBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="TitleBarBadgeBackgroundBrush" Color="#383838"/>
+    
+    <!-- Sidebar / Navigation -->
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="NavItemBackgroundBrush" Color="Transparent"/>
+    <SolidColorBrush x:Key="NavItemHoverBackgroundBrush" Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="NavItemActiveBackgroundBrush" Color="#383838"/>
+    <SolidColorBrush x:Key="NavItemSelectedBackgroundBrush" Color="#2860A0FF"/>
+    <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemTextBrush" Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="NavItemIconBrush" Color="#909090"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="#6366F1"/><!-- Primary/Accent Color -->
+    
+    <!-- Content Area -->
+    <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#202020"/>
+    <SolidColorBrush x:Key="ContentHeaderBackgroundBrush" Color="#262626"/>
+    <SolidColorBrush x:Key="ContentBorderBrush" Color="#303030"/>
+    
+    <!-- Text Colors -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#707070"/>
+    
+    <!-- Surface Colors -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#383838"/>
+    <SolidColorBrush x:Key="SurfaceActiveBrush" Color="#4A4A4A"/>
+    
+    <!-- Card Colors -->
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#2A2A2A"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#3A3A3A"/>
+    
+    <!-- Badge Colors -->
+    <SolidColorBrush x:Key="BadgeBackgroundBrush" Color="#F44336"/>
+    <SolidColorBrush x:Key="BadgeTextBrush" Color="#FFFFFF"/>
+    
+</ResourceDictionary>

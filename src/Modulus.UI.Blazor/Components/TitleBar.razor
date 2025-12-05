@@ -1,0 +1,37 @@
+<MudAppBar Elevation="1" Class="@CssClass">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                   Color="Color.Inherit" 
+                   Edge="Edge.Start" 
+                   OnClick="@OnMenuToggle" />
+    <MudText Typo="Typo.h5" Class="ml-3 fw-bold">@Title</MudText>
+    @if (!string.IsNullOrEmpty(Badge))
+    {
+        <MudChip T="string" Size="Size.Small" Color="Color.Surface" Class="ml-2">@Badge</MudChip>
+    }
+    <MudSpacer />
+    @RightContent
+</MudAppBar>
+
+<style>
+    .mud-theme-gradient {
+        background: linear-gradient(135deg, #7B1FA2 0%, #9C27B0 50%, #C2185B 100%) !important;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "MODULUS";
+
+    [Parameter]
+    public string? Badge { get; set; }
+
+    [Parameter]
+    public EventCallback OnMenuToggle { get; set; }
+
+    [Parameter]
+    public RenderFragment? RightContent { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = "mud-theme-gradient";
+}
+

@@ -1,0 +1,72 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+        xmlns:behaviors="using:Modulus.UI.Avalonia.Behaviors"
+        xmlns:i="using:Avalonia.Xaml.Interactivity">
+    
+    <!-- TitleBar Default Style -->
+    <Style Selector="controls|TitleBar">
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:TitleBar">
+                <Grid ColumnDefinitions="Auto, Auto, *, Auto" 
+                      Height="{TemplateBinding Height}" 
+                      Background="{DynamicResource TitleBarBackgroundBrush}">
+                    <i:Interaction.Behaviors>
+                        <behaviors:WindowDragBehavior />
+                    </i:Interaction.Behaviors>
+                    
+                    <!-- Nav Toggle Button -->
+                    <Button x:Name="PART_ToggleButton"
+                            Grid.Column="0" 
+                            Command="{TemplateBinding ToggleCommand}"
+                            IsVisible="{TemplateBinding ShowToggle}"
+                            Width="48" 
+                            Height="{TemplateBinding Height}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ToolTip.Tip="Toggle Navigation">
+                        <PathIcon Data="{DynamicResource Icon.Menu}" 
+                                  Width="18" Height="18"
+                                  Foreground="{DynamicResource TitleBarTextBrush}"/>
+                    </Button>
+                    
+                    <!-- Branding -->
+                    <StackPanel Grid.Column="1" 
+                                Orientation="Horizontal" 
+                                VerticalAlignment="Center" 
+                                Margin="5,0,15,0">
+                        <TextBlock x:Name="PART_Title"
+                                   Text="{TemplateBinding Title}" 
+                                   FontWeight="Black" 
+                                   FontSize="18" 
+                                   Foreground="{DynamicResource TitleBarTextBrush}" 
+                                   VerticalAlignment="Center"/>
+                        <Border x:Name="PART_Badge"
+                                Background="{DynamicResource TitleBarBadgeBackgroundBrush}" 
+                                CornerRadius="4" 
+                                Padding="6,2" 
+                                Margin="10,0,0,0" 
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding Badge, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Text="{TemplateBinding Badge}" 
+                                       FontSize="10" 
+                                       FontWeight="Bold" 
+                                       Foreground="{DynamicResource TitleBarTextBrush}"/>
+                        </Border>
+                    </StackPanel>
+                    
+                    <!-- Spacer -->
+                    <Border Grid.Column="2" />
+                    
+                    <!-- Right Content -->
+                    <ContentPresenter x:Name="PART_RightContent"
+                                      Grid.Column="3" 
+                                      Content="{TemplateBinding RightContent}"
+                                      VerticalAlignment="Center" 
+                                      Margin="0,0,10,0"/>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+</Styles>

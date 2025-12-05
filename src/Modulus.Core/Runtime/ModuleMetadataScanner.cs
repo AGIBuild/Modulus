@@ -62,7 +62,7 @@ public class ModuleMetadataScanner
             {
                 Id = attr.ViewModelType.Name,
                 DisplayName = attr.DisplayName,
-                Icon = attr.Icon,
+                Icon = attr.Icon,  // Now IconKind type
                 ViewModelType = attr.ViewModelType.FullName,
                 Location = attr.Location == "Bottom" ? MenuLocation.Bottom : MenuLocation.Main,
                 Order = attr.Order
@@ -88,7 +88,7 @@ public class ModuleMetadataScanner
                 DisplayName = attr.DisplayName,
                 Icon = attr.Icon,
                 Route = attr.Route,
-                Location = attr.Location == "Bottom" ? MenuLocation.Bottom : MenuLocation.Main,
+                Location = attr.Location,
                 Order = attr.Order
             });
         }
@@ -114,7 +114,7 @@ public class ModuleMenuMetadata
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public string Icon { get; set; } = "circle";
+    public IconKind Icon { get; set; } = IconKind.Grid;
     public string? ViewModelType { get; set; }
     public string? Route { get; set; }
     public MenuLocation Location { get; set; } = MenuLocation.Main;

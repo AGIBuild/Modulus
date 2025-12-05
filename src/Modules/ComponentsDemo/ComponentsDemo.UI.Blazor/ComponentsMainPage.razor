@@ -1,0 +1,158 @@
+@page "/components"
+@page "/components/{DemoId}"
+@using Modulus.UI.Abstractions
+
+<MudGrid>
+    <!-- Demo Navigation Sidebar - Using MudBlazor native components -->
+    <MudItem xs="12" sm="3">
+        <MudPaper Elevation="2" Class="pa-4 pr-6" Style="height: 100%;">
+            <MudText Typo="Typo.h6" Class="mb-4">Component Demos</MudText>
+            <MudNavMenu Bordered="true" Color="Color.Primary">
+                @foreach (var item in _viewModel.DemoItems)
+                {
+                    @if (item.Children != null && item.Children.Count > 0)
+                    {
+                        <MudNavGroup Title="@item.DisplayName" 
+                                     Icon="@GetIcon(item.Icon.ToString())" 
+                                     Expanded="@item.IsExpanded"
+                                     ExpandedChanged="@(expanded => item.IsExpanded = expanded)">
+                            @foreach (var child in item.Children)
+                            {
+                                @if (child.Children != null && child.Children.Count > 0)
+                                {
+                                    <!-- Nested sub-menu -->
+                                    <MudNavGroup Title="@child.DisplayName" 
+                                                 Icon="@GetIcon(child.Icon.ToString())" 
+                                                 Expanded="@child.IsExpanded"
+                                                 ExpandedChanged="@(expanded => child.IsExpanded = expanded)">
+                                        @foreach (var subChild in child.Children)
+                                        {
+                                            <MudNavLink Href="@($"/components/{subChild.NavigationKey}")"
+                                                        Icon="@GetIcon(subChild.Icon.ToString())"
+                                                        Disabled="@(!subChild.IsEnabled)"
+                                                        Match="NavLinkMatch.All">
+                                                @subChild.DisplayName
+                                            </MudNavLink>
+                                        }
+                                    </MudNavGroup>
+                                }
+                                else
+                                {
+                                    <!-- Child item -->
+                                    <MudNavLink Href="@($"/components/{child.NavigationKey}")"
+                                                Icon="@GetIcon(child.Icon.ToString())"
+                                                Disabled="@(!child.IsEnabled)"
+                                                Match="NavLinkMatch.All">
+                                        <div class="d-flex align-center" style="gap: 8px;">
+                                            <span style="flex: 1;">@child.DisplayName</span>
+                                            @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                                            {
+                                                <MudBadge Content="@child.BadgeCount" Color="@GetBadgeColor(child.BadgeColor)" Overlap="false" Bordered="true" />
+                                            }
+                                        </div>
+                                    </MudNavLink>
+                                }
+                            }
+                        </MudNavGroup>
+                    }
+                    else
+                    {
+                        <!-- Top-level item -->
+                        <MudNavLink Href="@($"/components/{item.NavigationKey}")"
+                                    Icon="@GetIcon(item.Icon.ToString())"
+                                    Disabled="@(!item.IsEnabled)"
+                                    Match="NavLinkMatch.All">
+                            <div class="d-flex align-center" style="gap: 8px;">
+                                <span style="flex: 1;">@item.DisplayName</span>
+                                @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                {
+                                    <MudBadge Content="@item.BadgeCount" Color="@GetBadgeColor(item.BadgeColor)" Overlap="false" Bordered="true" />
+                                }
+                            </div>
+                        </MudNavLink>
+                    }
+                }
+            </MudNavMenu>
+        </MudPaper>
+    </MudItem>
+    
+    <!-- Demo Content Area -->
+    <MudItem xs="12" sm="9">
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudText Typo="Typo.h4" Class="mb-2">@_viewModel.CurrentDemoName</MudText>
+            <MudDivider Class="mb-4" />
+            
+            @switch (_currentDemoId)
+            {
+                case "basic-nav":
+                    <BasicNavDemo />
+                    break;
+                case "badge-nav":
+                    <BadgeNavDemo />
+                    break;
+                case "disabled-nav":
+                    <DisabledNavDemo />
+                    break;
+                case "sub-item-1":
+                case "sub-item-2":
+                case "sub-item-3":
+                    <SubItemDemo ItemId="@_currentDemoId" />
+                    break;
+                case "context-demo":
+                    <ContextMenuDemo />
+                    break;
+                case "lifecycle-demo":
+                    <LifecycleDemo />
+                    break;
+                default:
+                    <BasicNavDemo />
+                    break;
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public string? DemoId { get; set; }
+
+    private ComponentsMainViewModel _viewModel = new();
+    private string _currentDemoId = "basic-nav";
+
+    protected override void OnParametersSet()
+    {
+        _currentDemoId = DemoId ?? "basic-nav";
+        _viewModel.NavigateTo(_currentDemoId);
+    }
+
+    private string GetIcon(string iconName)
+    {
+        return iconName?.ToLower() switch
+        {
+            "compass" => Icons.Material.Filled.Explore,
+            "link" => Icons.Material.Filled.Link,
+            "notifications" or "bell" => Icons.Material.Filled.Notifications,
+            "block" => Icons.Material.Filled.Block,
+            "folder" => Icons.Material.Filled.Folder,
+            "file" => Icons.Material.Filled.InsertDriveFile,
+            "list" => Icons.Material.Filled.List,
+            "refresh" => Icons.Material.Filled.Refresh,
+            "edit" => Icons.Material.Filled.Edit,
+            "delete" => Icons.Material.Filled.Delete,
+            "info" => Icons.Material.Filled.Info,
+            _ => Icons.Material.Filled.Circle
+        };
+    }
+
+    private Color GetBadgeColor(string? colorName)
+    {
+        return colorName?.ToLower() switch
+        {
+            "error" or "red" => Color.Error,
+            "warning" or "orange" => Color.Warning,
+            "info" or "blue" => Color.Info,
+            "success" or "green" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}

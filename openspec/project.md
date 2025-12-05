@@ -31,6 +31,13 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 - **Dependency Rule**: Core assemblies MUST NOT reference UI frameworks; use `Modulus.UI.Abstractions` for UI contracts
 - **Cross-module Communication**: Always via MediatR, never direct dependencies
 
+### Module Load Context
+- Every module runs inside its own `ModuleLoadContext` (custom `AssemblyLoadContext`) so it can be unloaded independently.
+- A shared-assembly allowlist forces critical assemblies to load from the host’s default context. This list currently includes `System.*`, `Microsoft.*`, `Avalonia*`, `Modulus.Core`, `Modulus.Sdk`, `Modulus.UI.Abstractions`, and `Modulus.UI.Avalonia`.
+- UI libraries that expose controls, styles, or resources (e.g., `Modulus.UI.Avalonia`) MUST live on the shared list; otherwise modules load a second copy of the assembly, causing `ControlTemplate` lookups and `AssetLoader` queries to fail because the `TargetType` and resource indices come from different runtime types.
+- Symptoms of a missing shared assembly include `TemplatedParent` being null, `AssetLoader.Exists(avares://...)` returning false, and styles not applying even though resources are embedded.
+- When adding a new shared UI/core library, update `ModuleLoadContext.IsSharedAssembly` and redeploy the host so modules reuse the same assembly instance.
+
 ### Testing Strategy
 - Unit tests in `tests/<Project>.Tests/` directories
 - Use NSubstitute for mocking

@@ -1,4 +1,8 @@
-﻿<Router AppAssembly="typeof(MauiProgram).Assembly">
+﻿@using System.Reflection
+@using Modulus.Core.Runtime
+@inject IModulusApplication ModulusApp
+
+<Router AppAssembly="typeof(MauiProgram).Assembly" AdditionalAssemblies="@_additionalAssemblies">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
@@ -9,3 +13,28 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    private IEnumerable<Assembly> _additionalAssemblies = Enumerable.Empty<Assembly>();
+
+    protected override void OnInitialized()
+    {
+        // Get all loaded module assemblies that contain Blazor routable components
+        _additionalAssemblies = ModulusApp.LoadedModuleAssemblies
+            .Where(HasRoutableComponents)
+            .ToList();
+    }
+
+    private static bool HasRoutableComponents(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes()
+                .Any(t => t.GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.RouteAttribute), true).Any());
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

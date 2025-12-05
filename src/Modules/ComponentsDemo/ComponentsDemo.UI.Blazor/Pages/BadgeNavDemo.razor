@@ -1,0 +1,55 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Display notification badges on navigation items using <code>MudBadge</code>.
+</MudText>
+
+<MudText Typo="Typo.h6" Class="mb-3">Badge Properties</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem><strong>Content:</strong> The number or text to display</MudListItem>
+    <MudListItem><strong>Color:</strong> Error, Warning, Info, Success, Primary, Secondary</MudListItem>
+    <MudListItem><strong>Dot:</strong> Show as dot instead of content (for mini mode)</MudListItem>
+    <MudListItem><strong>Overlap:</strong> Whether badge overlaps the content</MudListItem>
+</MudList>
+
+<MudText Typo="Typo.h6" Class="mb-3">Badge Examples</MudText>
+
+<MudStack Spacing="2">
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Error Badge (Notifications)</MudText>
+        <MudBadge Content="5" Color="Color.Error" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Warning Badge</MudText>
+        <MudBadge Content="12" Color="Color.Warning" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Info Badge</MudText>
+        <MudBadge Content="3" Color="Color.Info" Overlap="false" />
+    </MudPaper>
+    
+    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center">
+        <MudText>Dot Badge (Mini Mode)</MudText>
+        <MudBadge Dot="true" Color="Color.Error" Overlap="true">
+            <MudIcon Icon="@Icons.Material.Filled.Notifications" />
+        </MudBadge>
+    </MudPaper>
+</MudStack>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Usage in NavLink:</MudText>
+    <MudMarkdown Value="@_codeExample" />
+</MudPaper>
+
+@code {
+    private string _codeExample = @"```razor
+<MudNavLink Href=""/messages"" Icon=""@Icons.Material.Filled.Mail"">
+    <div class=""d-flex align-center justify-space-between"" style=""width:100%"">
+        <span>Messages</span>
+        <MudBadge Content=""5"" Color=""Color.Error"" Overlap=""false"" />
+    </div>
+</MudNavLink>
+```";
+}
+

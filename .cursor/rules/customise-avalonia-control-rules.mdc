@@ -1,0 +1,6 @@
+---
+description: follow the rules when implement a avalonia control
+alwaysApply: false
+---
+
+you should follow `@.cursor\commands\avalonia-control-design-rules.md` to design new control or components.

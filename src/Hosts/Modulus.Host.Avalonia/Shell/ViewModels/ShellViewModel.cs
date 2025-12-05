@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Modulus.Host.Avalonia.Services;
 using Modulus.UI.Abstractions;
 using System;
 using System.Collections.ObjectModel;
@@ -11,8 +13,8 @@ namespace Modulus.Host.Avalonia.Shell.ViewModels;
 public partial class ShellViewModel : ViewModelBase
 {
     private readonly IMenuRegistry _menuRegistry;
-    private readonly IUIFactory _uiFactory;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly INavigationService _navigationService;
+    private readonly AvaloniaNavigationService? _avaloniaNavService;
     private bool _isNavigating;
 
     public ObservableCollection<MenuItem> MainMenuItems { get; } = new();
@@ -30,16 +32,43 @@ public partial class ShellViewModel : ViewModelBase
     [ObservableProperty]
     private MenuItem? _selectedBottomMenuItem;
 
+    /// <summary>
+    /// Whether the navigation panel is collapsed (icon-only mode).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isNavCollapsed;
+
+    /// <summary>
+    /// Inverse of IsNavCollapsed for binding to SplitView.IsPaneOpen.
+    /// </summary>
+    public bool IsPaneOpen => !IsNavCollapsed;
+
     public ShellViewModel(
-        IMenuRegistry menuRegistry, 
-        IUIFactory uiFactory,
-        IServiceProvider serviceProvider)
+        IMenuRegistry menuRegistry,
+        INavigationService navigationService)
     {
         _menuRegistry = menuRegistry;
-        _uiFactory = uiFactory;
-        _serviceProvider = serviceProvider;
+        _navigationService = navigationService;
         
+        // Get concrete implementation for callbacks
+        _avaloniaNavService = (navigationService as AvaloniaNavigationService)!;
+        if (_avaloniaNavService != null)
+        {
+            _avaloniaNavService.OnViewChanged = OnNavigationViewChanged;
+        }
+
         RefreshMenu();
+    }
+
+    partial void OnIsNavCollapsedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsPaneOpen));
+    }
+
+    [RelayCommand]
+    private void ToggleNavCollapse()
+    {
+        IsNavCollapsed = !IsNavCollapsed;
     }
 
     public void RefreshMenu()
@@ -65,8 +94,8 @@ public partial class ShellViewModel : ViewModelBase
             _isNavigating = true;
             SelectedBottomMenuItem = null;
             _isNavigating = false;
-            
-            _ = NavigateToMenuItem(value);
+
+            _ = NavigateToMenuItemAsync(value);
         }
     }
 
@@ -78,35 +107,34 @@ public partial class ShellViewModel : ViewModelBase
             _isNavigating = true;
             SelectedMainMenuItem = null;
             _isNavigating = false;
-            
-            _ = NavigateToMenuItem(value);
+
+            _ = NavigateToMenuItemAsync(value);
         }
     }
 
-    private async Task NavigateToMenuItem(MenuItem item)
+    private async Task NavigateToMenuItemAsync(MenuItem item)
     {
-        Type? vmType = Type.GetType(item.NavigationKey);
-        if (vmType == null)
+        // Skip if disabled
+        if (!item.IsEnabled)
         {
-            vmType = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(a => { try { return a.GetTypes(); } catch { return Array.Empty<Type>(); } })
-               .FirstOrDefault(t => t.FullName == item.NavigationKey || t.Name == item.NavigationKey);
+            return;
         }
 
-        if (vmType != null)
+        // Skip groups without navigation key
+        if (string.IsNullOrEmpty(item.NavigationKey))
         {
-            var vm = _serviceProvider.GetService(vmType);
-            if (vm == null)
-            {
-                vm = ActivatorUtilities.CreateInstance(_serviceProvider, vmType);
-            }
-            
-            var view = _uiFactory.CreateView(vm);
-            CurrentView = view;
-            CurrentTitle = item.DisplayName;
+            // Toggle expansion for groups
+            item.IsExpanded = !item.IsExpanded;
+            return;
         }
-        
-        await Task.CompletedTask;
+
+        await _navigationService.NavigateToAsync(item.NavigationKey);
+    }
+
+    private void OnNavigationViewChanged(object? view, string title)
+    {
+        CurrentView = view;
+        CurrentTitle = title;
     }
 
     /// <summary>
@@ -117,16 +145,13 @@ public partial class ShellViewModel : ViewModelBase
         _isNavigating = true;
         try
         {
-            var vm = _serviceProvider.GetService<TViewModel>() 
-                     ?? ActivatorUtilities.CreateInstance<TViewModel>(_serviceProvider);
-            var view = _uiFactory.CreateView(vm);
-            CurrentView = view;
-            CurrentTitle = typeof(TViewModel).Name.Replace("ViewModel", "");
-            
+            _ = _navigationService.NavigateToAsync<TViewModel>();
+
             // Find and select corresponding menu item
-            var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey.Contains(typeof(TViewModel).Name));
-            var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey.Contains(typeof(TViewModel).Name));
-            
+            var vmName = typeof(TViewModel).FullName;
+            var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
+            var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
+
             if (mainItem != null)
             {
                 SelectedMainMenuItem = mainItem;
@@ -135,6 +160,31 @@ public partial class ShellViewModel : ViewModelBase
             else if (bottomItem != null)
             {
                 SelectedBottomMenuItem = bottomItem;
+                SelectedMainMenuItem = null;
+            }
+        }
+        finally
+        {
+            _isNavigating = false;
+        }
+    }
+
+    /// <summary>
+    /// Select a menu item programmatically (updates selection state).
+    /// </summary>
+    public void SelectMenuItem(MenuItem item)
+    {
+        _isNavigating = true;
+        try
+        {
+            if (item.Location == MenuLocation.Main)
+            {
+                SelectedMainMenuItem = item;
+                SelectedBottomMenuItem = null;
+            }
+            else
+            {
+                SelectedBottomMenuItem = item;
                 SelectedMainMenuItem = null;
             }
         }

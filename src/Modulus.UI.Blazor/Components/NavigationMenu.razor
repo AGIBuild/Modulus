@@ -1,0 +1,272 @@
+@using Modulus.UI.Abstractions
+
+<MudNavMenu Bordered="true" Color="Color.Primary" Style="width: 100%">
+    @foreach (var item in Items)
+    {
+        @if (item.Children != null && item.Children.Count > 0)
+        {
+            <!-- Hierarchical item with children -->
+            <MudNavGroup Title="@(IsMini ? "" : item.DisplayName)" 
+                         Icon="@GetIcon(item.Icon.ToString())" 
+                         Expanded="@item.IsExpanded"
+                         ExpandedChanged="@(expanded => OnExpandedChanged(item, expanded))"
+                         Disabled="@(!item.IsEnabled)">
+                @foreach (var child in item.Children)
+                {
+                    <MudTooltip Text="@child.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
+                        <MudNavLink Href="@child.NavigationKey" 
+                                    Icon="@GetIcon(child.Icon.ToString())" 
+                                    Match="NavLinkMatch.Prefix"
+                                    Disabled="@(!child.IsEnabled)"
+                                    OnClick="@(() => OnItemClick(child))">
+                            @if (!IsMini)
+                            {
+                                <div class="nav-item-content">
+                                    <span>@child.DisplayName</span>
+                                    @if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                                    {
+                                        <MudBadge Content="@child.BadgeCount" 
+                                                  Color="@GetBadgeColor(child.BadgeColor)" 
+                                                  Overlap="false"
+                                                  Class="nav-badge" />
+                                    }
+                                </div>
+                            }
+                            else if (child.BadgeCount.HasValue && child.BadgeCount > 0)
+                            {
+                                <MudBadge Dot="true" Color="@GetBadgeColor(child.BadgeColor)" Overlap="true" />
+                            }
+                        </MudNavLink>
+                    </MudTooltip>
+                }
+            </MudNavGroup>
+        }
+        else
+        {
+            <!-- Leaf item -->
+            <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@(!IsMini)">
+                <MudNavLink Href="@item.NavigationKey" 
+                            Icon="@GetIcon(item.Icon.ToString())" 
+                            Match="NavLinkMatch.Prefix"
+                            Disabled="@(!item.IsEnabled)"
+                            OnClick="@(() => OnItemClick(item))">
+                    @if (!IsMini)
+                    {
+                        <div class="nav-item-content">
+                            <span>@item.DisplayName</span>
+                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                            {
+                                <MudBadge Content="@item.BadgeCount" 
+                                          Color="@GetBadgeColor(item.BadgeColor)" 
+                                          Overlap="false"
+                                          Class="nav-badge" />
+                            }
+                        </div>
+                    }
+                    else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                    {
+                        <MudBadge Dot="true" Color="@GetBadgeColor(item.BadgeColor)" Overlap="true" />
+                    }
+                </MudNavLink>
+            </MudTooltip>
+        }
+    }
+</MudNavMenu>
+
+<style>
+    .nav-item-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .nav-badge {
+        margin-left: auto;
+    }
+    
+    /* Make nav items fill full width */
+    .mud-nav-item {
+        width: 100%;
+    }
+    .mud-navmenu .mud-nav-link {
+        width: 100%;
+    }
+    /* Fix MudTooltip wrapper width */
+    .mud-navmenu .mud-tooltip-root {
+        width: 100%;
+        display: block;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public IEnumerable<MenuItem> Items { get; set; } = Enumerable.Empty<MenuItem>();
+
+    /// <summary>
+    /// When true, shows only icons (for mini drawer mode).
+    /// </summary>
+    [Parameter]
+    public bool IsMini { get; set; }
+
+    /// <summary>
+    /// Callback when an item is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<MenuItem> OnItemClicked { get; set; }
+
+    private async Task OnItemClick(MenuItem item)
+    {
+        if (!item.IsEnabled || string.IsNullOrEmpty(item.NavigationKey))
+        {
+            return;
+        }
+
+        await OnItemClicked.InvokeAsync(item);
+    }
+
+    private void OnExpandedChanged(MenuItem item, bool expanded)
+    {
+        item.IsExpanded = expanded;
+    }
+
+    private string GetIcon(string iconName)
+    {
+        return iconName?.ToLower() switch
+        {
+            // Navigation & Layout
+            "home" => Icons.Material.Filled.Home,
+            "menu" => Icons.Material.Filled.Menu,
+            "apps" or "grid" => Icons.Material.Filled.Apps,
+            "dashboard" => Icons.Material.Filled.Dashboard,
+            "extension" or "modules" => Icons.Material.Filled.Extension,
+            "settings" or "gear" => Icons.Material.Filled.Settings,
+            
+            // Documents & Files
+            "document" or "file" or "note" or "notes" => Icons.Material.Filled.Description,
+            "folder" => Icons.Material.Filled.Folder,
+            "folderopen" => Icons.Material.Filled.FolderOpen,
+            "archive" => Icons.Material.Filled.Archive,
+            
+            // Communication
+            "mail" or "email" => Icons.Material.Filled.Mail,
+            "chat" or "message" => Icons.Material.Filled.Chat,
+            "call" or "phone" => Icons.Material.Filled.Call,
+            "video" => Icons.Material.Filled.VideoCall,
+            "send" => Icons.Material.Filled.Send,
+            "echo" or "voice" => Icons.Material.Filled.RecordVoiceOver,
+            
+            // User & People
+            "person" or "user" => Icons.Material.Filled.Person,
+            "people" or "group" => Icons.Material.Filled.People,
+            "personadd" => Icons.Material.Filled.PersonAdd,
+            
+            // Actions
+            "add" or "plus" => Icons.Material.Filled.Add,
+            "edit" or "pencil" => Icons.Material.Filled.Edit,
+            "delete" or "trash" => Icons.Material.Filled.Delete,
+            "save" => Icons.Material.Filled.Save,
+            "copy" => Icons.Material.Filled.ContentCopy,
+            "search" => Icons.Material.Filled.Search,
+            "filter" => Icons.Material.Filled.FilterList,
+            "sort" => Icons.Material.Filled.Sort,
+            "refresh" => Icons.Material.Filled.Refresh,
+            "download" => Icons.Material.Filled.Download,
+            "upload" => Icons.Material.Filled.Upload,
+            "share" => Icons.Material.Filled.Share,
+            "print" => Icons.Material.Filled.Print,
+            
+            // Status & Feedback
+            "checkmark" or "check" => Icons.Material.Filled.Check,
+            "dismiss" or "close" or "x" => Icons.Material.Filled.Close,
+            "warning" => Icons.Material.Filled.Warning,
+            "error" or "erroricon" => Icons.Material.Filled.Error,
+            "info" => Icons.Material.Filled.Info,
+            "help" or "question" => Icons.Material.Filled.Help,
+            
+            // Media
+            "play" => Icons.Material.Filled.PlayArrow,
+            "pause" => Icons.Material.Filled.Pause,
+            "stop" => Icons.Material.Filled.Stop,
+            "camera" => Icons.Material.Filled.CameraAlt,
+            "image" => Icons.Material.Filled.Image,
+            "music" or "audio" => Icons.Material.Filled.MusicNote,
+            
+            // Favorites & Rating
+            "star" => Icons.Material.Filled.Star,
+            "heart" or "favorite" => Icons.Material.Filled.Favorite,
+            "bookmark" => Icons.Material.Filled.Bookmark,
+            "flag" => Icons.Material.Filled.Flag,
+            
+            // Navigation Arrows
+            "arrowleft" or "back" => Icons.Material.Filled.ArrowBack,
+            "arrowright" or "forward" => Icons.Material.Filled.ArrowForward,
+            "arrowup" => Icons.Material.Filled.ArrowUpward,
+            "arrowdown" => Icons.Material.Filled.ArrowDownward,
+            "chevronleft" => Icons.Material.Filled.ChevronLeft,
+            "chevronright" => Icons.Material.Filled.ChevronRight,
+            "chevronup" => Icons.Material.Filled.ExpandLess,
+            "chevrondown" => Icons.Material.Filled.ExpandMore,
+            
+            // Time & Calendar
+            "calendar" => Icons.Material.Filled.CalendarMonth,
+            "clock" or "time" => Icons.Material.Filled.Schedule,
+            "alarm" => Icons.Material.Filled.Alarm,
+            "history" => Icons.Material.Filled.History,
+            
+            // Security
+            "lock" or "locked" => Icons.Material.Filled.Lock,
+            "unlock" or "unlocked" => Icons.Material.Filled.LockOpen,
+            "key" => Icons.Material.Filled.Key,
+            "shield" => Icons.Material.Filled.Shield,
+            
+            // Notifications
+            "alert" or "bell" or "notification" => Icons.Material.Filled.Notifications,
+            
+            // View Controls
+            "list" => Icons.Material.Filled.List,
+            "eye" or "visibility" => Icons.Material.Filled.Visibility,
+            "eyeoff" or "visibilityoff" => Icons.Material.Filled.VisibilityOff,
+            "fullscreen" => Icons.Material.Filled.Fullscreen,
+            "zoomin" => Icons.Material.Filled.ZoomIn,
+            "zoomout" => Icons.Material.Filled.ZoomOut,
+            
+            // Dev Tools
+            "terminal" or "console" => Icons.Material.Filled.Terminal,
+            "code" => Icons.Material.Filled.Code,
+            "bug" => Icons.Material.Filled.BugReport,
+            "database" => Icons.Material.Filled.Storage,
+            "cloud" => Icons.Material.Filled.Cloud,
+            "cloudupload" => Icons.Material.Filled.CloudUpload,
+            "clouddownload" => Icons.Material.Filled.CloudDownload,
+            
+            // Components/UI
+            "palette" or "components" => Icons.Material.Filled.Palette,
+            "category" => Icons.Material.Filled.Category,
+            "link" => Icons.Material.Filled.Link,
+            "attach" or "attachment" => Icons.Material.Filled.AttachFile,
+            "location" or "pin" => Icons.Material.Filled.LocationOn,
+            "tag" or "label" => Icons.Material.Filled.Label,
+            "globe" or "web" => Icons.Material.Filled.Public,
+            "sync" => Icons.Material.Filled.Sync,
+            "power" => Icons.Material.Filled.PowerSettingsNew,
+            
+            _ => Icons.Material.Filled.Circle
+        };
+    }
+
+    private Color GetBadgeColor(string? colorName)
+    {
+        return colorName?.ToLower() switch
+        {
+            "error" or "red" => Color.Error,
+            "warning" or "orange" => Color.Warning,
+            "info" or "blue" => Color.Info,
+            "success" or "green" => Color.Success,
+            "primary" => Color.Primary,
+            "secondary" => Color.Secondary,
+            _ => Color.Error
+        };
+    }
+}
+

@@ -1,0 +1,195 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+    
+    <!-- ============================================== -->
+    <!-- NavigationViewItem Control Template           -->
+    <!-- Inherits from HeaderedItemsControl            -->
+    <!-- Uses Fluent System Icons via Path geometry    -->
+    <!-- ============================================== -->
+    
+    <Style Selector="controls|NavigationViewItem">
+        <Setter Property="Background" Value="{DynamicResource NavItemBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource NavItemTextBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:NavigationViewItem">
+                <StackPanel>
+                    <!-- Main Item Row -->
+                    <Border x:Name="PART_RootBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{DynamicResource CornerRadiusMedium}"
+                            Padding="{DynamicResource NavItemPadding}"
+                            Margin="{DynamicResource NavItemMargin}">
+                        <Border.Transitions>
+                            <Transitions>
+                                <BrushTransition Property="Background" Duration="0:0:0.1"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        
+                        <!-- ToolTip for collapsed mode -->
+                        <ToolTip.Tip>
+                            <TextBlock Text="{Binding Item.DisplayName, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </ToolTip.Tip>
+                        
+                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                            <!-- Icon (Path-based using Fluent Icons) -->
+                            <Path Grid.Column="0"
+                                  x:Name="PART_Icon"
+                                  Data="{Binding Item.Icon, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:NavigationViewItem.IconToGeometryConverter}}"
+                                  Fill="{DynamicResource NavItemIconBrush}"
+                                  Stretch="Uniform"
+                                  Width="20"
+                                  Height="20"
+                                  VerticalAlignment="Center"
+                                  Margin="{DynamicResource NavItemIconMargin}"/>
+                            
+                            <!-- Display Name -->
+                            <TextBlock Grid.Column="1"
+                                       x:Name="PART_DisplayName"
+                                       Text="{Binding Item.DisplayName, RelativeSource={RelativeSource TemplatedParent}}"
+                                       FontSize="{DynamicResource NavItemFontSize}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       VerticalAlignment="Center"/>
+                            
+                            <!-- Badge -->
+                            <Border Grid.Column="2"
+                                    x:Name="PART_Badge"
+                                    Background="{DynamicResource BadgeBackgroundBrush}"
+                                    CornerRadius="{DynamicResource CornerRadiusRound}"
+                                    MinWidth="{DynamicResource NavBadgeMinWidth}"
+                                    Padding="{DynamicResource NavBadgePadding}"
+                                    Margin="{DynamicResource NavBadgeMargin}"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding Item.BadgeCount, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static controls:NavigationViewItem.HasBadgeConverter}}">
+                                <TextBlock Text="{Binding Item.BadgeCount, RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontSize="{DynamicResource NavBadgeFontSize}"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource BadgeTextBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            
+                            <!-- Chevron (for groups with children) -->
+                            <Path Grid.Column="3"
+                                  x:Name="PART_Chevron"
+                                  Data="{DynamicResource Icon.ChevronRight}"
+                                  Fill="{DynamicResource NavItemIconBrush}"
+                                  Stretch="Uniform"
+                                  Width="12"
+                                  Height="12"
+                                  VerticalAlignment="Center"
+                                  Margin="4,0,0,0"
+                                  RenderTransformOrigin="50%,50%"
+                                  IsVisible="False">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                                <Path.Transitions>
+                                    <Transitions>
+                                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15"/>
+                                    </Transitions>
+                                </Path.Transitions>
+                            </Path>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Children Container - uses ItemsPresenter for hierarchical binding -->
+                    <Border x:Name="PART_ChildContainer"
+                            Margin="{DynamicResource NavChildIndent}"
+                            IsVisible="False"
+                            ClipToBounds="True">
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <!-- ItemsPresenter: native hierarchical binding from HeaderedItemsControl -->
+                        <ItemsPresenter x:Name="PART_ItemsPresenter"/>
+                    </Border>
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+        
+        <!-- Default ItemsPanel for children -->
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <StackPanel/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    
+    <!-- ============================================== -->
+    <!-- State-based Styles (DataTrigger Pattern)      -->
+    <!-- ============================================== -->
+    
+    <!-- Hover State -->
+    <Style Selector="controls|NavigationViewItem:pointerover /template/ Border#PART_RootBorder">
+        <Setter Property="Background" Value="{DynamicResource NavItemHoverBrush}"/>
+    </Style>
+    
+    <!-- Selected State -->
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ Border#PART_RootBorder">
+        <Setter Property="Background" Value="{DynamicResource NavItemSelectedBrush}"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ TextBlock#PART_DisplayName">
+        <Setter Property="Foreground" Value="{DynamicResource NavItemSelectedTextBrush}"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsSelected=True] /template/ Path#PART_Icon">
+        <Setter Property="Fill" Value="{DynamicResource NavItemSelectedIconBrush}"/>
+    </Style>
+    
+    <!-- Has Children - Show Chevron -->
+    <Style Selector="controls|NavigationViewItem:not(:empty) /template/ Path#PART_Chevron">
+        <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    
+    <!-- Expanded State - Rotate Chevron and Show Children -->
+    <Style Selector="controls|NavigationViewItem[IsExpanded=True] /template/ Path#PART_Chevron">
+        <Setter Property="RenderTransform">
+            <RotateTransform Angle="90"/>
+        </Setter>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsExpanded=True] /template/ Border#PART_ChildContainer">
+        <Setter Property="IsVisible" Value="True"/>
+    </Style>
+    
+    <!-- Disabled State -->
+    <Style Selector="controls|NavigationViewItem:disabled">
+        <Setter Property="Opacity" Value="{DynamicResource DisabledOpacity}"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+    
+    <!-- ============================================== -->
+    <!-- Collapsed Mode (NavigationView.IsCollapsed)   -->
+    <!-- ============================================== -->
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ TextBlock#PART_DisplayName">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_Badge">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Path#PART_Chevron">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_RootBorder">
+        <Setter Property="Padding" Value="{DynamicResource NavItemCompactPadding}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Path#PART_Icon">
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+    
+    <Style Selector="controls|NavigationViewItem[IsCollapsed=True] /template/ Border#PART_ChildContainer">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    
+</Styles>

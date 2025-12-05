@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="8.15.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -16,6 +16,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.EchoPlugin.UI.Blazor</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
   </PropertyGroup>
 
   <!-- Copy manifest.json to output directory -->

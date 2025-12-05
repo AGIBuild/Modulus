@@ -18,6 +18,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
+        <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
 
         <!-- Display name -->
         <ApplicationTitle>Modulus.Host.Blazor</ApplicationTitle>
@@ -41,7 +42,7 @@
 
     <ItemGroup>
         <!-- App Icon -->
-        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+        <MauiIcon Include="Resources\AppIcon\appicon.png" />
 
         <!-- Splash Screen -->
         <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
@@ -67,7 +68,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
       <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
-      <ProjectReference Include="..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+      <ProjectReference Include="..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
       <!-- Module references for static page routing -->
       <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.Core\SimpleNotes.Core.csproj" />
     </ItemGroup>

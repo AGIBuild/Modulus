@@ -1,0 +1,20 @@
+<MudMainContent Class="@MainClass">
+    <MudContainer MaxWidth="@MaxWidth" Class="@ContainerClass">
+        @ChildContent
+    </MudContainer>
+</MudMainContent>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public MaxWidth MaxWidth { get; set; } = MaxWidth.ExtraLarge;
+
+    [Parameter]
+    public string MainClass { get; set; } = "pt-16";
+
+    [Parameter]
+    public string ContainerClass { get; set; } = "pa-4";
+}
+

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.UI.Blazor</RootNamespace>
+    <Description>Blazor UI components library for Modulus framework</Description>
+    <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="8.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

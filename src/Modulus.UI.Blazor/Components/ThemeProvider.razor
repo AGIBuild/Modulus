@@ -1,0 +1,112 @@
+@using Modulus.UI.Abstractions
+@using AppTheme = Modulus.UI.Abstractions.AppTheme
+@implements IDisposable
+
+<MudThemeProvider @ref="_mudThemeProvider" Theme="_theme" IsDarkMode="@IsDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Theme service for theme management.
+    /// </summary>
+    [Parameter]
+    public IThemeService? ThemeService { get; set; }
+
+    /// <summary>
+    /// Custom MudBlazor theme. If not provided, uses default theme.
+    /// </summary>
+    [Parameter]
+    public MudTheme? CustomTheme { get; set; }
+
+    public bool IsDarkMode { get; private set; }
+
+    private MudThemeProvider? _mudThemeProvider;
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#9C27B0",
+            Secondary = "#E91E63",
+            AppbarBackground = "#7B1FA2",
+            Background = "#F5F0FF",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#F8F4FF",
+            AppbarText = "#FFFFFF",
+            TextPrimary = "#1A1A1A",
+            TextSecondary = "#4A4A4A",
+            DrawerText = "#424242",
+            DrawerIcon = "#7B1FA2"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#CE93D8",
+            Secondary = "#F48FB1",
+            AppbarBackground = "#242424",
+            Background = "#121212",
+            Surface = "#1E1E1E",
+            DrawerBackground = "#1A1A1A",
+            TextPrimary = "#E8E8E8",
+            TextSecondary = "#A0A0A0",
+            DrawerText = "#B0B0B0",
+            DrawerIcon = "#CE93D8"
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        if (CustomTheme != null)
+        {
+            _theme = CustomTheme;
+        }
+
+        if (ThemeService != null)
+        {
+            ThemeService.ThemeChanged += OnThemeChanged;
+            IsDarkMode = ThemeService.CurrentTheme == AppTheme.Dark;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _mudThemeProvider != null && ThemeService != null)
+        {
+            if (ThemeService.CurrentTheme == AppTheme.System)
+            {
+                IsDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+                ThemeService.SetTheme(IsDarkMode ? AppTheme.Dark : AppTheme.Light);
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void ToggleTheme()
+    {
+        IsDarkMode = !IsDarkMode;
+        ThemeService?.SetTheme(IsDarkMode ? AppTheme.Dark : AppTheme.Light);
+    }
+
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        IsDarkMode = theme == AppTheme.Dark;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (ThemeService != null)
+        {
+            ThemeService.ThemeChanged -= OnThemeChanged;
+        }
+    }
+}
+

@@ -34,6 +34,8 @@ public class BlazorHostModule : ModuleBase
 
         // Shell Services
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
+        context.Services.AddScoped<BlazorNavigationService>();
+        context.Services.AddScoped<INavigationService>(sp => sp.GetRequiredService<BlazorNavigationService>());
 
         // Shell ViewModels
         context.Services.AddSingleton<ShellViewModel>();
@@ -43,10 +45,10 @@ public class BlazorHostModule : ModuleBase
 
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {
-        // Register built-in menu items
+        // Register built-in menu items (Components is registered by ComponentsDemo module)
         var menuRegistry = context.ServiceProvider.GetRequiredService<IMenuRegistry>();
-        menuRegistry.Register(new UiMenuItem("Modules", "Modules", "extension", "/modules", MenuLocation.Main, 10));
-        menuRegistry.Register(new UiMenuItem("Settings", "Settings", "settings", "/settings", MenuLocation.Bottom, 100));
+        menuRegistry.Register(new UiMenuItem("Modules", "Modules", IconKind.AppsAddIn, "/modules", MenuLocation.Main, 10));
+        menuRegistry.Register(new UiMenuItem("Settings", "Settings", IconKind.Settings, "/settings", MenuLocation.Bottom, 100));
         
         return Task.CompletedTask;
     }

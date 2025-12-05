@@ -1,0 +1,22 @@
+@code {
+    [Parameter]
+    public string ItemId { get; set; } = "";
+}
+
+<MudText Typo="Typo.body1" Class="mb-4">
+    This is a sub-item of the hierarchical menu.
+</MudText>
+
+<MudPaper Elevation="1" Class="pa-4">
+    <MudText Typo="Typo.subtitle1">Item ID: <strong>@ItemId</strong></MudText>
+    <MudText Typo="Typo.body2" Class="mt-2">
+        This is a child item inside a hierarchical menu group. Hierarchical menus allow you to organize related items under expandable/collapsible groups.
+    </MudText>
+</MudPaper>
+
+<MudAlert Severity="Severity.Info" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        Click on "Hierarchical Demo" in the sidebar to expand/collapse the group.
+    </MudText>
+</MudAlert>
+

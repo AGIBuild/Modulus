@@ -40,7 +40,7 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
         if (string.IsNullOrEmpty(name)) return false;
 
         // Core Framework & Extensions
-        if (name.StartsWith("System.") || 
+        if (name.StartsWith("System.") ||
             name.StartsWith("Microsoft.") ||
             name.Equals("mscorlib") ||
             name.Equals("netstandard"))
@@ -51,11 +51,13 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
         // Modulus Core Assemblies
         if (name.Equals("Modulus.Core") ||
             name.Equals("Modulus.Sdk") ||
-            name.Equals("Modulus.UI.Abstractions"))
+            name.Equals("Modulus.UI.Abstractions") ||
+            name.Equals("Modulus.UI.Avalonia") ||
+            name.Equals("Modulus.UI.Blazor"))
         {
             return true;
         }
-        
+
         // Avalonia Assemblies (Host should provide these)
         if (name.StartsWith("Avalonia"))
         {

@@ -1,22 +1,358 @@
-﻿@inherits LayoutComponentBase
+﻿@using Modulus.UI.Abstractions
+@inherits LayoutComponentBase
+@inject IThemeService ThemeService
+@inject IMenuRegistry MenuRegistry
+@inject INavigationService NavigationService
+@implements IDisposable
 
-<ThemeProvider>
-    <MudLayout>
-        <AppBar OnMenuToggle="@ToggleDrawer" />
-        
-        <NavDrawer @bind-IsOpen="_drawerOpen" />
-        
-        <ContentHost>
+<MudThemeProvider @ref="_mudThemeProvider" Theme="_theme" IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <!-- App Bar -->
+    <MudAppBar Elevation="1" Class="mud-theme-gradient">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                       Color="Color.Inherit" 
+                       Edge="Edge.Start" 
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h5" Class="ml-3 fw-bold">MODULUS</MudText>
+        <MudChip T="string" Size="Size.Small" Color="Color.Surface" Class="ml-2">HOST</MudChip>
+        <MudSpacer />
+    </MudAppBar>
+    
+    <!-- Side Drawer -->
+    <MudDrawer @bind-Open="_drawerOpen" 
+               ClipMode="DrawerClipMode.Always" 
+               Elevation="2" 
+               Variant="DrawerVariant.Mini"
+               MiniWidth="56px"
+               Width="220px"
+               Breakpoint="Breakpoint.Md">
+        <div class="drawer-content">
+            <div class="drawer-top">
+                @if (_drawerOpen)
+                {
+                    <MudDrawerHeader>
+                        <MudText Typo="Typo.h6">Navigation</MudText>
+                    </MudDrawerHeader>
+                }
+                <MudNavMenu Bordered="true" Color="Color.Primary" Style="width: 100%">
+                    <!-- Static Home -->
+                    <MudTooltip Text="Home" Placement="Placement.Right" Disabled="@_drawerOpen">
+                        <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                            @if (_drawerOpen) { <span>Home</span> }
+                        </MudNavLink>
+                    </MudTooltip>
+                    
+                    <!-- Main Menu Items -->
+                    @foreach (var item in _mainMenuItems)
+                    {
+                        <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
+                            <MudNavLink Href="@item.NavigationKey" 
+                                        Icon="@GetIcon(item.Icon.ToString())" 
+                                        Match="NavLinkMatch.Prefix"
+                                        Disabled="@(!item.IsEnabled)">
+                                @if (_drawerOpen)
+                                {
+                                    <div class="d-flex align-center" style="gap: 8px;">
+                                        <span style="flex: 1;">@item.DisplayName</span>
+                                        @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                        {
+                                            <MudBadge Content="@item.BadgeCount" Color="Color.Error" Overlap="false" Bordered="true" />
+                                        }
+                                    </div>
+                                }
+                                else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                {
+                                    <MudBadge Dot="true" Color="Color.Error" Overlap="true" />
+                                }
+                            </MudNavLink>
+                        </MudTooltip>
+                    }
+                </MudNavMenu>
+            </div>
+            
+            <div class="drawer-bottom">
+                @if (_drawerOpen) { <MudDivider Class="mb-2" /> }
+                <MudNavMenu Bordered="true" Color="Color.Primary" Style="width: 100%">
+                    @foreach (var item in _bottomMenuItems)
+                    {
+                        <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
+                            <MudNavLink Href="@item.NavigationKey" 
+                                        Icon="@GetIcon(item.Icon.ToString())" 
+                                        Match="NavLinkMatch.Prefix"
+                                        Disabled="@(!item.IsEnabled)">
+                                @if (_drawerOpen) { <span>@item.DisplayName</span> }
+                            </MudNavLink>
+                        </MudTooltip>
+                    }
+                </MudNavMenu>
+            </div>
+        </div>
+    </MudDrawer>
+    
+    <!-- Main Content -->
+    <MudMainContent Class="pt-16">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
             @Body
-        </ContentHost>
-    </MudLayout>
-</ThemeProvider>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<style>
+    .mud-theme-gradient {
+        background: linear-gradient(135deg, #7B1FA2 0%, #9C27B0 50%, #C2185B 100%) !important;
+    }
+    .drawer-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .drawer-top {
+        flex: 1;
+        overflow-y: auto;
+    }
+    .drawer-bottom {
+        flex-shrink: 0;
+        padding-bottom: 8px;
+    }
+    /* Make nav items fill full width */
+    .mud-nav-item {
+        width: 100%;
+    }
+    .mud-navmenu .mud-nav-link {
+        width: 100%;
+    }
+    /* Fix MudTooltip wrapper width */
+    .mud-navmenu .mud-tooltip-root {
+        width: 100%;
+        display: block;
+    }
+</style>
 
 @code {
     private bool _drawerOpen = true;
+    private bool _isDarkMode;
+    private MudThemeProvider? _mudThemeProvider;
+    private List<MenuItem> _mainMenuItems = new();
+    private List<MenuItem> _bottomMenuItems = new();
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#9C27B0",
+            Secondary = "#E91E63",
+            AppbarBackground = "#7B1FA2",
+            Background = "#F5F0FF",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#F8F4FF",
+            AppbarText = "#FFFFFF",
+            TextPrimary = "#1A1A1A",
+            TextSecondary = "#4A4A4A",
+            DrawerText = "#424242",
+            DrawerIcon = "#7B1FA2"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#CE93D8",
+            Secondary = "#F48FB1",
+            AppbarBackground = "#242424",
+            Background = "#121212",
+            Surface = "#1E1E1E",
+            DrawerBackground = "#1A1A1A",
+            TextPrimary = "#E8E8E8",
+            TextSecondary = "#A0A0A0",
+            DrawerText = "#B0B0B0",
+            DrawerIcon = "#CE93D8"
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        _mainMenuItems = MenuRegistry.GetItems(MenuLocation.Main).ToList();
+        _bottomMenuItems = MenuRegistry.GetItems(MenuLocation.Bottom).ToList();
+        
+        ThemeService.ThemeChanged += OnThemeChanged;
+        // Don't assume dark mode here - will be set properly in OnAfterRenderAsync
+        _isDarkMode = ThemeService.CurrentTheme == AppTheme.Dark;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _mudThemeProvider != null)
+        {
+            // Watch for system theme changes
+            await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            
+            if (ThemeService.CurrentTheme == AppTheme.System)
+            {
+                _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnSystemPreferenceChanged(bool isDarkMode)
+    {
+        // Only apply system preference when in System mode
+        if (ThemeService.CurrentTheme == AppTheme.System)
+        {
+            _isDarkMode = isDarkMode;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        if (theme == AppTheme.System)
+        {
+            // Re-detect system theme when System is selected
+            if (_mudThemeProvider != null)
+            {
+                _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+            }
+        }
+        else
+        {
+            _isDarkMode = theme == AppTheme.Dark;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetIcon(string iconName)
+    {
+        return iconName?.ToLower() switch
+        {
+            // Navigation & Layout
+            "home" => Icons.Material.Filled.Home,
+            "menu" => Icons.Material.Filled.Menu,
+            "apps" or "grid" => Icons.Material.Filled.Apps,
+            "dashboard" => Icons.Material.Filled.Dashboard,
+            "extension" or "modules" => Icons.Material.Filled.Extension,
+            "settings" or "gear" => Icons.Material.Filled.Settings,
+            
+            // Documents & Files
+            "document" or "file" => Icons.Material.Filled.Description,
+            "folder" => Icons.Material.Filled.Folder,
+            "folderopen" => Icons.Material.Filled.FolderOpen,
+            "archive" => Icons.Material.Filled.Archive,
+            
+            // Communication
+            "mail" or "email" => Icons.Material.Filled.Mail,
+            "chat" or "message" => Icons.Material.Filled.Chat,
+            "call" or "phone" => Icons.Material.Filled.Call,
+            "video" => Icons.Material.Filled.VideoCall,
+            "send" => Icons.Material.Filled.Send,
+            
+            // User & People
+            "person" or "user" => Icons.Material.Filled.Person,
+            "people" or "group" => Icons.Material.Filled.People,
+            "personadd" => Icons.Material.Filled.PersonAdd,
+            
+            // Actions
+            "add" or "plus" => Icons.Material.Filled.Add,
+            "edit" or "pencil" => Icons.Material.Filled.Edit,
+            "delete" or "trash" => Icons.Material.Filled.Delete,
+            "save" => Icons.Material.Filled.Save,
+            "copy" => Icons.Material.Filled.ContentCopy,
+            "search" => Icons.Material.Filled.Search,
+            "filter" => Icons.Material.Filled.FilterList,
+            "sort" => Icons.Material.Filled.Sort,
+            "refresh" => Icons.Material.Filled.Refresh,
+            "download" => Icons.Material.Filled.Download,
+            "upload" => Icons.Material.Filled.Upload,
+            "share" => Icons.Material.Filled.Share,
+            "print" => Icons.Material.Filled.Print,
+            
+            // Status & Feedback
+            "checkmark" or "check" => Icons.Material.Filled.Check,
+            "dismiss" or "close" or "x" => Icons.Material.Filled.Close,
+            "warning" => Icons.Material.Filled.Warning,
+            "error" or "erroricon" => Icons.Material.Filled.Error,
+            "info" => Icons.Material.Filled.Info,
+            "help" or "question" => Icons.Material.Filled.Help,
+            
+            // Media
+            "play" => Icons.Material.Filled.PlayArrow,
+            "pause" => Icons.Material.Filled.Pause,
+            "stop" => Icons.Material.Filled.Stop,
+            "camera" => Icons.Material.Filled.CameraAlt,
+            "image" => Icons.Material.Filled.Image,
+            "music" or "audio" => Icons.Material.Filled.MusicNote,
+            
+            // Favorites & Rating
+            "star" => Icons.Material.Filled.Star,
+            "heart" or "favorite" => Icons.Material.Filled.Favorite,
+            "bookmark" => Icons.Material.Filled.Bookmark,
+            "flag" => Icons.Material.Filled.Flag,
+            
+            // Navigation Arrows
+            "arrowleft" or "back" => Icons.Material.Filled.ArrowBack,
+            "arrowright" or "forward" => Icons.Material.Filled.ArrowForward,
+            "arrowup" => Icons.Material.Filled.ArrowUpward,
+            "arrowdown" => Icons.Material.Filled.ArrowDownward,
+            "chevronleft" => Icons.Material.Filled.ChevronLeft,
+            "chevronright" => Icons.Material.Filled.ChevronRight,
+            "chevronup" => Icons.Material.Filled.ExpandLess,
+            "chevrondown" => Icons.Material.Filled.ExpandMore,
+            
+            // Time & Calendar
+            "calendar" => Icons.Material.Filled.CalendarMonth,
+            "clock" or "time" => Icons.Material.Filled.Schedule,
+            "alarm" => Icons.Material.Filled.Alarm,
+            "history" => Icons.Material.Filled.History,
+            
+            // Security
+            "lock" or "locked" => Icons.Material.Filled.Lock,
+            "unlock" or "unlocked" => Icons.Material.Filled.LockOpen,
+            "key" => Icons.Material.Filled.Key,
+            "shield" => Icons.Material.Filled.Shield,
+            
+            // Notifications
+            "alert" or "bell" or "notification" => Icons.Material.Filled.Notifications,
+            
+            // View Controls
+            "list" => Icons.Material.Filled.List,
+            "eye" or "visibility" => Icons.Material.Filled.Visibility,
+            "eyeoff" or "visibilityoff" => Icons.Material.Filled.VisibilityOff,
+            "fullscreen" => Icons.Material.Filled.Fullscreen,
+            "zoomin" => Icons.Material.Filled.ZoomIn,
+            "zoomout" => Icons.Material.Filled.ZoomOut,
+            
+            // Dev Tools
+            "terminal" or "console" => Icons.Material.Filled.Terminal,
+            "code" => Icons.Material.Filled.Code,
+            "bug" => Icons.Material.Filled.BugReport,
+            "database" => Icons.Material.Filled.Storage,
+            "cloud" => Icons.Material.Filled.Cloud,
+            "cloudupload" => Icons.Material.Filled.CloudUpload,
+            "clouddownload" => Icons.Material.Filled.CloudDownload,
+            
+            // Components/UI
+            "palette" or "components" => Icons.Material.Filled.Palette,
+            "category" => Icons.Material.Filled.Category,
+            "link" => Icons.Material.Filled.Link,
+            "attach" or "attachment" => Icons.Material.Filled.AttachFile,
+            "location" or "pin" => Icons.Material.Filled.LocationOn,
+            "tag" or "label" => Icons.Material.Filled.Label,
+            "globe" or "web" => Icons.Material.Filled.Public,
+            "sync" => Icons.Material.Filled.Sync,
+            "power" => Icons.Material.Filled.PowerSettingsNew,
+            
+            _ => Icons.Material.Filled.Circle
+        };
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
     }
 }

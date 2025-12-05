@@ -31,6 +31,8 @@ public class AvaloniaHostModule : ModuleBase
         
         // Shell Services
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
+        context.Services.AddSingleton<AvaloniaNavigationService>();
+        context.Services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<AvaloniaNavigationService>());
         
         // Shell ViewModels
         context.Services.AddSingleton<ShellViewModel>();
@@ -47,6 +49,9 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+#if DEBUG
+        this.AttachDeveloperTools();
+#endif
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -121,8 +126,8 @@ public partial class App : Application
             
             // Register Shell Menu Items
             var menuRegistry = Services.GetRequiredService<IMenuRegistry>();
-            menuRegistry.Register(new MenuItem("Modules", "Modules", "🧩", typeof(ModuleListViewModel).FullName!, MenuLocation.Main, 0));
-            menuRegistry.Register(new MenuItem("Settings", "Settings", "⚙️", typeof(SettingsViewModel).FullName!, MenuLocation.Bottom, 100));
+            menuRegistry.Register(new MenuItem("Modules", "Modules", IconKind.AppsAddIn, typeof(ModuleListViewModel).FullName!, MenuLocation.Main, 0));
+            menuRegistry.Register(new MenuItem("Settings", "Settings", IconKind.Settings, typeof(SettingsViewModel).FullName!, MenuLocation.Bottom, 100));
             
             // Initialize Modules
             _modulusApp.InitializeAsync().GetAwaiter().GetResult();

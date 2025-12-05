@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Modulus.Modules.ComponentsDemo.ViewModels"
+             xmlns:local="using:Modulus.Modules.ComponentsDemo.UI.Avalonia"
+             xmlns:nav="using:Modulus.UI.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Modulus.Modules.ComponentsDemo.UI.Avalonia.ComponentsMainView"
+             x:DataType="vm:ComponentsMainViewModel"
+             x:Name="Root">
+    
+    <Grid ColumnDefinitions="220, *">
+        <!-- Demo Navigation Sidebar - Using NavigationView from Modulus.UI.Avalonia -->
+        <Border Grid.Column="0" 
+                Background="{DynamicResource SurfaceBrush}" 
+                CornerRadius="8,0,0,8"
+                Margin="0,0,1,0">
+            <Grid RowDefinitions="Auto, *">
+                <TextBlock Grid.Row="0" 
+                           Text="Component Demos" 
+                           FontWeight="Bold" 
+                           FontSize="16"
+                           Margin="16,16,16,8"/>
+                
+                <!-- Using our NavigationView component with MVVM binding -->
+                <nav:NavigationView x:Name="DemoNavView"
+                                    Grid.Row="1" 
+                                    ItemsSource="{Binding DemoItems}"
+                                    SelectedItem="{Binding SelectedDemoItem, Mode=TwoWay}"
+                                    Margin="8,0"/>
+            </Grid>
+        </Border>
+        
+        <!-- Demo Content Area -->
+        <Border Grid.Column="1" 
+                Background="{DynamicResource CardBackgroundBrush}"
+                CornerRadius="0,8,8,0"
+                Padding="24">
+            <Grid RowDefinitions="Auto, *">
+                <!-- Demo Title -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                    <TextBlock Text="{Binding CurrentDemoName}" 
+                               FontSize="24" 
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                    <Border Height="2" 
+                            Background="{DynamicResource NavItemActiveBackgroundBrush}"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Width="60"/>
+                </StackPanel>
+                
+                <!-- Demo Content -->
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                    <local:DemoContentControl DemoId="{Binding CurrentDemoId}"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

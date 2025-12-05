@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.ComponentsDemo.UI.Avalonia</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ComponentsDemo.Core\ComponentsDemo.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.9" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <!-- Copy manifest.json to output directory -->
+  <ItemGroup>
+    <None Include="..\manifest.json" CopyToOutputDirectory="PreserveNewest" Link="manifest.json" />
+  </ItemGroup>
+
+</Project>

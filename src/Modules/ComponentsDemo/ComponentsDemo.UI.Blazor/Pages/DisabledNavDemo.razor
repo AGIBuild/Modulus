@@ -1,0 +1,41 @@
+<MudText Typo="Typo.body1" Class="mb-4">
+    Navigation items can be disabled to prevent interaction.
+</MudText>
+
+<MudText Typo="Typo.h6" Class="mb-3">Disabled State Behavior</MudText>
+
+<MudList T="string" Class="mb-4">
+    <MudListItem Icon="@Icons.Material.Filled.Block"><code>Disabled="true"</code> grays out the item</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.DoNotTouch">Disabled items don't respond to clicks</MudListItem>
+    <MudListItem Icon="@Icons.Material.Filled.Keyboard">MudBlazor handles focus correctly</MudListItem>
+</MudList>
+
+<MudAlert Severity="Severity.Warning" Class="mt-4">
+    <MudText Typo="Typo.body2">
+        <strong>Try It:</strong> Look at "Sub Item 3 (Disabled)" in the Navigation → Sub Menu Demo group.
+    </MudText>
+</MudAlert>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Example NavLinks</MudText>
+    <MudNavMenu>
+        <MudNavLink Href="#" Icon="@Icons.Material.Filled.Check">Enabled Item</MudNavLink>
+        <MudNavLink Href="#" Icon="@Icons.Material.Filled.Block" Disabled="true">Disabled Item</MudNavLink>
+    </MudNavMenu>
+</MudPaper>
+
+<MudPaper Elevation="1" Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">Usage:</MudText>
+    <MudMarkdown Value="@_codeExample" />
+</MudPaper>
+
+@code {
+    private string _codeExample = @"```razor
+<MudNavLink Href=""/admin"" 
+            Icon=""@Icons.Material.Filled.AdminPanelSettings""
+            Disabled=""@(!_userIsAdmin)"">
+    Admin Panel
+</MudNavLink>
+```";
+}
+
