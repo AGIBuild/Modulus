@@ -1,6 +1,22 @@
 ---
-description: add package or update solution file.
+description: Project management rules - NuGet packages and solution file operations
 alwaysApply: false
+globs:
+  - "**/*.csproj"
+  - "**/*.sln"
 ---
-## Core rules
-- 必须使用dotnet 命令来添加nuget包和项目solution文件维护. 
+
+## Project Management Rules
+
+### NuGet Package Operations
+- MUST use `dotnet add package` command
+- Example: `dotnet add package PackageName --version x.x.x | Out-String`
+
+### Solution File Operations
+- MUST use `dotnet sln` commands
+- Add project: `dotnet sln add path/to/project.csproj | Out-String`
+- Remove project: `dotnet sln remove path/to/project.csproj | Out-String`
+- List projects: `dotnet sln list | Out-String`
+
+### Project Reference Operations
+- Add reference: `dotnet add reference ../OtherProject/OtherProject.csproj | Out-String`
