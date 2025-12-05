@@ -8,7 +8,7 @@ namespace Modulus.Modules.ComponentsDemo.UI.Blazor;
 /// <summary>
 /// Components Demo Blazor UI - declares Blazor-specific navigation.
 /// </summary>
-[BlazorMenu("Components", "/components", Icon = "palette", Order = 15)]
+[BlazorMenu("Components", "/components", Icon = IconKind.add, Order = 15)]
 public class ComponentsDemoBlazorModule : ModuleBase
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

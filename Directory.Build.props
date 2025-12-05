@@ -1,0 +1,6 @@
+<Project>
+  
+  <!-- Import Modulus Architecture Props -->
+  <Import Project="$(MSBuildThisFileDirectory)build/Modulus.Architecture.props" />
+  
+</Project>

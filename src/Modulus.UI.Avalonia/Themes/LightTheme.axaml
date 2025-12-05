@@ -27,7 +27,7 @@
     <SolidColorBrush x:Key="NavItemTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="NavItemSelectedTextBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="NavItemIconBrush" Color="#E8E8E8"/>
-    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavItemSelectedIconBrush" Color="#FFD54F"/><!-- Golden accent for this theme -->
     
     <!-- Content Area - Light Purple (coordinated with sidebar) -->
     <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#BB8BFF"/>

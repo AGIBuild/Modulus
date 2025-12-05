@@ -11,7 +11,7 @@
                     <controls:NavigationView x:Name="PART_MainNavigationView"
                                              Grid.Row="0" 
                                              ItemsSource="{TemplateBinding MainItems}"
-                                             SelectedItem="{TemplateBinding MainSelectedItem, Mode=TwoWay}"
+                                             SelectedItem="{Binding MainSelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                                              IsCollapsed="{TemplateBinding IsCollapsed}"
                                              Margin="0,8,0,0" />
                     
@@ -19,7 +19,7 @@
                     <controls:NavigationView x:Name="PART_BottomNavigationView"
                                              Grid.Row="1" 
                                              ItemsSource="{TemplateBinding BottomItems}"
-                                             SelectedItem="{TemplateBinding BottomSelectedItem, Mode=TwoWay}"
+                                             SelectedItem="{Binding BottomSelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                                              IsCollapsed="{TemplateBinding IsCollapsed}"
                                              Margin="0,0,0,10" />
                 </Grid>

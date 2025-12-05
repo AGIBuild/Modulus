@@ -1,0 +1,70 @@
+---
+description: Assembly domain architecture rules for Modulus framework
+alwaysApply: true
+---
+
+## Assembly Domain Architecture
+
+The Modulus framework uses `AssemblyLoadContext` for module isolation. Every project must declare its domain type.
+
+### Domain Types
+
+| Type | Description | Examples |
+|------|-------------|----------|
+| **Shared** | Loaded once by host, reused by all modules | Modulus.Core, Modulus.Sdk, Modulus.UI.* |
+| **Module** | Loaded in isolated context per module | EchoPlugin.*, ComponentsDemo.* |
+
+### How to Declare
+
+Add `<ModulusAssemblyDomain>` to your `.csproj`:
+
+```xml
+<!-- For shared assemblies -->
+<PropertyGroup>
+  <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
+</PropertyGroup>
+
+<!-- For module assemblies -->
+<PropertyGroup>
+  <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+</PropertyGroup>
+```
+
+This automatically generates `[AssemblyDomain]` attribute and `MODULUS_SHARED_DOMAIN` / `MODULUS_MODULE_DOMAIN` compile-time constants.
+
+### Shared Assembly Allowlist
+
+The following assemblies MUST be in the shared domain (registered in `ModuleLoadContext.IsSharedAssembly`):
+- Modulus.Core
+- Modulus.Sdk
+- Modulus.UI.Abstractions
+- Modulus.UI.Avalonia
+- Modulus.UI.Blazor
+
+### Runtime API
+
+Use `AssemblyDomainInfo` to check domain at runtime:
+
+```csharp
+using Modulus.Core.Architecture;
+
+// Check assembly domain
+var domainType = AssemblyDomainInfo.GetDomainType(assembly);
+
+// Check if running in module context
+if (AssemblyDomainInfo.IsInModuleDomain())
+{
+    var moduleId = AssemblyDomainInfo.GetCurrentModuleId();
+}
+
+// Get diagnostics
+var diag = AssemblyDomainInfo.GetDiagnostics(assembly);
+```
+
+### Common Issues
+
+1. **Type mismatch errors** - If a shared assembly is not in the allowlist, modules load their own copy, causing type incompatibility.
+
+2. **Resource loading failures** - XAML templates from shared UI libraries won't work if the assembly is not properly shared.
+
+3. **Fix**: Ensure the assembly is added to `ModuleLoadContext.IsSharedAssembly` and marked with `<ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>`.

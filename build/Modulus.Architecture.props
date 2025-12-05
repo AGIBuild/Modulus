@@ -1,0 +1,42 @@
+<!--
+  Modulus Architecture Props
+  
+  This file provides MSBuild infrastructure for declaring assembly domain types.
+  
+  Usage in .csproj:
+    <PropertyGroup>
+      <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
+    </PropertyGroup>
+  
+  Or for modules:
+    <PropertyGroup>
+      <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+    </PropertyGroup>
+  
+  This will automatically generate the [AssemblyDomain] attribute.
+-->
+<Project>
+  
+  <!-- Default to Unknown if not specified -->
+  <PropertyGroup>
+    <ModulusAssemblyDomain Condition="'$(ModulusAssemblyDomain)' == ''">Unknown</ModulusAssemblyDomain>
+  </PropertyGroup>
+  
+  <!-- Generate AssemblyInfo with domain attribute -->
+  <ItemGroup Condition="'$(ModulusAssemblyDomain)' != 'Unknown'">
+    <AssemblyAttribute Include="Modulus.Architecture.AssemblyDomainAttribute">
+      <_Parameter1>Modulus.Architecture.AssemblyDomainType.$(ModulusAssemblyDomain)</_Parameter1>
+      <_Parameter1_IsLiteral>true</_Parameter1_IsLiteral>
+    </AssemblyAttribute>
+  </ItemGroup>
+  
+  <!-- Compile-time constant for conditional compilation -->
+  <PropertyGroup Condition="'$(ModulusAssemblyDomain)' == 'Shared'">
+    <DefineConstants>$(DefineConstants);MODULUS_SHARED_DOMAIN</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(ModulusAssemblyDomain)' == 'Module'">
+    <DefineConstants>$(DefineConstants);MODULUS_MODULE_DOMAIN</DefineConstants>
+  </PropertyGroup>
+  
+</Project>

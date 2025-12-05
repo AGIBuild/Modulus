@@ -16,6 +16,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.EchoPlugin.UI.Blazor</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
   </PropertyGroup>
 
   <!-- Copy manifest.json to output directory -->

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml.Styling;
@@ -10,107 +10,66 @@ namespace Modulus.UI.Avalonia.Icons;
 
 /// <summary>
 /// Helper class for resolving icons from IconKind enum to Geometry resources.
+/// Supports Regular and Filled variants.
 /// </summary>
 public static class IconHelper
 {
-    private static readonly Dictionary<IconKind, string> IconResourceKeys = new()
-    {
-        [IconKind.None] = "Icon.None",
-        [IconKind.Home] = "Icon.Home",
-        [IconKind.Settings] = "Icon.Settings",
-        [IconKind.Menu] = "Icon.Menu",
-        [IconKind.ChevronRight] = "Icon.ChevronRight",
-        [IconKind.ChevronDown] = "Icon.ChevronDown",
-        [IconKind.ChevronLeft] = "Icon.ChevronLeft",
-        [IconKind.ChevronUp] = "Icon.ChevronUp",
-        [IconKind.ArrowLeft] = "Icon.ArrowLeft",
-        [IconKind.ArrowRight] = "Icon.ArrowRight",
-        [IconKind.Folder] = "Icon.Folder",
-        [IconKind.FolderOpen] = "Icon.FolderOpen",
-        [IconKind.File] = "Icon.File",
-        [IconKind.Document] = "Icon.Document",
-        [IconKind.Image] = "Icon.Image",
-        [IconKind.Archive] = "Icon.Archive",
-        [IconKind.Add] = "Icon.Add",
-        [IconKind.Delete] = "Icon.Delete",
-        [IconKind.Edit] = "Icon.Edit",
-        [IconKind.Save] = "Icon.Save",
-        [IconKind.Copy] = "Icon.Copy",
-        [IconKind.Cut] = "Icon.Cut",
-        [IconKind.Paste] = "Icon.Paste",
-        [IconKind.Undo] = "Icon.Undo",
-        [IconKind.Redo] = "Icon.Redo",
-        [IconKind.Refresh] = "Icon.Refresh",
-        [IconKind.Search] = "Icon.Search",
-        [IconKind.Filter] = "Icon.Filter",
-        [IconKind.Sort] = "Icon.Sort",
-        [IconKind.Mail] = "Icon.Mail",
-        [IconKind.Chat] = "Icon.Chat",
-        [IconKind.Notification] = "Icon.Notification",
-        [IconKind.Bell] = "Icon.Bell",
-        [IconKind.Person] = "Icon.Person",
-        [IconKind.People] = "Icon.People",
-        [IconKind.Lock] = "Icon.Lock",
-        [IconKind.Unlock] = "Icon.Unlock",
-        [IconKind.Shield] = "Icon.Shield",
-        [IconKind.Key] = "Icon.Key",
-        [IconKind.Play] = "Icon.Play",
-        [IconKind.Pause] = "Icon.Pause",
-        [IconKind.Stop] = "Icon.Stop",
-        [IconKind.Volume] = "Icon.Volume",
-        [IconKind.VolumeMute] = "Icon.VolumeMute",
-        [IconKind.Info] = "Icon.Info",
-        [IconKind.Warning] = "Icon.Warning",
-        [IconKind.Error] = "Icon.Error",
-        [IconKind.Success] = "Icon.Success",
-        [IconKind.Question] = "Icon.Question",
-        [IconKind.Star] = "Icon.Star",
-        [IconKind.Heart] = "Icon.Heart",
-        [IconKind.Bookmark] = "Icon.Bookmark",
-        [IconKind.Pin] = "Icon.Pin",
-        [IconKind.Link] = "Icon.Link",
-        [IconKind.Code] = "Icon.Code",
-        [IconKind.Terminal] = "Icon.Terminal",
-        [IconKind.Grid] = "Icon.Grid",
-        [IconKind.List] = "Icon.List",
-        [IconKind.Table] = "Icon.Table",
-        [IconKind.Dashboard] = "Icon.Dashboard",
-        [IconKind.Calendar] = "Icon.Calendar",
-        [IconKind.Clock] = "Icon.Clock",
-        [IconKind.Location] = "Icon.Location",
-        [IconKind.Globe] = "Icon.Globe",
-        [IconKind.Cloud] = "Icon.Cloud",
-        [IconKind.Download] = "Icon.Download",
-        [IconKind.Upload] = "Icon.Upload",
-        [IconKind.Share] = "Icon.Share",
-        [IconKind.Print] = "Icon.Print",
-        [IconKind.Help] = "Icon.Help",
-        [IconKind.MoreHorizontal] = "Icon.MoreHorizontal",
-        [IconKind.MoreVertical] = "Icon.MoreVertical",
-        [IconKind.Close] = "Icon.Close",
-        [IconKind.Check] = "Icon.Check",
-        [IconKind.Block] = "Icon.Block",
-        [IconKind.Compass] = "Icon.Compass"
-    };
+    private const string IconPrefix = "Icon.";
 
     /// <summary>
-    /// Gets the resource key for an IconKind.
+    /// Gets the resource key for an IconKind with optional variant suffix.
+    /// Convention: Icon.{EnumName}.{Variant} (e.g., Icon.Home.Regular)
     /// </summary>
-    public static string GetResourceKey(IconKind iconKind)
+    public static string GetResourceKey(IconKind iconKind, IconVariant variant = IconVariant.Regular)
     {
-        return IconResourceKeys.TryGetValue(iconKind, out var key) ? key : "Icon.None";
+        if (iconKind == IconKind.None)
+            return $"{IconPrefix}None";
+            
+        var variantSuffix = variant switch
+        {
+            IconVariant.Filled => ".Filled",
+            _ => ".Regular"
+        };
+        
+        return $"{IconPrefix}{iconKind}{variantSuffix}";
     }
 
     /// <summary>
     /// Resolves an IconKind to a Geometry from application resources.
-    /// Searches through Application.Resources, Styles, and merged dictionaries.
+    /// Falls back to Regular variant if specified variant is not found.
     /// </summary>
-    public static Geometry? GetGeometry(IconKind iconKind)
+    public static Geometry? GetGeometry(IconKind iconKind, IconVariant variant = IconVariant.Regular)
     {
         if (iconKind == IconKind.None)
             return null;
             
-        var key = GetResourceKey(iconKind);
+        var key = GetResourceKey(iconKind, variant);
+        var geometry = FindGeometry(key);
+        
+        // Fallback to Regular variant if Filled not found
+        if (geometry == null && variant == IconVariant.Filled)
+        {
+            key = GetResourceKey(iconKind, IconVariant.Regular);
+            geometry = FindGeometry(key);
+        }
+        
+        // Fallback to base key (no variant suffix) for backward compatibility
+        if (geometry == null)
+        {
+            var baseKey = $"{IconPrefix}{iconKind}";
+            geometry = FindGeometry(baseKey);
+        }
+        
+        return geometry;
+    }
+    
+    /// <summary>
+    /// Resolves an IconKind to a Geometry (Regular variant).
+    /// </summary>
+    public static Geometry? GetGeometry(IconKind iconKind) => GetGeometry(iconKind, IconVariant.Regular);
+    
+    private static Geometry? FindGeometry(string key)
+    {
         var app = Application.Current;
         if (app == null)
             return null;

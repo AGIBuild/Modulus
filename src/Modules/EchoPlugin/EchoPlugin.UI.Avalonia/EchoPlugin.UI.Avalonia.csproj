@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.EchoPlugin.UI.Avalonia</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
   </PropertyGroup>
 
   <ItemGroup>
