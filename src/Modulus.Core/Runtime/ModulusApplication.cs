@@ -90,6 +90,11 @@ public class ModulusApplication : IModulusApplication
     public void SetServiceProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+
+        if (_serviceProvider.GetService<IModuleLoader>() is IHostAwareModuleLoader hostAwareLoader)
+        {
+            hostAwareLoader.BindHostServices(_serviceProvider);
+        }
     }
 
     public async Task InitializeAsync()
@@ -170,6 +175,9 @@ public class ModulusApplication : IModulusApplication
                     menu.Location,
                     menu.Order
                 );
+                
+                var attr = moduleType.GetCustomAttribute<ModuleAttribute>();
+                item.ModuleId = attr?.Id ?? moduleType.FullName ?? moduleType.Name;
 
                 menuRegistry.Register(item);
                 _logger.LogDebug("Registered menu: {DisplayName} -> {NavigationKey}", menu.DisplayName, navigationKey);

@@ -1,4 +1,5 @@
 using Modulus.Core.Runtime;
+using Modulus.Core.Architecture;
 
 namespace Modulus.Core.Tests;
 
@@ -23,8 +24,10 @@ public class RuntimeContextTests
         // Arrange
         var context = new RuntimeContext();
         var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { HostType.Avalonia });
-        var loadContext = new ModuleLoadContext("test-module", "/path/to/module");
-        var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", false);
+        var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var loadContext = new ModuleLoadContext("test-module", "/path/to/module", sharedCatalog);
+        var manifest = new Modulus.Sdk.ModuleManifest { Id = "test-module", Version = "1.0.0" };
+        var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
 
         // Act
         context.RegisterModule(runtimeModule);
@@ -40,8 +43,10 @@ public class RuntimeContextTests
         // Arrange
         var context = new RuntimeContext();
         var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { HostType.Avalonia });
-        var loadContext = new ModuleLoadContext("test-module", "/path/to/module");
-        var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", false);
+        var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var loadContext = new ModuleLoadContext("test-module", "/path/to/module", sharedCatalog);
+        var manifest = new Modulus.Sdk.ModuleManifest { Id = "test-module", Version = "1.0.0" };
+        var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
         context.RegisterModule(runtimeModule);
 
         // Act
@@ -72,12 +77,15 @@ public class RuntimeContextTests
         var context = new RuntimeContext();
         
         var descriptor1 = new ModuleDescriptor("module-1", "1.0.0", "Module 1", "Desc", new[] { HostType.Avalonia });
-        var loadContext1 = new ModuleLoadContext("module-1", "/path/1");
-        var module1 = new RuntimeModule(descriptor1, loadContext1, "/path/1", false);
+        var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var loadContext1 = new ModuleLoadContext("module-1", "/path/1", sharedCatalog);
+        var manifest1 = new Modulus.Sdk.ModuleManifest { Id = "module-1", Version = "1.0.0" };
+        var module1 = new RuntimeModule(descriptor1, loadContext1, "/path/1", manifest1, false);
         
         var descriptor2 = new ModuleDescriptor("module-2", "1.0.0", "Module 2", "Desc", new[] { HostType.Blazor });
-        var loadContext2 = new ModuleLoadContext("module-2", "/path/2");
-        var module2 = new RuntimeModule(descriptor2, loadContext2, "/path/2", false);
+        var loadContext2 = new ModuleLoadContext("module-2", "/path/2", sharedCatalog);
+        var manifest2 = new Modulus.Sdk.ModuleManifest { Id = "module-2", Version = "1.0.0" };
+        var module2 = new RuntimeModule(descriptor2, loadContext2, "/path/2", manifest2, false);
         
         context.RegisterModule(module1);
         context.RegisterModule(module2);

@@ -1,5 +1,8 @@
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using Microsoft.Extensions.Logging;
+using Modulus.Core.Architecture;
 
 namespace Modulus.Core.Runtime;
 
@@ -9,18 +12,28 @@ namespace Modulus.Core.Runtime;
 public sealed class ModuleLoadContext : AssemblyLoadContext
 {
     private readonly string _basePath;
+    private readonly ISharedAssemblyCatalog _sharedAssemblies;
+    private readonly ILogger? _logger;
 
-    public ModuleLoadContext(string moduleId, string basePath)
+    public ModuleLoadContext(string moduleId, string basePath, ISharedAssemblyCatalog sharedAssemblies, ILogger? logger = null)
         : base(name: moduleId, isCollectible: true)
     {
         _basePath = basePath;
+        _sharedAssemblies = sharedAssemblies;
+        _logger = logger;
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         // 1. Force shared assemblies to be loaded from default context (Host)
-        if (IsSharedAssembly(assemblyName))
+        if (_sharedAssemblies.IsShared(assemblyName))
         {
+            var defaultAssembly = AssemblyLoadContext.Default.Assemblies.FirstOrDefault(a =>
+                string.Equals(a.GetName().Name, assemblyName.Name, StringComparison.OrdinalIgnoreCase));
+            if (defaultAssembly != null && AssemblyDomainInfo.GetDomainType(defaultAssembly) == Modulus.Architecture.AssemblyDomainType.Module)
+            {
+                _logger?.LogWarning("Assembly {Assembly} is requested as shared but declared Module.", assemblyName.Name);
+            }
             return null; // Delegate to default context
         }
 
@@ -34,36 +47,4 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
         return null;
     }
 
-    private static bool IsSharedAssembly(AssemblyName assemblyName)
-    {
-        var name = assemblyName.Name;
-        if (string.IsNullOrEmpty(name)) return false;
-
-        // Core Framework & Extensions
-        if (name.StartsWith("System.") ||
-            name.StartsWith("Microsoft.") ||
-            name.Equals("mscorlib") ||
-            name.Equals("netstandard"))
-        {
-            return true;
-        }
-
-        // Modulus Core Assemblies
-        if (name.Equals("Modulus.Core") ||
-            name.Equals("Modulus.Sdk") ||
-            name.Equals("Modulus.UI.Abstractions") ||
-            name.Equals("Modulus.UI.Avalonia") ||
-            name.Equals("Modulus.UI.Blazor"))
-        {
-            return true;
-        }
-
-        // Avalonia Assemblies (Host should provide these)
-        if (name.StartsWith("Avalonia"))
-        {
-            return true;
-        }
-
-        return false;
-    }
 }

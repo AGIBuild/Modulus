@@ -67,6 +67,17 @@ public class ModuleManagerTests
         Assert.Equal(2, sorted.Count);
     }
 
+    [Fact]
+    public void GetSortedModules_MissingDependency_Throws()
+    {
+        // Arrange
+        var moduleWithMissingDep = new ModuleWithMissingDependency();
+        _manager.AddModule(moduleWithMissingDep);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => _manager.GetSortedModules());
+    }
+
     // Test module classes
     private class TestModule : ModuleBase { }
     private class TestModule2 : ModuleBase { }
@@ -75,5 +86,10 @@ public class ModuleManagerTests
     
     [DependsOn(typeof(TestModuleA))]
     private class TestModuleB : ModuleBase { }
+
+    [DependsOn(typeof(ExternalDependency))]
+    private class ModuleWithMissingDependency : ModuleBase { }
+
+    private class ExternalDependency : ModuleBase { }
 }
 

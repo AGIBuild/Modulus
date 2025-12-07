@@ -123,7 +123,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
 
         // Act & Assert - Verify module is loaded
         Assert.True(runtimeContext.TryGetModule("reload-test-module", out var module));
-        Assert.Equal(ModuleState.Loaded, module!.State);
+        Assert.Equal(ModuleState.Active, module!.State);
 
         // Unload
         await loader.UnloadAsync("reload-test-module");
@@ -133,7 +133,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         var reloaded = await loader.LoadAsync(modulePath);
         Assert.NotNull(reloaded);
         Assert.True(runtimeContext.TryGetModule("reload-test-module", out var reloadedModule));
-        Assert.Equal(ModuleState.Loaded, reloadedModule!.State);
+        Assert.Equal(ModuleState.Active, reloadedModule!.State);
     }
 
     private string CreateTestModule(string id, string version)

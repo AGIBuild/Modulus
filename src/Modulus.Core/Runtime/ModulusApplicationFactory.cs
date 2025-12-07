@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Architecture;
 using Modulus.Core.Manifest;
 using Modulus.Sdk;
 
@@ -30,12 +31,15 @@ public static class ModulusApplicationFactory
         
         var signatureVerifier = new Sha256ManifestSignatureVerifier(Microsoft.Extensions.Logging.Abstractions.NullLogger<Sha256ManifestSignatureVerifier>.Instance);
         var manifestValidator = new DefaultManifestValidator(signatureVerifier, Microsoft.Extensions.Logging.Abstractions.NullLogger<DefaultManifestValidator>.Instance);
-        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, Microsoft.Extensions.Logging.Abstractions.NullLogger<ModuleLoader>.Instance);
+        var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, Microsoft.Extensions.Logging.Abstractions.NullLogger<ModuleLoader>.Instance);
+        services.AddSingleton<ISharedAssemblyCatalog>(sharedAssemblies);
         
         var moduleManagerLogger = loggerFactory.CreateLogger<ModuleManager>();
         var moduleManager = new ModuleManager(moduleManagerLogger);
 
-        // 2. Load Modules (Discovery Phase using Providers)
+        // 2. Load Modules (Discovery Phase using Providers) with dependency ordering
+        var packageInfos = new List<ModulePackageInfo>();
         if (moduleProviders != null)
         {
             foreach (var provider in moduleProviders)
@@ -45,14 +49,35 @@ public static class ModulusApplicationFactory
                 {
                     try
                     {
-                        // Pass IsSystemSource from provider
-                        await moduleLoader.LoadAsync(path, provider.IsSystemSource).ConfigureAwait(false);
+                        var manifestPath = Path.Combine(path, "manifest.json");
+                        var manifest = await ManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
+                        if (manifest == null)
+                        {
+                            logger.LogWarning("Skipping module at {Path}: manifest not found.", path);
+                            continue;
+                        }
+
+                        packageInfos.Add(new ModulePackageInfo(path, manifest, provider.IsSystemSource));
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Failed to load module from {Path}", path);
+                        logger.LogError(ex, "Failed to read manifest from {Path}", path);
                     }
                 }
+            }
+        }
+
+        var orderedPackages = OrderPackages(packageInfos, runtimeContext, logger);
+
+        foreach (var package in orderedPackages)
+        {
+            try
+            {
+                await moduleLoader.LoadAsync(package.Path, package.IsSystem).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to load module from {Path}", package.Path);
             }
         }
 
@@ -77,7 +102,7 @@ public static class ModulusApplicationFactory
                      {
                          // logger.LogInformation("Found module type {Type}", type.FullName);
                          var instance = (IModule)Activator.CreateInstance(type)!;
-                         moduleManager.AddModule(instance);
+                         moduleManager.AddModule(instance, runtimeModule.Descriptor.Id, runtimeModule.Manifest.Dependencies.Keys);
                      }
                      catch (Exception ex)
                      {
@@ -106,4 +131,44 @@ public static class ModulusApplicationFactory
 
         return app;
     }
+
+    private static IReadOnlyList<ModulePackageInfo> OrderPackages(IEnumerable<ModulePackageInfo> packages, RuntimeContext runtimeContext, ILogger logger)
+    {
+        var packageList = packages.ToList();
+        var packageIdSet = new HashSet<string>(packageList.Select(p => p.Manifest.Id), StringComparer.OrdinalIgnoreCase);
+
+        var registrations = new List<PackageRegistration>();
+        foreach (var package in packageList)
+        {
+            var deps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var dependency in package.Manifest.Dependencies.Keys)
+            {
+                if (packageIdSet.Contains(dependency))
+                {
+                    deps.Add(dependency);
+                }
+                else if (!runtimeContext.TryGetModule(dependency, out _))
+                {
+                    logger.LogError("Module {ModuleId} is missing dependency {DependencyId}.", package.Manifest.Id, dependency);
+                    throw new InvalidOperationException($"Missing dependency '{dependency}' for module '{package.Manifest.Id}'.");
+                }
+            }
+
+            registrations.Add(new PackageRegistration(package, package.Manifest.Id, deps));
+        }
+
+        var sorted = ModuleDependencyResolver.TopologicallySort(
+            registrations,
+            r => r.ModuleId,
+            r => r.Dependencies,
+            logger);
+
+        return sorted.Select(r => r.Package).ToList();
+    }
+
+    private sealed record ModulePackageInfo(string Path, ModuleManifest Manifest, bool IsSystem);
+
+    private sealed record PackageRegistration(ModulePackageInfo Package, string ModuleId, HashSet<string> Dependencies);
 }
+
+

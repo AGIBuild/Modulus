@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Modulus.Core.Runtime;
 using Modulus.UI.Abstractions;
 
 namespace Modulus.Host.Avalonia.Services;
@@ -16,6 +17,7 @@ public class AvaloniaNavigationService : INavigationService
     private readonly IServiceProvider _serviceProvider;
     private readonly IUIFactory _uiFactory;
     private readonly IMenuRegistry _menuRegistry;
+    private readonly RuntimeContext _runtimeContext;
     private readonly List<INavigationGuard> _guards = new();
     private readonly ConcurrentDictionary<string, object> _singletonViewModels = new();
     private readonly ConcurrentDictionary<string, object> _singletonViews = new();
@@ -37,11 +39,13 @@ public class AvaloniaNavigationService : INavigationService
     public AvaloniaNavigationService(
         IServiceProvider serviceProvider,
         IUIFactory uiFactory,
-        IMenuRegistry menuRegistry)
+        IMenuRegistry menuRegistry,
+        RuntimeContext runtimeContext)
     {
         _serviceProvider = serviceProvider;
         _uiFactory = uiFactory;
         _menuRegistry = menuRegistry;
+        _runtimeContext = runtimeContext;
     }
 
     public async Task<bool> NavigateToAsync(string navigationKey, NavigationOptions? options = null)
@@ -199,7 +203,7 @@ public class AvaloniaNavigationService : INavigationService
             return vmType;
         }
 
-        // Search loaded assemblies
+        // Search host assemblies
         vmType = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a =>
             {
@@ -208,7 +212,54 @@ public class AvaloniaNavigationService : INavigationService
             })
             .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
 
-        return vmType;
+        if (vmType != null)
+        {
+            return vmType;
+        }
+
+        // Search module assemblies (loaded in separate AssemblyLoadContexts)
+        foreach (var runtimeModule in _runtimeContext.RuntimeModules)
+        {
+            // Also search RuntimeModuleHandle assemblies (more complete list)
+            if (_runtimeContext.TryGetModuleHandle(runtimeModule.Descriptor.Id, out var handle) && handle != null)
+            {
+                foreach (var assembly in handle.Assemblies)
+                {
+                    try
+                    {
+                        vmType = assembly.GetTypes()
+                            .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
+                        if (vmType != null)
+                        {
+                            return vmType;
+                        }
+                    }
+                    catch
+                    {
+                        // Skip assemblies that fail to enumerate types
+                    }
+                }
+            }
+            // Fallback to LoadContext.Assemblies
+            foreach (var assembly in runtimeModule.LoadContext.Assemblies)
+            {
+                try
+                {
+                    vmType = assembly.GetTypes()
+                        .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
+                    if (vmType != null)
+                    {
+                        return vmType;
+                    }
+                }
+                catch
+                {
+                    // Skip assemblies that fail to enumerate types
+                }
+            }
+        }
+
+        return null;
     }
 
     private object? GetOrCreateViewModel(Type vmType, string navigationKey, PageInstanceMode instanceMode, bool forceNew)
@@ -225,22 +276,38 @@ public class AvaloniaNavigationService : INavigationService
 
     private object? CreateViewModel(Type vmType)
     {
-        // Try DI first
-        var vm = _serviceProvider.GetService(vmType);
-        if (vm != null)
-        {
-            return vm;
-        }
-
-        // Fall back to ActivatorUtilities
         try
         {
+            var moduleProvider = ResolveModuleServiceProvider(vmType);
+            
+            if (moduleProvider != null)
+            {
+                var moduleVm = moduleProvider.GetService(vmType) ?? ActivatorUtilities.CreateInstance(moduleProvider, vmType);
+                if (moduleVm != null)
+                {
+                    return moduleVm;
+                }
+            }
+
+            var vm = _serviceProvider.GetService(vmType);
+            if (vm != null)
+            {
+                return vm;
+            }
+
+            // Fall back to ActivatorUtilities
             return ActivatorUtilities.CreateInstance(_serviceProvider, vmType);
         }
-        catch
+        catch (Exception ex)
         {
             return null;
         }
+    }
+
+    private IServiceProvider? ResolveModuleServiceProvider(Type vmType)
+    {
+        var handle = _runtimeContext.ModuleHandles.FirstOrDefault(h => h.Assemblies.Any(a => a == vmType.Assembly));
+        return handle?.CompositeServiceProvider;
     }
 
     private static string ExtractDisplayName(string navigationKey)

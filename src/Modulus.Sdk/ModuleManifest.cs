@@ -39,6 +39,9 @@ public sealed class ModuleManifest
     [JsonPropertyName("dependencies")]
     public Dictionary<string, string> Dependencies { get; init; } = new();
 
+    [JsonPropertyName("assemblyHashes")]
+    public Dictionary<string, string> AssemblyHashes { get; init; } = new();
+
     [JsonPropertyName("signature")]
     public ManifestSignature? Signature { get; init; }
 }

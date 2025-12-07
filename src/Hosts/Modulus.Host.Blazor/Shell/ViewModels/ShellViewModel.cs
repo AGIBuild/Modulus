@@ -21,6 +21,7 @@ public partial class ShellViewModel : ObservableObject
     public ShellViewModel(IMenuRegistry menuRegistry)
     {
         _menuRegistry = menuRegistry;
+        _menuRegistry.MenuChanged += (s, e) => RefreshMenu();
         RefreshMenu();
     }
 

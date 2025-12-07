@@ -57,6 +57,14 @@ public partial class ShellViewModel : ViewModelBase
             _avaloniaNavService.OnViewChanged = OnNavigationViewChanged;
         }
 
+        _menuRegistry.MenuChanged += (s, e) => 
+        {
+            // Ensure UI update happens on UI thread if needed, though ObservableCollection handles some sync
+            // For safety in Avalonia, we might need Dispatcher.UIThread.InvokeAsync, but ViewModel is usually bound
+            // Let's assume Mvvm toolkit handles basic binding updates or we are on UI thread from Loader
+            RefreshMenu();
+        };
+
         RefreshMenu();
     }
 

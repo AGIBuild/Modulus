@@ -56,6 +56,8 @@ public class BlazorHostModule : ModuleBase
 
 public static class MauiProgram
 {
+    public static void Main(string[] args) {} // Dummy entry point for net10.0 target without MAUI
+
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
