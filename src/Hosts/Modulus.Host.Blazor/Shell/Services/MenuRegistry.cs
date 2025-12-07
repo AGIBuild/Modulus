@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,19 +10,22 @@ public class MenuRegistry : IMenuRegistry
 {
     private readonly ConcurrentDictionary<string, UiMenuItem> _items = new(StringComparer.OrdinalIgnoreCase);
 
-    public event EventHandler? MenuChanged;
-
     public void Register(UiMenuItem item)
     {
         _items[item.Id] = item;
-        MenuChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Unregister(string id)
     {
-        if (_items.TryRemove(id, out _))
+        _items.TryRemove(id, out _);
+    }
+
+    public void UnregisterModuleItems(string moduleId)
+    {
+        var itemsToRemove = _items.Values.Where(i => i.ModuleId == moduleId).Select(i => i.Id).ToList();
+        foreach (var id in itemsToRemove)
         {
-            MenuChanged?.Invoke(this, EventArgs.Empty);
+            _items.TryRemove(id, out _);
         }
     }
 

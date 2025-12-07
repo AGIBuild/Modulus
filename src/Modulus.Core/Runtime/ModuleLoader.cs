@@ -16,6 +16,7 @@ namespace Modulus.Core.Runtime;
 public interface IHostAwareModuleLoader
 {
     void BindHostServices(IServiceProvider hostServices);
+    Task InitializeLoadedModulesAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
@@ -24,7 +25,6 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     private readonly IManifestValidator _manifestValidator;
     private readonly ILogger<ModuleLoader> _logger;
     private readonly ISharedAssemblyCatalog _sharedAssemblyCatalog;
-    private readonly ModuleMetadataScanner _metadataScanner;
     private IServiceProvider? _hostServices;
 
     public ModuleLoader(RuntimeContext runtimeContext, IManifestValidator manifestValidator, ISharedAssemblyCatalog sharedAssemblyCatalog, ILogger<ModuleLoader> logger, IServiceProvider? hostServices = null)
@@ -33,16 +33,69 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         _manifestValidator = manifestValidator;
         _sharedAssemblyCatalog = sharedAssemblyCatalog;
         _logger = logger;
-        _metadataScanner = new ModuleMetadataScanner(logger);
         _hostServices = hostServices;
     }
 
     public void BindHostServices(IServiceProvider hostServices)
     {
+        _logger.LogInformation("BindHostServices called. Updating {Count} module handles...", _runtimeContext.ModuleHandles.Count);
         _hostServices = hostServices;
+        
+        // Update all existing module handles with the new host services
+        foreach (var handle in _runtimeContext.ModuleHandles)
+        {
+            _logger.LogInformation("  Updating composite provider for module {ModuleId}", handle.RuntimeModule.Descriptor.Id);
+            handle.UpdateCompositeServiceProvider(hostServices);
+        }
     }
 
-    public async Task<ModuleDescriptor?> LoadAsync(string packagePath, bool isSystem = false, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Initializes all pre-loaded modules that were loaded with skipModuleInitialization=true.
+    /// This should be called after BindHostServices.
+    /// </summary>
+    public async Task InitializeLoadedModulesAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("InitializeLoadedModulesAsync called. HostServices bound: {Bound}", _hostServices != null);
+        
+        if (_hostServices == null)
+        {
+            _logger.LogWarning("Cannot initialize modules: host services not bound.");
+            return;
+        }
+
+        _logger.LogInformation("Found {Count} module handles to initialize.", _runtimeContext.ModuleHandles.Count);
+        
+        foreach (var handle in _runtimeContext.ModuleHandles)
+        {
+            var module = handle.RuntimeModule;
+            _logger.LogInformation("Checking module {ModuleId}, State={State}", module.Descriptor.Id, module.State);
+            if (module.State != ModuleState.Loaded) continue; // Skip already initialized or errored modules
+
+            _logger.LogInformation("Initializing pre-loaded module {ModuleId} with {InstanceCount} instances...", 
+                module.Descriptor.Id, handle.ModuleInstances.Count);
+
+            var compositeProvider = new CompositeServiceProvider(handle.ServiceProvider, _hostServices);
+            var initContext = new ModuleInitializationContext(compositeProvider);
+
+            try
+            {
+                foreach (var moduleInstance in handle.ModuleInstances)
+                {
+                    _logger.LogInformation("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
+                    await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                }
+                module.State = ModuleState.Active;
+                _logger.LogInformation("Module {ModuleId} initialized successfully.", module.Descriptor.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing module {ModuleId}", module.Descriptor.Id);
+                module.State = ModuleState.Error;
+            }
+        }
+    }
+
+    public async Task<ModuleDescriptor?> LoadAsync(string packagePath, bool isSystem = false, bool skipModuleInitialization = false, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -154,53 +207,68 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             loadedAssemblies.AddRange(alc.Assemblies);
         }
 
-        var moduleTypes = loadedAssemblies
+        var componentTypes = loadedAssemblies
             .SelectMany(SafeGetTypes)
             .Where(t => typeof(IModule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
             .ToList();
 
-        var moduleRegistrations = new List<ModuleRegistration>();
-        foreach (var moduleType in moduleTypes)
+        // Entry component filtering (if specified)
+        if (!string.IsNullOrWhiteSpace(manifest.EntryComponent))
+        {
+            var entryName = manifest.EntryComponent!;
+            var map = componentTypes.ToDictionary(t => t.FullName ?? t.Name, StringComparer.OrdinalIgnoreCase);
+            if (map.TryGetValue(entryName, out var entryType))
+            {
+                var reachable = new HashSet<Type>();
+                void Dfs(Type t)
+                {
+                    if (!reachable.Add(t)) return;
+                    foreach (var dep in GetComponentDependencies(t))
+                    {
+                        var depId = dep.FullName ?? dep.Name;
+                        if (depId != null && map.TryGetValue(depId, out var depType))
+                        {
+                            Dfs(depType);
+                        }
+                    }
+                }
+                Dfs(entryType);
+                componentTypes = reachable.ToList();
+            }
+            else
+            {
+                _logger.LogWarning("Entry component {Entry} not found in module {ModuleId}; falling back to all components.", entryName, manifest.Id);
+            }
+        }
+
+        IReadOnlyList<Type> sortedTypes;
+        try
+        {
+            sortedTypes = ComponentDependencyResolver.TopologicallySort(componentTypes, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to resolve component dependencies for module {ModuleId}.", manifest.Id);
+            return null;
+        }
+
+        var sortedModules = new List<IModule>();
+        foreach (var type in sortedTypes)
         {
             try
             {
-                var moduleInstance = CreateModuleInstance(moduleType);
-                if (moduleInstance == null)
+                var instance = CreateModuleInstance(type);
+                if (instance != null)
                 {
-                    continue;
+                    sortedModules.Add(instance);
                 }
-
-                var moduleId = ResolveModuleId(moduleType, manifest.Id);
-                var dependencies = new HashSet<string>(manifest.Dependencies.Keys, StringComparer.OrdinalIgnoreCase);
-                foreach (var attr in moduleType.GetCustomAttributes<DependsOnAttribute>())
-                {
-                    foreach (var depType in attr.DependedModuleTypes)
-                    {
-                        var depId = ResolveModuleId(depType, depType.FullName ?? depType.Name);
-                        dependencies.Add(depId);
-                    }
-                }
-
-                moduleRegistrations.Add(new ModuleRegistration(moduleInstance, moduleId, dependencies));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to instantiate module {ModuleType}", moduleType.FullName);
+                _logger.LogError(ex, "Failed to instantiate component {Component}", type.FullName);
                 return null;
             }
         }
-
-        var moduleIdSet = new HashSet<string>(moduleRegistrations.Select(r => r.ModuleId), StringComparer.OrdinalIgnoreCase);
-        foreach (var registration in moduleRegistrations)
-        {
-            registration.Dependencies.RemoveWhere(dep => !moduleIdSet.Contains(dep));
-        }
-
-        var sortedModules = ModuleDependencyResolver.TopologicallySort(
-            moduleRegistrations,
-            r => r.ModuleId,
-            r => r.Dependencies,
-            _logger).Select(r => r.Instance).ToList();
 
         var services = new ServiceCollection();
         services.AddSingleton(_runtimeContext);
@@ -231,37 +299,41 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             ? new CompositeServiceProvider(scopedProvider, _hostServices)
             : scopedProvider;
 
-        var initContext = new ModuleInitializationContext(compositeProvider);
+        var registeredMenus = new List<MenuItem>();
+        var runtimeModule = new RuntimeModule(descriptor, alc, packagePath, manifest, isSystem)
+        {
+            State = skipModuleInitialization ? ModuleState.Loaded : ModuleState.Active
+        };
 
         var initialized = false;
         try
         {
-            foreach (var module in sortedModules)
+            // Only run module initialization if not skipped (host services must be bound first)
+            if (!skipModuleInitialization)
             {
-                try
+                var initContext = new ModuleInitializationContext(compositeProvider);
+                foreach (var module in sortedModules)
                 {
-                    await module.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        await module.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error initializing module {ModuleType}", module.GetType().Name);
+                        return null;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error initializing module {ModuleType}", module.GetType().Name);
-                    return null;
-                }
+                runtimeModule.State = ModuleState.Active;
             }
-
-            var registeredMenus = RegisterMenus(sortedModules, compositeProvider, currentHostId, manifest.Id).ToList();
-
-            var runtimeModule = new RuntimeModule(descriptor, alc, packagePath, manifest, isSystem)
-            {
-                State = ModuleState.Active
-            };
 
             _runtimeContext.RegisterModule(runtimeModule);
             var handle = new RuntimeModuleHandle(runtimeModule, manifest, moduleScope, moduleProvider, compositeProvider, sortedModules, registeredMenus, loadedAssemblies);
             _runtimeContext.RegisterModuleHandle(handle);
             initialized = true;
 
-            _logger.LogInformation("Module {ModuleId} (v{Version}) loaded from {PackagePath} for host {HostType} (System: {IsSystem}).", manifest.Id, manifest.Version, packagePath, currentHostId ?? "None", isSystem);
+            _logger.LogInformation("Module {ModuleId} (v{Version}) loaded from {PackagePath} for host {HostType} (System: {IsSystem}, Initialized: {Initialized}).", 
+                manifest.Id, manifest.Version, packagePath, currentHostId ?? "None", isSystem, !skipModuleInitialization);
 
             return descriptor;
         }
@@ -360,13 +432,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             // We should probably store IsSystem in manifest? No, it's a provider property.
             // For now, default to false (safe) or true if we could track it.
             // Actually we can check the path again via providers? Too slow.
-            // Let's modify ReloadAsync signature or just pass false for now.
-            // Wait, we can't change signature easily as it's an interface.
-            // But we can assume false for ReloadAsync as user-initiated reload is usually for dev/user modules.
-            // If we want to support system module reload, we should probably pass isSystem=true if it was system.
-            // But we unloaded it, so we lost that info unless we kept it.
-            // Let's default to false for now to fix the build error.
-            return await LoadAsync(packagePath, isSystem, cancellationToken).ConfigureAwait(false);
+            // Reload should initialize immediately (user-initiated action)
+            return await LoadAsync(packagePath, isSystem, skipModuleInitialization: false, cancellationToken).ConfigureAwait(false);
         }
         
         _logger.LogWarning("Cannot reload module {ModuleId}: not found.", moduleId);
@@ -438,59 +505,6 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         return (IModule)Activator.CreateInstance(moduleType)!;
     }
 
-    private static string ResolveModuleId(Type moduleType, string fallback)
-    {
-        var moduleAttribute = moduleType.GetCustomAttribute<ModuleAttribute>();
-        if (moduleAttribute != null && !string.IsNullOrWhiteSpace(moduleAttribute.Id))
-        {
-            return moduleAttribute.Id;
-        }
-
-        return fallback;
-    }
-
-    private IEnumerable<MenuItem> RegisterMenus(IReadOnlyCollection<IModule> modules, IServiceProvider serviceProvider, string? hostType, string fallbackModuleId)
-    {
-        var menuRegistry = serviceProvider.GetService<IMenuRegistry>();
-        if (menuRegistry == null || string.IsNullOrEmpty(hostType))
-        {
-            return Array.Empty<MenuItem>();
-        }
-
-        var menus = new List<MenuItem>();
-
-        foreach (var module in modules)
-        {
-            var moduleType = module.GetType();
-            List<ModuleMenuMetadata> menuMetadata;
-
-            if (hostType == HostType.Avalonia)
-            {
-                menuMetadata = _metadataScanner.ScanAvaloniaMenus(moduleType);
-            }
-            else if (hostType == HostType.Blazor)
-            {
-                menuMetadata = _metadataScanner.ScanBlazorMenus(moduleType);
-            }
-            else
-            {
-                continue;
-            }
-
-            foreach (var menu in menuMetadata)
-            {
-                var navigationKey = !string.IsNullOrEmpty(menu.Route) ? menu.Route : menu.ViewModelType ?? menu.Id;
-                var item = new MenuItem($"{moduleType.Name}.{menu.Id}", menu.DisplayName, menu.Icon, navigationKey, menu.Location, menu.Order);
-                var moduleId = ResolveModuleId(moduleType, fallbackModuleId);
-                item.ModuleId = moduleId;
-                menuRegistry.Register(item);
-                menus.Add(item);
-            }
-        }
-
-        return menus;
-    }
-
     private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
     {
         try
@@ -507,5 +521,14 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         }
     }
 
-    private sealed record ModuleRegistration(IModule Instance, string ModuleId, HashSet<string> Dependencies);
+    private static IReadOnlyCollection<Type> GetComponentDependencies(Type componentType)
+    {
+        var deps = new List<Type>();
+        var dependsOnAttrs = componentType.GetCustomAttributes<DependsOnAttribute>();
+        foreach (var attr in dependsOnAttrs)
+        {
+            deps.AddRange(attr.DependedModuleTypes);
+        }
+        return deps;
+    }
 }

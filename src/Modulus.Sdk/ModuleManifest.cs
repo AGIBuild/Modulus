@@ -27,6 +27,18 @@ public sealed class ModuleManifest
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
+    /// <summary>
+    /// Fully-qualified type name of the entry component (optional).
+    /// </summary>
+    [JsonPropertyName("entryComponent")]
+    public string? EntryComponent { get; init; }
+
+    [JsonPropertyName("author")]
+    public string? Author { get; init; }
+
+    [JsonPropertyName("website")]
+    public string? Website { get; init; }
+
     [JsonPropertyName("supportedHosts")]
     public List<string> SupportedHosts { get; init; } = new();
 

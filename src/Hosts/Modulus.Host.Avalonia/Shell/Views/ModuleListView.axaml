@@ -3,104 +3,205 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Modulus.Host.Avalonia.Shell.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:md="clr-namespace:Markdown.Avalonia;assembly=Markdown.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
              x:Class="Modulus.Host.Avalonia.Shell.Views.ModuleListView"
              x:DataType="vm:ModuleListViewModel">
-  <Grid RowDefinitions="Auto, Auto, *">
-      <!-- Header -->
-      <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-          <TextBlock Text="Modules" FontSize="28" FontWeight="Light" VerticalAlignment="Center" 
-                     Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,20,0"/>
-          <Button Command="{Binding RefreshModulesCommand}" ToolTip.Tip="Refresh module list">
-              <TextBlock Text="🔄" FontSize="16"/>
-          </Button>
-      </StackPanel>
-      
-      <!-- Description -->
-      <TextBlock Grid.Row="1" Text="Manage installed modules and plugins" 
-                 Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,20"/>
-      
-      <!-- Module Cards -->
-      <ScrollViewer Grid.Row="2">
-          <ItemsControl ItemsSource="{Binding Modules}">
-              <ItemsControl.ItemsPanel>
-                  <ItemsPanelTemplate>
-                      <WrapPanel />
-                  </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:ModuleViewModel">
-                      <Border Width="300" MinHeight="180" Margin="0,0,16,16" CornerRadius="8" 
-                              Background="{DynamicResource CardBackgroundBrush}" 
-                              BorderBrush="{DynamicResource CardBorderBrush}"
-                              BorderThickness="1">
-                          <Grid RowDefinitions="Auto, *, Auto" Margin="16">
-                              <!-- Header -->
-                              <Grid ColumnDefinitions="Auto, *, Auto">
-                                  <Border Width="44" Height="44" CornerRadius="22" 
-                                          Background="{DynamicResource SurfaceActiveBrush}" Margin="0,0,12,0">
-                                      <TextBlock Text="{Binding DisplayName[0]}" 
-                                                 HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                                 Foreground="White" FontWeight="Bold" FontSize="18"/>
-                                  </Border>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                      <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14"
-                                                 TextTrimming="CharacterEllipsis"
-                                                 Foreground="{DynamicResource PrimaryTextBrush}"/>
-                                      <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="11" 
-                                                 Foreground="{DynamicResource TertiaryTextBrush}"/>
-                                  </StackPanel>
-                                  <!-- Status Badge -->
-                                  <Border Grid.Column="2" CornerRadius="10" Padding="8,3" VerticalAlignment="Top"
-                                          Background="{DynamicResource SurfaceBrush}">
-                                      <TextBlock Text="{Binding State}" FontSize="10" FontWeight="Medium"
-                                                 Foreground="{DynamicResource SecondaryTextBrush}"/>
-                                  </Border>
-                              </Grid>
-                              
-                              <!-- Content -->
-                              <StackPanel Grid.Row="1" Margin="0,12,0,0" Spacing="6">
-                                  <TextBlock Text="{Binding Description}" FontSize="12" TextWrapping="Wrap" 
-                                             Foreground="{DynamicResource SecondaryTextBrush}" 
-                                             MaxLines="2" TextTrimming="CharacterEllipsis"
-                                             IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                  <StackPanel Orientation="Horizontal" Spacing="8">
-                                      <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="4" Padding="6,2"
-                                              IsVisible="{Binding IsSystem}">
-                                          <TextBlock Text="System" FontSize="10" 
-                                                     Foreground="{DynamicResource TertiaryTextBrush}"/>
-                                      </Border>
-                                  </StackPanel>
-                              </StackPanel>
-                              
-                              <!-- Actions -->
-                              <Grid Grid.Row="2" ColumnDefinitions="*, 8, *" Margin="0,12,0,0">
-                                  <!-- Load Button (when unloaded) -->
-                                  <Button Grid.Column="0" Content="Load" HorizontalAlignment="Stretch" 
-                                          HorizontalContentAlignment="Center"
-                                          Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}" 
-                                          CommandParameter="{Binding}" 
-                                          IsVisible="{Binding IsUnloaded}"/>
-                                          
-                                  <!-- Unload Button (when loaded and not system) -->
-                                  <Button Grid.Column="0" Content="Unload" HorizontalAlignment="Stretch" 
-                                          HorizontalContentAlignment="Center"
-                                          Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}" 
-                                          CommandParameter="{Binding}" 
-                                          IsVisible="{Binding CanUnload}"/>
+    
+    <Grid ColumnDefinitions="280, *, 280">
+        
+        <!-- Left Sidebar: Module List -->
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBackgroundBrush}" 
+                BorderBrush="{DynamicResource ContentBorderBrush}" BorderThickness="0,0,1,0">
+            <Grid RowDefinitions="Auto, *">
+                <TextBlock Text="Installed Modules" FontWeight="SemiBold" Margin="16" FontSize="16"
+                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                
+                <ListBox Grid.Row="1" ItemsSource="{Binding FilteredModules}" SelectedItem="{Binding SelectedModule}" 
+                         Background="Transparent" BorderThickness="0" Padding="4">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ModuleViewModel">
+                            <Grid ColumnDefinitions="Auto, *" Margin="4,6">
+                                <!-- Status Indicator -->
+                                <CheckBox Grid.Column="0" IsChecked="{Binding IsEnabled}" IsHitTestVisible="False" 
+                                          Margin="0,0,12,0" VerticalAlignment="Top"/>
+                                
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <!-- Row 1: Name + Version -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Medium" 
+                                                   Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                        <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="11" 
+                                                   Foreground="{DynamicResource TertiaryTextBrush}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <!-- Row 2: Description -->
+                                    <TextBlock Text="{Binding Description}" FontSize="11" 
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                                    <!-- Row 3: Author -->
+                                    <TextBlock Text="{Binding Author}" FontSize="10" 
+                                               Foreground="{DynamicResource TertiaryTextBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
 
-                                  <!-- Reload Button (when loaded) -->
-                                  <Button Grid.Column="2" Content="Reload" HorizontalAlignment="Stretch" 
-                                          HorizontalContentAlignment="Center"
-                                          Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ReloadModuleCommand}" 
-                                          CommandParameter="{Binding}"
-                                          IsVisible="{Binding IsLoaded}"/>
-                              </Grid>
-                          </Grid>
-                      </Border>
-                  </DataTemplate>
-              </ItemsControl.ItemTemplate>
-          </ItemsControl>
-      </ScrollViewer>
-  </Grid>
+        <!-- Middle: Detail View -->
+        <Border Grid.Column="1" Background="{DynamicResource ContentBackgroundBrush}">
+            <ScrollViewer Padding="32">
+                <ContentControl Content="{Binding SelectedModule}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate DataType="vm:ModuleViewModel">
+                            <StackPanel Spacing="20">
+                                <!-- Header -->
+                                <StackPanel Spacing="8">
+                                    <!-- Module Name -->
+                                    <TextBlock Text="{Binding Name}" FontSize="28" FontWeight="Bold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                    
+                                    <!-- Version + Author -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding Version, StringFormat='v{0}'}" 
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                        <TextBlock Text="by" 
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                        <TextBlock Text="{Binding Author}" 
+                                                   Foreground="{DynamicResource NavItemSelectedIconBrush}"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Action Buttons (below version) -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                        <Button Content="Enable" Classes="accent" Padding="24,8"
+                                                Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}"
+                                                CommandParameter="{Binding}" IsVisible="{Binding !IsEnabled}"/>
+                                                
+                                        <Button Content="Disable" Classes="secondary" Padding="24,8"
+                                                Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}"
+                                                CommandParameter="{Binding}" IsVisible="{Binding IsEnabled}"/>
+                                                
+                                        <Button Content="Uninstall" Classes="danger" Padding="16,8"
+                                                Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).RemoveModuleCommand}"
+                                                CommandParameter="{Binding}" IsVisible="{Binding CanRemove}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Height="1" Background="{DynamicResource ContentBorderBrush}" Margin="0,8"/>
+
+                                <!-- Description (Markdown) -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Description" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                    <Border MinHeight="100" MaxHeight="500" Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" 
+                                            BorderThickness="1" CornerRadius="4" Padding="12">
+                                        <md:MarkdownScrollViewer Markdown="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).SelectedModuleDetails}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Status Info -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Status" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                    <Border Classes.running="{Binding IsLoaded}"
+                                            Classes.stopped="{Binding !IsLoaded}"
+                                            CornerRadius="4" HorizontalAlignment="Left" Padding="8,4">
+                                        <Border.Styles>
+                                            <Style Selector="Border.running">
+                                                <Setter Property="Background" Value="{DynamicResource NavItemSelectedIconBrush}"/>
+                                            </Style>
+                                            <Style Selector="Border.stopped">
+                                                <Setter Property="Background" Value="{DynamicResource TertiaryTextBrush}"/>
+                                            </Style>
+                                        </Border.Styles>
+                                        <TextBlock Text="{Binding StatusText}" Foreground="White" 
+                                                   FontWeight="SemiBold" FontSize="12"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Menu Placement -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Menu Location" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                    <TextBlock Text="{Binding MenuLocation}" 
+                                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                </StackPanel>
+
+                                <!-- Technical Info -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Manifest Path" FontWeight="Bold" FontSize="16"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                    <TextBox Text="{Binding Entity.Path}" IsReadOnly="True" FontFamily="Consolas" 
+                                             Background="{DynamicResource CardBackgroundBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+            </ScrollViewer>
+        </Border>
+        
+        <!-- Empty State for Middle -->
+        <Grid Grid.Column="1" IsVisible="{Binding SelectedModule, Converter={x:Static ObjectConverters.IsNull}}"
+              Background="{DynamicResource ContentBackgroundBrush}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                <TextBlock Text="Select a module to view details" 
+                           Foreground="{DynamicResource SecondaryTextBrush}" FontSize="16"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Right Sidebar: Actions -->
+        <Border Grid.Column="2" BorderBrush="{DynamicResource ContentBorderBrush}" 
+                BorderThickness="1,0,0,0" Padding="16" 
+                Background="{DynamicResource SidebarBackgroundBrush}">
+            <StackPanel Spacing="20">
+                <!-- Search -->
+                <TextBox Watermark="Search installed plugins..." Text="{Binding SearchText}">
+                    <TextBox.InnerRightContent>
+                        <TextBlock Text="🔍" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    </TextBox.InnerRightContent>
+                </TextBox>
+
+                <!-- Install Card -->
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Manual Install" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <TextBox Watermark="Path to manifest.json" Text="{Binding ImportPath}" FontSize="12"/>
+                        <Button Command="{Binding ImportModuleCommand}" Content="Install Plugin from File.." 
+                                Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Padding="10"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stats / Info -->
+                <Border Background="{DynamicResource CardBackgroundBrush}" 
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Overview" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"/>
+                        <Grid ColumnDefinitions="*,*">
+                            <StackPanel>
+                                <TextBlock Text="{Binding EnabledModules.Count, FallbackValue=0}" FontSize="24" FontWeight="Bold" 
+                                           Foreground="{DynamicResource NavItemSelectedIconBrush}"/>
+                                <TextBlock Text="Enabled" FontSize="12" 
+                                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding DisabledModules.Count, FallbackValue=0}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <TextBlock Text="Disabled" FontSize="12" 
+                                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>

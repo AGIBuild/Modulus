@@ -1,111 +1,137 @@
 @page "/modules"
+@using Modulus.Host.Blazor.Shell.ViewModels
+@using Markdig
 @inject ModuleListViewModel ViewModel
 
 <MudText Typo="Typo.h4" GutterBottom="true">Modules</MudText>
 <MudText Typo="Typo.body2" Class="mb-4">Manage installed modules and plugins</MudText>
 
-<MudStack Row="true" Class="mb-4">
-    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@MudBlazor.Icons.Material.Filled.Refresh"
-               OnClick="@RefreshModules" Disabled="@_isLoading">
-        @if (_isLoading)
-        {
-            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-        }
-        Refresh
-    </MudButton>
-</MudStack>
-
-@if (_isLoading)
+@if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
 {
-    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
-}
-
-<MudGrid Spacing="3">
-    @foreach (var module in ViewModel.Modules)
-    {
-        <MudItem xs="12" sm="6" md="4" lg="3">
-            <MudCard Elevation="2" Class="module-card">
-                <MudCardHeader>
-                    <CardHeaderAvatar>
-                        <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
-                            @(module.DisplayName.Length > 0 ? module.DisplayName[0].ToString().ToUpper() : "?")
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.body1"><strong>@module.DisplayName</strong></MudText>
-                        <MudText Typo="Typo.caption">@module.Id • v@module.Version</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <MudChip T="string" Size="Size.Small" Color="@GetStateColor(module.State)" Variant="Variant.Filled">
-                            @module.State
-                        </MudChip>
-                    </CardHeaderActions>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (!string.IsNullOrEmpty(module.Description))
-                    {
-                        <MudText Typo="Typo.body2" Class="mb-2">@module.Description</MudText>
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.body2" Class="mb-2" Color="Color.Secondary">No description available</MudText>
-                    }
-                    @if (module.IsSystem)
-                    {
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Icon="@MudBlazor.Icons.Material.Filled.Lock">
-                            System Module
-                        </MudChip>
-                    }
-                </MudCardContent>
-                <MudCardActions>
-                    @if (module.IsUnloaded)
-                    {
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@MudBlazor.Icons.Material.Filled.PlayArrow"
-                                   OnClick="@(() => LoadModule(module))">
-                            Load
-                        </MudButton>
-                    }
-                    else if (module.CanUnload)
-                    {
-                        <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@MudBlazor.Icons.Material.Filled.Stop"
-                                   OnClick="@(() => UnloadModule(module))">
-                            Unload
-                        </MudButton>
-                    }
-                    @if (module.IsLoaded && !module.IsSystem)
-                    {
-                        <MudButton Variant="Variant.Text" Color="Color.Secondary" StartIcon="@MudBlazor.Icons.Material.Filled.Refresh"
-                                   OnClick="@(() => ReloadModule(module))">
-                            Reload
-                        </MudButton>
-                    }
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-    }
-</MudGrid>
-
-@if (ViewModel.Modules.Count == 0 && !_isLoading)
-{
-    <MudAlert Severity="Severity.Info" Class="mt-4" Icon="@MudBlazor.Icons.Material.Filled.Info">
-        <MudText>No modules found. Modules will appear here once installed.</MudText>
+    <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="@(() => ViewModel.ErrorMessage = null)">
+        @ViewModel.ErrorMessage
     </MudAlert>
 }
 
-<style>
-    .module-card {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-    .module-card .mud-card-content {
-        flex-grow: 1;
-    }
-</style>
+<MudGrid Spacing="3">
+    <!-- Left: Module List -->
+    <MudItem xs="12" md="3">
+        <MudPaper Class="pa-0" Elevation="0" Outlined="true" Style="height: calc(100vh - 200px); overflow-y: auto;">
+            <MudText Typo="Typo.subtitle1" Class="pa-4 pb-2">Installed Modules</MudText>
+            <MudList T="ModuleViewModel" @bind-SelectedValue="ViewModel.SelectedModule" Color="Color.Primary">
+                @foreach (var module in ViewModel.Modules)
+                {
+                    <MudListItem Value="@module" OnClick="@(() => ViewModel.SelectedModule = module)">
+                        <div class="d-flex align-center">
+                            <MudCheckBox T="bool" Value="@module.IsRunning" Disabled="true" Dense="true" Size="Size.Small" Color="@GetColor(module.StatusColor)" Class="mr-2" />
+                            <div>
+                                <MudText Typo="Typo.body2">@module.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">v@module.Version</MudText>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Middle: Details -->
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Elevation="0" Outlined="true" Style="height: calc(100vh - 200px); overflow-y: auto;">
+            @if (ViewModel.SelectedModule != null)
+            {
+                var module = ViewModel.SelectedModule;
+                <div class="d-flex justify-space-between align-start mb-4">
+                    <div>
+                        <MudText Typo="Typo.h5">@module.Name</MudText>
+                        <MudStack Row="true" Spacing="2" Class="mt-1">
+                            <MudText Typo="Typo.caption">v@module.Version</MudText>
+                            <MudText Typo="Typo.caption">•</MudText>
+                            <MudText Typo="Typo.caption">@module.Author</MudText>
+                        </MudStack>
+                    </div>
+                    <MudStack Row="true">
+                        @if (module.ShowToggle)
+                        {
+                            if (module.IsRunning)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" OnClick="@(() => ToggleModule(module))">Disable</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="@(() => ToggleModule(module))">Enable</MudButton>
+                            }
+                        }
+                        @if (module.CanRemove)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveModule(module))">Uninstall</MudButton>
+                        }
+                    </MudStack>
+                </div>
+
+                <MudDivider Class="mb-4" />
+
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Description</MudText>
+                
+                <!-- Markdown Rendering -->
+                <div class="markdown-body">
+                    @((MarkupString)Markdown.ToHtml(ViewModel.SelectedModuleDetails ?? ""))
+                </div>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-6" GutterBottom="true">Status</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@GetColor(module.StatusColor)" Variant="Variant.Filled">@module.StatusText</MudChip>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4" GutterBottom="true">Menu Location</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@module.MenuLocation</MudChip>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-4" GutterBottom="true">Path</MudText>
+                <MudPaper Class="pa-2 mud-theme-dark" Elevation="0">
+                    <code style="color: white; word-break: break-all;">@module.Entity.Path</code>
+                </MudPaper>
+            }
+            else
+            {
+                <div class="d-flex justify-center align-center h-100">
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">Select a module to view details</MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- Right: Actions -->
+    <MudItem xs="12" md="3">
+        <MudStack Spacing="3">
+            <!-- Actions Card -->
+            <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+                <MudTextField @bind-Value="ViewModel.ImportPath" Placeholder="Path to manifest.json" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="@ImportModule" Disabled="@ViewModel.IsLoading">
+                    Install Plugin from File
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" StartIcon="@MudBlazor.Icons.Material.Filled.Refresh" FullWidth="true" OnClick="@RefreshModules" Class="mt-2">
+                    Refresh List
+                </MudButton>
+            </MudPaper>
+
+            <!-- Stats Card -->
+            <MudPaper Class="pa-4" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Overview</MudText>
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.h4" Color="Color.Success">@ViewModel.Modules.Count(m => m.IsRunning)</MudText>
+                        <MudText Typo="Typo.caption">Enabled</MudText>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.h4">@ViewModel.Modules.Count(m => !m.IsRunning)</MudText>
+                        <MudText Typo="Typo.caption">Disabled</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudStack>
+    </MudItem>
+</MudGrid>
 
 @code {
-    private bool _isLoading;
-
     protected override async Task OnInitializedAsync()
     {
         await RefreshModules();
@@ -113,43 +139,34 @@
 
     private async Task RefreshModules()
     {
-        _isLoading = true;
+        await ViewModel.RefreshModulesAsync();
         StateHasChanged();
-        
-        try
-        {
-            await ViewModel.RefreshModulesAsync();
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
     }
 
-    private async Task LoadModule(ModuleViewModel module)
+    private async Task ToggleModule(ModuleViewModel module)
     {
         await ViewModel.ToggleModuleAsync(module);
         StateHasChanged();
     }
 
-    private async Task UnloadModule(ModuleViewModel module)
+    private async Task RemoveModule(ModuleViewModel module)
     {
-        await ViewModel.ToggleModuleAsync(module);
+        await ViewModel.RemoveModuleAsync(module);
         StateHasChanged();
     }
 
-    private async Task ReloadModule(ModuleViewModel module)
+    private async Task ImportModule()
     {
-        await ViewModel.ReloadModuleAsync(module);
+        await ViewModel.ImportModuleAsync();
         StateHasChanged();
     }
 
-    private Color GetStateColor(Modulus.Core.Runtime.ModuleState state) => state switch
+    private Color GetColor(string statusColor) => statusColor switch
     {
-        Modulus.Core.Runtime.ModuleState.Active => Color.Success,
-        Modulus.Core.Runtime.ModuleState.Loaded => Color.Info,
-        Modulus.Core.Runtime.ModuleState.Error => Color.Error,
-        _ => Color.Default
+        "success" => Color.Success,
+        "warning" => Color.Warning,
+        "error" => Color.Error,
+        "secondary" => Color.Default,
+        _ => Color.Info
     };
 }

@@ -9,6 +9,7 @@ namespace Modulus.Modules.ComponentsDemo.UI.Avalonia;
 /// <summary>
 /// Components Demo Avalonia UI - declares Avalonia-specific navigation.
 /// </summary>
+[DependsOn(typeof(ComponentsDemo.ComponentsDemoModule))]
 [AvaloniaMenu("Components", typeof(ComponentsMainViewModel), Icon = IconKind.Grid, Order = 15)]
 public class ComponentsDemoAvaloniaModule : AvaloniaModuleBase
 {

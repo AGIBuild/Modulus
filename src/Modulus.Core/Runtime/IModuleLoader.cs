@@ -10,8 +10,9 @@ public interface IModuleLoader
     /// </summary>
     /// <param name="packagePath">Path to the module package.</param>
     /// <param name="isSystem">Whether this module is considered a system module.</param>
+    /// <param name="skipModuleInitialization">If true, modules are loaded but not initialized. Call IHostAwareModuleLoader.InitializeLoadedModulesAsync after host services are bound.</param>
     /// <param name="cancellationToken"></param>
-    Task<ModuleDescriptor?> LoadAsync(string packagePath, bool isSystem = false, CancellationToken cancellationToken = default);
+    Task<ModuleDescriptor?> LoadAsync(string packagePath, bool isSystem = false, bool skipModuleInitialization = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Unloads a module by its ID.

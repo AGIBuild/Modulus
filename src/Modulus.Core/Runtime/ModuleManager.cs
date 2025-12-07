@@ -55,6 +55,20 @@ public class ModuleManager
         return sorted.Select(r => r.Module).ToList();
     }
 
+    /// <summary>
+    /// Gets sorted modules with their registered IDs.
+    /// </summary>
+    public IReadOnlyList<(IModule Module, string ModuleId)> GetSortedModulesWithIds()
+    {
+        var sorted = ModuleDependencyResolver.TopologicallySort(
+            _registrations,
+            r => r.Id,
+            r => r.Dependencies,
+            _logger);
+
+        return sorted.Select(r => (r.Module, r.Id)).ToList();
+    }
+
     private static string ResolveModuleId(Type type)
     {
         var attr = type.GetCustomAttribute<ModuleAttribute>();

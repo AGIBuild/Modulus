@@ -37,7 +37,7 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
             return null; // Delegate to default context
         }
 
-        // 2. Try to load from module directory
+        // 2. Load from module package directory (standardized structure: manifest.json + *.dll in same directory)
         var candidatePath = Path.Combine(_basePath, $"{assemblyName.Name}.dll");
         if (File.Exists(candidatePath))
         {

@@ -12,7 +12,7 @@ public sealed class RuntimeModuleHandle : IAsyncDisposable, IDisposable
     public RuntimeModule RuntimeModule { get; }
     public ModuleManifest Manifest { get; }
     public IServiceProvider ServiceProvider { get; }
-    public IServiceProvider CompositeServiceProvider { get; }
+    public IServiceProvider CompositeServiceProvider { get; private set; }
     public IReadOnlyCollection<IModule> ModuleInstances { get; }
     public IReadOnlyCollection<MenuItem> RegisteredMenus { get; }
     public IReadOnlyCollection<Assembly> Assemblies { get; }
@@ -37,6 +37,15 @@ public sealed class RuntimeModuleHandle : IAsyncDisposable, IDisposable
         ModuleInstances = moduleInstances;
         RegisteredMenus = registeredMenus;
         Assemblies = assemblies;
+    }
+
+    /// <summary>
+    /// Updates the composite service provider with a new host services provider.
+    /// Called when host services are bound after initial module loading.
+    /// </summary>
+    public void UpdateCompositeServiceProvider(IServiceProvider hostServices)
+    {
+        CompositeServiceProvider = new CompositeServiceProvider(ServiceProvider, hostServices);
     }
 
     public void Dispose()

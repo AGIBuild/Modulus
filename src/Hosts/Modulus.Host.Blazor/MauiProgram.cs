@@ -1,13 +1,16 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Configuration;
 using MudBlazor.Services;
 using Modulus.Core;
 using Modulus.Core.Data;
+using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Host.Blazor.Services;
 using Modulus.Host.Blazor.Shell.Services;
 using Modulus.Host.Blazor.Shell.ViewModels;
+using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
@@ -15,7 +18,7 @@ using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 namespace Modulus.Host.Blazor;
 
 [DependsOn()]
-public class BlazorHostModule : ModuleBase
+public class BlazorHostModule : ModulusComponent
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {
@@ -45,11 +48,8 @@ public class BlazorHostModule : ModuleBase
 
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {
-        // Register built-in menu items (Components is registered by ComponentsDemo module)
-        var menuRegistry = context.ServiceProvider.GetRequiredService<IMenuRegistry>();
-        menuRegistry.Register(new UiMenuItem("Modules", "Modules", IconKind.AppsAddIn, "/modules", MenuLocation.Main, 10));
-        menuRegistry.Register(new UiMenuItem("Settings", "Settings", IconKind.Settings, "/settings", MenuLocation.Bottom, 100));
-        
+        // Menus come from database (full database-driven approach)
+        // View mappings for Blazor are handled via Razor page routing
         return Task.CompletedTask;
     }
 }
@@ -68,57 +68,62 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
             });
 
-        // Module Providers
+        // Module Providers - load from Modules/ directory relative to executable
         var providers = new List<IModuleProvider>();
 
-#if DEBUG
-        // Development: Scan solution for modules (filter by host type)
-        var solutionRoot = FindSolutionRoot(AppContext.BaseDirectory);
-        if (solutionRoot != null)
-        {
-            providers.Add(new DevelopmentModuleScanningProvider(solutionRoot, HostType.Blazor, NullLogger.Instance));
-        }
-#endif
-
-        // App Modules Directory
+        // App Modules: {AppBaseDir}/Modules/ (populated by nuke build)
         var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
         if (Directory.Exists(appModules))
         {
             providers.Add(new DirectoryModuleProvider(appModules, NullLogger.Instance, isSystem: true));
         }
 
-        // User Modules Directory
+        // User-installed modules (for runtime installation)
         var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
         if (Directory.Exists(userModules))
         {
             providers.Add(new DirectoryModuleProvider(userModules, NullLogger.Instance, isSystem: false));
         }
 
-        // Database
-        var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath();
+        // Configuration
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
+
+        // Database (configurable name; defaults to framework/solution name)
+        var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
+        var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath(dbName);
         builder.Services.AddModulusDatabase(dbPath);
 
-        // Create Modulus App
-        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, providers, HostType.Blazor);
+        // Repositories & installers
+        builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
+        builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+        builder.Services.AddScoped<HostModuleSeeder>();
+
+        // Create Modulus App (use same DB path to align migrations and runtime)
+        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, providers, HostType.Blazor, dbPath);
         var modulusApp = appTask.GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected
         builder.Services.AddSingleton<IModulusApplication>(modulusApp);
 
-        return builder.Build();
+        // Build the app first, then seed Host module
+        var app = builder.Build();
+        
+        // Seed Host module and menus to database (full database-driven approach)
+        using (var scope = app.Services.CreateScope())
+        {
+            var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
+            hostSeeder.SeedAsync(
+                HostType.Blazor,
+                "/modules",  // Blazor uses route-based navigation
+                "/settings"
+            ).GetAwaiter().GetResult();
+        }
+
+        return app;
     }
 
-    private static string? FindSolutionRoot(string startPath)
-    {
-        var current = new DirectoryInfo(startPath);
-        while (current != null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "Modulus.sln")))
-            {
-                return current.FullName;
-            }
-            current = current.Parent;
-        }
-        return null;
-    }
 }

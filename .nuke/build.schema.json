@@ -26,15 +26,16 @@
       "enum": [
         "Build",
         "BuildAll",
+        "BuildApp",
+        "BuildModule",
         "Clean",
         "CleanPluginsArtifacts",
+        "Compile",
         "Default",
         "Pack",
         "Plugin",
         "Restore",
         "Run",
-        "StartAI",
-        "SyncAIManifest",
         "Test"
       ]
     },
@@ -125,17 +126,13 @@
           "type": "string",
           "description": "Operation to perform: 'all' (default) or 'single'"
         },
-        "role": {
-          "type": "string",
-          "description": "Role to filter context (e.g., Backend, Frontend, Plugin)"
-        },
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },
-        "verbose": {
-          "type": "boolean",
-          "description": "Verbosity for ManifestSync tool (true/false)"
+        "target-host": {
+          "type": "string",
+          "description": "Target host to build for: 'avalonia' (default), 'blazor', or 'all'"
         }
       }
     },

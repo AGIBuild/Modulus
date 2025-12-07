@@ -4,14 +4,17 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Modulus.Core;
 using Modulus.Core.Data;
+using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Host.Avalonia.Services;
 using Modulus.Host.Avalonia.Shell.Services;
 using Modulus.Host.Avalonia.Shell.ViewModels;
 using Modulus.Host.Avalonia.Shell.Views;
+using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -20,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace Modulus.Host.Avalonia;
 
-public class AvaloniaHostModule : ModuleBase
+public class AvaloniaHostModule : ModulusComponent
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {
@@ -38,6 +41,16 @@ public class AvaloniaHostModule : ModuleBase
         context.Services.AddSingleton<ShellViewModel>();
         context.Services.AddTransient<ModuleListViewModel>();
         context.Services.AddTransient<SettingsViewModel>();
+    }
+
+    public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
+    {
+        // Register view mappings (menus come from database - full database-driven approach)
+        var viewRegistry = context.ServiceProvider.GetRequiredService<IViewRegistry>();
+        viewRegistry.Register<ModuleListViewModel, ModuleListView>();
+        viewRegistry.Register<SettingsViewModel, SettingsView>();
+
+        return Task.CompletedTask;
     }
 }
 
@@ -63,42 +76,60 @@ public partial class App : Application
             // Add Logging
             services.AddLogging();
             
-            // Module Providers
+            // Module Providers - load from Modules/ directory
             var providers = new System.Collections.Generic.List<IModuleProvider>();
 
-            #if DEBUG
+#if DEBUG
+            // Development: Load from artifacts/ (populated by nuke build-module)
             var solutionRoot = FindSolutionRoot(AppContext.BaseDirectory);
             if (solutionRoot != null)
             {
-                providers.Add(new DevelopmentModuleScanningProvider(solutionRoot, HostType.Avalonia, NullLogger.Instance));
+                var artifactsModules = Path.Combine(solutionRoot, "artifacts", "Modulus.Host.Avalonia", "Modules");
+                if (Directory.Exists(artifactsModules))
+                {
+                    // User modules from artifacts - NOT system modules
+                    providers.Add(new DirectoryModuleProvider(artifactsModules, NullLogger.Instance, isSystem: false));
+                }
             }
-            
-            var outputModules = Path.Combine(solutionRoot ?? AppContext.BaseDirectory, "_output", "modules");
-            if (Directory.Exists(outputModules))
-            {
-                providers.Add(new DirectoryModuleProvider(outputModules, NullLogger.Instance, isSystem: true));
-            }
-            #endif
-
+#else
+            // Production: Load from {AppBaseDir}/Modules/ 
             var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
             if (Directory.Exists(appModules))
             {
                 providers.Add(new DirectoryModuleProvider(appModules, NullLogger.Instance, isSystem: true));
             }
+#endif
 
+            // User-installed modules (for runtime installation)
             var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
             if (Directory.Exists(userModules))
             {
                 providers.Add(new DirectoryModuleProvider(userModules, NullLogger.Instance, isSystem: false));
             }
 
-            // Database
-            var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath();
+            // Configuration
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            // Database (configurable name; defaults to framework/solution name)
+            var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
+            var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath(dbName);
             services.AddModulusDatabase(dbPath);
+
+            // Repositories & installers (needed at runtime for menu registration)
+            services.AddScoped<IModuleRepository, ModuleRepository>();
+            services.AddScoped<IMenuRepository, MenuRepository>();
+            services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
+            services.AddScoped<SystemModuleSeeder>();
+            services.AddScoped<ModuleIntegrityChecker>();
+            services.AddScoped<HostModuleSeeder>();
 
             // Bootstrap Modulus
             var appTask = Task.Run(async () => 
-                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, providers, HostType.Avalonia)
+                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, providers, HostType.Avalonia, dbPath)
             );
             _modulusApp = appTask.GetAwaiter().GetResult();
             
@@ -115,21 +146,27 @@ public partial class App : Application
             var database = Services.GetRequiredService<IAppDatabase>();
             database.InitializeAsync().GetAwaiter().GetResult();
             
+            // Seed Host module and menus to database (full database-driven approach)
+            using (var scope = Services.CreateScope())
+            {
+                var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
+                hostSeeder.SeedAsync(
+                    HostType.Avalonia,
+                    typeof(ModuleListViewModel).FullName!,
+                    typeof(SettingsViewModel).FullName!
+                ).GetAwaiter().GetResult();
+            }
+            
             // Initialize Theme Service (load saved theme)
             var themeService = Services.GetRequiredService<IThemeService>() as AvaloniaThemeService;
             themeService?.InitializeAsync().GetAwaiter().GetResult();
             
-            // Register Shell Views
+            // Register Shell Views (view mappings, menus come from database)
             var viewRegistry = Services.GetRequiredService<IViewRegistry>();
             viewRegistry.Register<ModuleListViewModel, ModuleListView>();
             viewRegistry.Register<SettingsViewModel, SettingsView>();
             
-            // Register Shell Menu Items
-            var menuRegistry = Services.GetRequiredService<IMenuRegistry>();
-            menuRegistry.Register(new MenuItem("Modules", "Modules", IconKind.AppsAddIn, typeof(ModuleListViewModel).FullName!, MenuLocation.Main, 0));
-            menuRegistry.Register(new MenuItem("Settings", "Settings", IconKind.Settings, typeof(SettingsViewModel).FullName!, MenuLocation.Bottom, 100));
-            
-            // Initialize Modules
+            // Initialize Modules (loads menus from database into IMenuRegistry)
             _modulusApp.InitializeAsync().GetAwaiter().GetResult();
             
             // Create and set ShellViewModel
@@ -153,18 +190,20 @@ public partial class App : Application
         var current = RequestedThemeVariant;
         RequestedThemeVariant = current == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     }
-
+    
+#if DEBUG
     private static string? FindSolutionRoot(string startPath)
     {
-        var current = new DirectoryInfo(startPath);
-        while (current != null)
+        var dir = new DirectoryInfo(startPath);
+        while (dir != null)
         {
-            if (File.Exists(Path.Combine(current.FullName, "Modulus.sln")))
+            if (File.Exists(Path.Combine(dir.FullName, "Modulus.sln")))
             {
-                return current.FullName;
+                return dir.FullName;
             }
-            current = current.Parent;
+            dir = dir.Parent;
         }
         return null;
     }
+#endif
 }

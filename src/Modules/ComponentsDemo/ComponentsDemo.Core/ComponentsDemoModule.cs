@@ -8,9 +8,10 @@ namespace Modulus.Modules.ComponentsDemo;
 /// Components Demo Module - demonstrates navigation and UI component features.
 /// UI-specific implementations are in UI.Avalonia and UI.Blazor modules.
 /// </summary>
+[DependsOn()] // no explicit deps
 [Module("ComponentsDemo", "Components Demo",
     Description = "Demonstrates navigation and UI components for both Avalonia and Blazor hosts.")]
-public class ComponentsDemoModule : ModuleBase
+public class ComponentsDemoModule : ModulusComponent
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {

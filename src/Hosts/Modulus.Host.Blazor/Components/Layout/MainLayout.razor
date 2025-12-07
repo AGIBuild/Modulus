@@ -184,8 +184,8 @@
     {
         if (firstRender && _mudThemeProvider != null)
         {
-            // Watch for system theme changes
-            await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            // Watch for system theme changes (new API)
+            await _mudThemeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
             
             if (ThemeService.CurrentTheme == AppTheme.System)
             {
