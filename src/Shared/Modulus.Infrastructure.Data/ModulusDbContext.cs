@@ -1,0 +1,50 @@
+using Microsoft.EntityFrameworkCore;
+using Modulus.Infrastructure.Data.Models;
+using Modulus.UI.Abstractions;
+
+namespace Modulus.Infrastructure.Data;
+
+public class ModulusDbContext : DbContext
+{
+    public DbSet<ModuleEntity> Modules { get; set; } = null!;
+    public DbSet<MenuEntity> Menus { get; set; } = null!;
+    public DbSet<AppSettingEntity> AppSettings { get; set; } = null!;
+
+    public ModulusDbContext(DbContextOptions<ModulusDbContext> options) : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ModuleEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.Version).IsRequired();
+            entity.Property(e => e.Path).IsRequired();
+            entity.Property(e => e.EntryComponent);
+            entity.Property(e => e.MenuLocation).HasDefaultValue(MenuLocation.Main);
+        });
+
+        modelBuilder.Entity<MenuEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DisplayName).IsRequired();
+            
+            entity.HasOne(d => d.Module)
+                .WithMany(p => p.Menus)
+                .HasForeignKey(d => d.ModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AppSettingEntity>(entity =>
+        {
+            entity.ToTable("AppSettings");
+            entity.HasKey(e => e.Key);
+            entity.Property(e => e.Value).IsRequired();
+        });
+    }
+}
+

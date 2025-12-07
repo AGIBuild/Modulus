@@ -37,6 +37,11 @@ public partial class MenuItem : ObservableObject
     public int Order { get; }
 
     /// <summary>
+    /// ID of the module that owns this menu item.
+    /// </summary>
+    public string? ModuleId { get; set; }
+
+    /// <summary>
     /// Controls page instance lifecycle during navigation.
     /// </summary>
     public PageInstanceMode InstanceMode { get; set; } = PageInstanceMode.Default;

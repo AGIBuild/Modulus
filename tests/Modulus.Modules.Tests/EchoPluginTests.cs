@@ -1,3 +1,5 @@
+using Modulus.Core;
+using Modulus.Core.Architecture;
 using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,9 +26,11 @@ public class EchoPluginTests
         }
 
         var runtimeContext = new RuntimeContext();
+        runtimeContext.SetCurrentHost(HostType.Avalonia);
         var signatureVerifier = new Sha256ManifestSignatureVerifier(NullLogger<Sha256ManifestSignatureVerifier>.Instance);
         var manifestValidator = new DefaultManifestValidator(signatureVerifier, NullLogger<DefaultManifestValidator>.Instance);
-        var loader = new ModuleLoader(runtimeContext, manifestValidator, NullLogger<ModuleLoader>.Instance);
+        var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, NullLogger<ModuleLoader>.Instance);
 
         // Act
         var descriptor = await loader.LoadAsync(echoPluginPath);
@@ -58,9 +62,11 @@ public class EchoPluginTests
         }
 
         var runtimeContext = new RuntimeContext();
+        runtimeContext.SetCurrentHost(HostType.Avalonia);
         var signatureVerifier = new Sha256ManifestSignatureVerifier(NullLogger<Sha256ManifestSignatureVerifier>.Instance);
         var manifestValidator = new DefaultManifestValidator(signatureVerifier, NullLogger<DefaultManifestValidator>.Instance);
-        var loader = new ModuleLoader(runtimeContext, manifestValidator, NullLogger<ModuleLoader>.Instance);
+        var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, NullLogger<ModuleLoader>.Instance);
 
         // Act
         var descriptor = await loader.LoadAsync(devOutputPath);

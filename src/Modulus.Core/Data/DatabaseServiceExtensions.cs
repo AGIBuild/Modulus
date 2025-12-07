@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Modulus.Infrastructure.Data;
 
 namespace Modulus.Core.Data;
 
@@ -23,7 +24,7 @@ public static class DatabaseServiceExtensions
             Directory.CreateDirectory(directory);
         }
 
-        // Register DbContext
+        // Register unified DbContext (Infrastructure.Data.ModulusDbContext)
         services.AddDbContext<ModulusDbContext>(options =>
         {
             options.UseSqlite($"Data Source={databasePath}");
@@ -39,10 +40,19 @@ public static class DatabaseServiceExtensions
     /// <summary>
     /// Gets the default database path for the application.
     /// </summary>
-    public static string GetDefaultDatabasePath()
+    /// <param name="databaseName">
+    /// Optional database name (without extension). If null, resolves from
+    /// environment variable MODULUS_DB_NAME, otherwise falls back to "Modulus".
+    /// </param>
+    public static string GetDefaultDatabasePath(string? databaseName = null)
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        return Path.Combine(appDataPath, "Modulus", "modulus.db");
+        var resolvedName = databaseName
+            ?? Environment.GetEnvironmentVariable("MODULUS_DB_NAME")
+            ?? "Modulus";
+
+        var sanitizedName = string.IsNullOrWhiteSpace(resolvedName) ? "Modulus" : resolvedName;
+        return Path.Combine(appDataPath, "Modulus", $"{sanitizedName}.db");
     }
 }
 

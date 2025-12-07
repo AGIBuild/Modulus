@@ -1,8 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Modulus.Core.Installation;
+using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
+using Modulus.Infrastructure.Data.Models;
+using Modulus.Infrastructure.Data.Repositories;
 using Modulus.UI.Abstractions;
-using System.Collections.ObjectModel;
+
+using DataModuleState = Modulus.Infrastructure.Data.Models.ModuleState;
+using RuntimeModuleState = Modulus.Core.Runtime.ModuleState;
 
 namespace Modulus.Host.Blazor.Shell.ViewModels;
 
@@ -10,57 +22,124 @@ public partial class ModuleListViewModel : ObservableObject
 {
     private readonly RuntimeContext _runtimeContext;
     private readonly IModuleLoader _moduleLoader;
-    private readonly IEnumerable<IModuleProvider> _moduleProviders;
+    private readonly IModuleRepository _moduleRepository;
+    private readonly IModuleInstallerService _moduleInstaller;
 
     public ObservableCollection<ModuleViewModel> Modules { get; } = new();
 
     [ObservableProperty]
     private bool _isLoading;
 
+    [ObservableProperty]
+    private string _importPath = string.Empty;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    [ObservableProperty]
+    private ModuleViewModel? _selectedModule;
+
+    [ObservableProperty]
+    private string _selectedModuleDetails = string.Empty;
+
     public ModuleListViewModel(
         RuntimeContext runtimeContext,
         IModuleLoader moduleLoader,
+        IModuleRepository moduleRepository,
+        IModuleInstallerService moduleInstaller,
         IEnumerable<IModuleProvider> moduleProviders)
     {
         _runtimeContext = runtimeContext;
         _moduleLoader = moduleLoader;
-        _moduleProviders = moduleProviders;
+        _moduleRepository = moduleRepository;
+        _moduleInstaller = moduleInstaller;
+    }
+
+    partial void OnSelectedModuleChanged(ModuleViewModel? value)
+    {
+        if (value != null)
+        {
+            _ = LoadModuleDetailsAsync(value);
+        }
+        else
+        {
+            SelectedModuleDetails = string.Empty;
+        }
+    }
+
+    private async Task LoadModuleDetailsAsync(ModuleViewModel module)
+    {
+        SelectedModuleDetails = "Loading..."; 
+        
+        try 
+        {
+            var manifestPath = Path.GetFullPath(module.Entity.Path);
+            var dir = Path.GetDirectoryName(manifestPath);
+            
+            // 1. Try README.md
+            if (dir != null)
+            {
+                var readmePath = Path.Combine(dir, "README.md");
+                if (File.Exists(readmePath))
+                {
+                    SelectedModuleDetails = await File.ReadAllTextAsync(readmePath);
+                    return;
+                }
+            }
+
+            // 2. Fallback to Manifest Description
+            if (File.Exists(manifestPath))
+            {
+                var manifest = await ManifestReader.ReadFromFileAsync(manifestPath);
+                if (!string.IsNullOrWhiteSpace(manifest?.Description))
+                {
+                    SelectedModuleDetails = manifest.Description;
+                    return;
+                }
+            }
+        }
+        catch { /* Ignore file access errors */ }
+
+        SelectedModuleDetails = "No description provided.";
     }
 
     [RelayCommand]
     public async Task RefreshModulesAsync()
     {
         IsLoading = true;
+        ErrorMessage = null;
         try
         {
             Modules.Clear();
-
-            var loadedModules = _runtimeContext.RuntimeModules.ToDictionary(m => m.Descriptor.Id);
-
-            foreach (var provider in _moduleProviders)
+            var dbModules = await _moduleRepository.GetAllAsync();
+            
+            foreach (var dbModule in dbModules)
             {
-                var paths = await provider.GetModulePackagesAsync();
-                foreach (var path in paths)
+                 var isLoaded = _runtimeContext.TryGetModule(dbModule.Id, out var runtimeModule);
+                 Modules.Add(new ModuleViewModel(dbModule, runtimeModule));
+            }
+            
+            if (SelectedModule == null && Modules.Any())
+            {
+                SelectedModule = Modules.First();
+            }
+            else if (SelectedModule != null)
+            {
+                // Check if selected module still exists or needs refresh
+                var existing = Modules.FirstOrDefault(m => m.Id == SelectedModule.Id);
+                if (existing != null)
                 {
-                    var descriptor = await _moduleLoader.GetDescriptorAsync(path);
-                    if (descriptor == null) continue;
-
-                    if (loadedModules.TryGetValue(descriptor.Id, out var loadedModule))
-                    {
-                        Modules.Add(new ModuleViewModel(loadedModule));
-                        loadedModules.Remove(descriptor.Id);
-                    }
-                    else
-                    {
-                        Modules.Add(new ModuleViewModel(descriptor, path, ModuleState.Unloaded));
-                    }
+                    SelectedModule = existing; // Re-select to update UI state
+                }
+                else
+                {
+                    SelectedModule = Modules.FirstOrDefault();
                 }
             }
-
-            foreach (var remaining in loadedModules.Values)
-            {
-                Modules.Add(new ModuleViewModel(remaining));
-            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to load modules: {ex.Message}";
         }
         finally
         {
@@ -72,78 +151,141 @@ public partial class ModuleListViewModel : ObservableObject
     public async Task ToggleModuleAsync(ModuleViewModel moduleVm)
     {
         if (moduleVm == null) return;
+        ErrorMessage = null;
 
         try
         {
-            if (moduleVm.IsLoaded)
-            {
-                await _moduleLoader.UnloadAsync(moduleVm.Id);
-            }
-            else if (moduleVm.IsUnloaded && !string.IsNullOrEmpty(moduleVm.PackagePath))
-            {
-                await _moduleLoader.LoadAsync(moduleVm.PackagePath);
-            }
+             if (moduleVm.IsRunning)
+             {
+                 await _moduleLoader.UnloadAsync(moduleVm.Id);
+                 await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Disabled);
+             }
+             else
+             {
+                 if (moduleVm.Entity.State == DataModuleState.MissingFiles)
+                 {
+                     ErrorMessage = "Cannot enable module with missing files.";
+                     return;
+                 }
+
+                 await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Ready);
+                 
+                 var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
+                 var packagePath = Path.GetDirectoryName(manifestPath);
+                 
+                 if (packagePath != null)
+                 {
+                     await _moduleLoader.LoadAsync(packagePath, moduleVm.IsSystem);
+                 }
+             }
 
             await RefreshModulesAsync();
         }
         catch (Exception ex)
         {
-            // TODO: Show error notification
-            Console.WriteLine($"Error toggling module: {ex.Message}");
+            ErrorMessage = $"Error toggling module: {ex.Message}";
         }
     }
 
     [RelayCommand]
-    public async Task ReloadModuleAsync(ModuleViewModel moduleVm)
+    public async Task RemoveModuleAsync(ModuleViewModel moduleVm)
     {
-        if (moduleVm == null) return;
+        if (moduleVm == null || moduleVm.IsSystem) return;
+        ErrorMessage = null;
 
         try
         {
-            await _moduleLoader.ReloadAsync(moduleVm.Id);
+            if (moduleVm.IsRunning)
+            {
+                await _moduleLoader.UnloadAsync(moduleVm.Id);
+            }
+            
+            await _moduleRepository.DeleteAsync(moduleVm.Id);
+            
+            // Try to clean files
+            try 
+            {
+                var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
+                var dir = Path.GetDirectoryName(manifestPath);
+                if (dir != null && Directory.Exists(dir))
+                {
+                    Directory.Delete(dir, true);
+                }
+            }
+            catch { /* Ignore file deletion errors */ }
+
             await RefreshModulesAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reloading module: {ex.Message}");
+            ErrorMessage = $"Error removing module: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task ImportModuleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ImportPath)) return;
+        ErrorMessage = null;
+
+        var path = ImportPath;
+        if (Directory.Exists(path))
+        {
+            path = Path.Combine(path, "manifest.json");
+        }
+
+        try
+        {
+            await _moduleInstaller.RegisterDevelopmentModuleAsync(path);
+            ImportPath = string.Empty;
+            await RefreshModulesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Import failed: {ex.Message}";
         }
     }
 }
 
 public partial class ModuleViewModel : ObservableObject
 {
-    private readonly RuntimeModule? _runtimeModule;
-    private readonly ModuleDescriptor _descriptor;
-    private readonly string _packagePath;
+    public ModuleEntity Entity { get; }
+    public RuntimeModule? RuntimeModule { get; }
 
-    [ObservableProperty]
-    private ModuleState _state;
-
-    public string Id => _descriptor.Id;
-    public string DisplayName => _descriptor.DisplayName;
-    public string Description => _descriptor.Description;
-    public string Version => _descriptor.Version;
-    public string PackagePath => _packagePath;
-    public bool IsSystem => _runtimeModule?.IsSystem ?? false;
-
-    public ModuleViewModel(RuntimeModule module)
+    public ModuleViewModel(ModuleEntity entity, RuntimeModule? runtimeModule)
     {
-        _runtimeModule = module;
-        _descriptor = module.Descriptor;
-        _packagePath = module.PackagePath;
-        State = module.State;
+        Entity = entity;
+        RuntimeModule = runtimeModule;
     }
 
-    public ModuleViewModel(ModuleDescriptor descriptor, string packagePath, ModuleState state)
+    public string Id => Entity.Id;
+    public string Name => Entity.Name;
+    public string Version => Entity.Version;
+    public string Author => Entity.Author ?? "Unknown";
+    public bool IsSystem => Entity.IsSystem;
+    public string MenuLocation => Entity.MenuLocation.ToString();
+    
+    public bool IsRunning => RuntimeModule?.State == RuntimeModuleState.Active;
+    
+    public string StatusText 
     {
-        _runtimeModule = null;
-        _descriptor = descriptor;
-        _packagePath = packagePath;
-        State = state;
+        get 
+        {
+            if (Entity.State == DataModuleState.MissingFiles) return "Missing Files";
+            if (Entity.State == DataModuleState.Disabled) return "Disabled";
+            if (IsRunning) return "Running";
+            return "Stopped";
+        }
     }
 
-    public bool IsLoaded => State == ModuleState.Active || State == ModuleState.Loaded || State == ModuleState.Error;
-    public bool IsUnloaded => State == ModuleState.Unloaded;
-    public bool CanUnload => IsLoaded && !IsSystem;
+    public string StatusColor => StatusText switch
+    {
+        "Running" => "success",
+        "Disabled" => "secondary",
+        "Missing Files" => "warning",
+        _ => "primary"
+    };
+
+    public bool ShowToggle => !IsSystem; 
+    public bool CanRemove => !IsSystem;
 }
-

@@ -13,12 +13,12 @@ public static class ManifestReader
         AllowTrailingCommas = true
     };
 
-    public static async Task<ModuleManifest?> ReadAsync(Stream stream)
+    public static async Task<ModuleManifest?> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
     {
-        return await JsonSerializer.DeserializeAsync<ModuleManifest>(stream, Options).ConfigureAwait(false);
+        return await JsonSerializer.DeserializeAsync<ModuleManifest>(stream, Options, cancellationToken).ConfigureAwait(false);
     }
 
-    public static async Task<ModuleManifest?> ReadFromFileAsync(string filePath)
+    public static async Task<ModuleManifest?> ReadFromFileAsync(string filePath, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(filePath))
         {
@@ -26,7 +26,7 @@ public static class ManifestReader
         }
 
         await using var stream = File.OpenRead(filePath);
-        return await ReadAsync(stream).ConfigureAwait(false);
+        return await ReadAsync(stream, cancellationToken).ConfigureAwait(false);
     }
 }
 

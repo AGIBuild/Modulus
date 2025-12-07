@@ -9,6 +9,7 @@ namespace Modulus.Modules.EchoPlugin.UI.Avalonia;
 /// <summary>
 /// Echo Plugin Avalonia UI - declares Avalonia-specific navigation.
 /// </summary>
+[DependsOn(typeof(Modulus.Modules.EchoPlugin.EchoPluginModule))]
 [AvaloniaMenu("Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
 public class EchoPluginAvaloniaModule : AvaloniaModuleBase
 {

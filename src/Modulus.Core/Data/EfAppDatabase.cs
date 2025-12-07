@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Modulus.Core.Data.Entities;
+using Modulus.Infrastructure.Data;
+using Modulus.Infrastructure.Data.Models;
 
 namespace Modulus.Core.Data;
 
 /// <summary>
 /// EF Core implementation of the application database.
+/// Uses Infrastructure.Data.ModulusDbContext for unified persistence.
 /// </summary>
 public class EfAppDatabase : IAppDatabase
 {
@@ -18,11 +20,11 @@ public class EfAppDatabase : IAppDatabase
         _logger = logger;
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        // EnsureCreated will create the database and tables if they don't exist
-        await _context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Database initialized");
+        // Database initialization (migrations) is handled by ModulusApplicationFactory
+        _logger.LogInformation("AppDatabase initialized");
+        return Task.CompletedTask;
     }
 
     #region App Settings
@@ -49,7 +51,7 @@ public class EfAppDatabase : IAppDatabase
         }
         else
         {
-            _context.AppSettings.Add(new AppSetting
+            _context.AppSettings.Add(new AppSettingEntity
             {
                 Key = key,
                 Value = value,
@@ -69,74 +71,4 @@ public class EfAppDatabase : IAppDatabase
     }
 
     #endregion
-
-    #region Installed Modules
-
-    public async Task<IReadOnlyList<InstalledModule>> GetInstalledModulesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.InstalledModules
-            .AsNoTracking()
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public async Task<InstalledModule?> GetInstalledModuleAsync(string moduleId, CancellationToken cancellationToken = default)
-    {
-        return await _context.InstalledModules
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == moduleId, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public async Task UpsertInstalledModuleAsync(InstalledModule module, CancellationToken cancellationToken = default)
-    {
-        var existing = await _context.InstalledModules
-            .FirstOrDefaultAsync(m => m.Id == module.Id, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (existing != null)
-        {
-            existing.DisplayName = module.DisplayName;
-            existing.Version = module.Version;
-            existing.PackagePath = module.PackagePath;
-            existing.IsEnabled = module.IsEnabled;
-            existing.IsSystem = module.IsSystem;
-            existing.LastLoadedAt = module.LastLoadedAt;
-        }
-        else
-        {
-            _context.InstalledModules.Add(module);
-        }
-
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task DeleteInstalledModuleAsync(string moduleId, CancellationToken cancellationToken = default)
-    {
-        var module = await _context.InstalledModules
-            .FirstOrDefaultAsync(m => m.Id == moduleId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (module != null)
-        {
-            _context.InstalledModules.Remove(module);
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    public async Task UpdateModuleEnabledStateAsync(string moduleId, bool isEnabled, CancellationToken cancellationToken = default)
-    {
-        var module = await _context.InstalledModules
-            .FirstOrDefaultAsync(m => m.Id == moduleId, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (module != null)
-        {
-            module.IsEnabled = isEnabled;
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    #endregion
 }
-

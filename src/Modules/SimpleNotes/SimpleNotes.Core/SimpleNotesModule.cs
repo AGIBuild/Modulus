@@ -9,9 +9,10 @@ namespace SimpleNotes.Core;
 /// Simple Notes Core - business logic only.
 /// UI-specific menu declarations are in UI.Avalonia and UI.Blazor modules.
 /// </summary>
+[DependsOn()] // no explicit deps
 [Module("SimpleNotes", "Notes",
     Description = "A simple note taking module to demonstrate Modulus vertical slice architecture.")]
-public class SimpleNotesModule : ModuleBase
+public class SimpleNotesModule : ModulusComponent
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {

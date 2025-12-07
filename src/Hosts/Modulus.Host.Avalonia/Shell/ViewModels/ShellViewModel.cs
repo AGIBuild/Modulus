@@ -1,16 +1,20 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Mvvm.Messaging;
 using Modulus.Host.Avalonia.Services;
 using Modulus.UI.Abstractions;
-using System;
+using Modulus.UI.Abstractions.Messages;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Modulus.Host.Avalonia.Shell.ViewModels;
 
-public partial class ShellViewModel : ViewModelBase
+public partial class ShellViewModel : ViewModelBase, 
+    IRecipient<MenuRefreshMessage>,
+    IRecipient<MenuItemsAddedMessage>,
+    IRecipient<MenuItemsRemovedMessage>
 {
     private readonly IMenuRegistry _menuRegistry;
     private readonly INavigationService _navigationService;
@@ -57,7 +61,61 @@ public partial class ShellViewModel : ViewModelBase
             _avaloniaNavService.OnViewChanged = OnNavigationViewChanged;
         }
 
+        // Subscribe to menu messages
+        WeakReferenceMessenger.Default.RegisterAll(this);
+
         RefreshMenu();
+    }
+    
+    /// <summary>
+    /// Handle full menu refresh message - reload all menus from registry.
+    /// </summary>
+    public void Receive(MenuRefreshMessage message)
+    {
+        Dispatcher.UIThread.Post(RefreshMenu);
+    }
+    
+    /// <summary>
+    /// Handle incremental menu addition - add items without losing selection.
+    /// </summary>
+    public void Receive(MenuItemsAddedMessage message)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            foreach (var item in message.Items)
+            {
+                var collection = item.Location == MenuLocation.Main ? MainMenuItems : BottomMenuItems;
+                
+                // Avoid duplicates
+                if (collection.All(m => m.Id != item.Id))
+                {
+                    // Insert in order
+                    var index = collection.Count(m => m.Order < item.Order);
+                    collection.Insert(index, item);
+                }
+            }
+        });
+    }
+    
+    /// <summary>
+    /// Handle incremental menu removal - remove items without losing selection.
+    /// </summary>
+    public void Receive(MenuItemsRemovedMessage message)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var mainToRemove = MainMenuItems.Where(m => m.ModuleId == message.ModuleId).ToList();
+            foreach (var item in mainToRemove)
+            {
+                MainMenuItems.Remove(item);
+            }
+            
+            var bottomToRemove = BottomMenuItems.Where(m => m.ModuleId == message.ModuleId).ToList();
+            foreach (var item in bottomToRemove)
+            {
+                BottomMenuItems.Remove(item);
+            }
+        });
     }
 
     partial void OnIsNavCollapsedChanged(bool value)

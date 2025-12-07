@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Json;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using Nuke.Common;
@@ -26,7 +27,7 @@ class BuildTasks : NukeBuild
             .WriteTo.Console(theme: AnsiConsoleTheme.Code)
             .CreateLogger();
 
-        return Execute<BuildTasks>(x => x.BuildAll);
+        return Execute<BuildTasks>(x => x.Compile);
     }
 
     // Custom log helpers with ANSI color codes for consistent coloring across platforms
@@ -51,12 +52,20 @@ class BuildTasks : NukeBuild
 
     [Parameter("Name of the plugin to pack (required when op=single)", Name = "name")]
     readonly string PluginName;
+    
+    [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "target-host")]
+    readonly string TargetHost = "avalonia";
 
     [Solution] readonly Solution Solution;
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
     AbsolutePath PluginsArtifactsDirectory => ArtifactsDirectory / "plugins";
     AbsolutePath SamplesDirectory => RootDirectory / "src" / "samples";
+    AbsolutePath ModulesDirectory => RootDirectory / "src" / "Modules";
+    
+    // Host project names
+    const string AvaloniaHostProject = "Modulus.Host.Avalonia";
+    const string BlazorHostProject = "Modulus.Host.Blazor";
 
     Target Clean => _ => _
         .Executes(() =>
@@ -78,18 +87,8 @@ class BuildTasks : NukeBuild
                 .SetProjectFile(Solution));
         });
 
-    Target Build => _ => _
-        .DependsOn(Restore)
-        .Executes(() =>
-        {
-            DotNetTasks.DotNetBuild(s => s
-                .SetProjectFile(Solution)
-                .SetConfiguration(Configuration)
-                .EnableNoRestore());
-        });
-
     Target Pack => _ => _
-        .DependsOn(Build)
+        .DependsOn(Compile)
         .Executes(() =>
         {
             foreach (var project in Solution.AllProjects.Where(p => p.Name.Contains("Plugin") || p.Name.Contains("App")))
@@ -102,19 +101,50 @@ class BuildTasks : NukeBuild
             }
         });
 
+    /// <summary>
+    /// Build all and run the host application
+    /// Usage: nuke run [--target-host avalonia|blazor]
+    /// </summary>
     Target Run => _ => _
+        .DependsOn(Build)
+        .Description("Build all and run the host application")
         .Executes(() =>
         {
-            var desktopProject = Solution.AllProjects.FirstOrDefault(p => p.Name == "Modulus.Host.Avalonia");
-            if (desktopProject == null)
-                throw new Exception("Modulus.Host.Avalonia project not found");
-            DotNetTasks.DotNetRun(s => s
-                .SetProjectFile(desktopProject)
-                .SetConfiguration(Configuration));
+            var hostProjectName = TargetHost?.ToLower() == "blazor" ? BlazorHostProject : AvaloniaHostProject;
+            var outputDir = ArtifactsDirectory / hostProjectName;
+            
+            var executable = outputDir / hostProjectName;
+            if (OperatingSystem.IsWindows())
+                executable = outputDir / $"{hostProjectName}.exe";
+            
+            if (!File.Exists(executable))
+            {
+                LogError($"Executable not found: {executable}");
+                LogError("Run 'nuke build' first to build the application.");
+                throw new Exception($"Executable not found: {executable}");
+            }
+            
+            LogHeader($"Running {hostProjectName}");
+            LogHighlight($"Executable: {executable}");
+            
+            // Run the application
+            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = executable,
+                WorkingDirectory = outputDir,
+                UseShellExecute = false
+            });
+            
+            if (process != null)
+            {
+                LogSuccess($"Started {hostProjectName} (PID: {process.Id})");
+                process.WaitForExit();
+                LogNormal($"Application exited with code: {process.ExitCode}");
+            }
         });
 
     Target Test => _ => _
-        .DependsOn(Build)
+        .DependsOn(Compile)
         .Executes(() =>
         {
             DotNetTasks.DotNetTest(s => s
@@ -124,10 +154,180 @@ class BuildTasks : NukeBuild
         });
 
     Target BuildAll => _ => _
-        .DependsOn(Build, Test);
+        .DependsOn(Compile, Test);
 
     Target Default => _ => _
-        .DependsOn(Build);
+        .DependsOn(Compile);
+    
+    // ============================================================
+    // Application Build Targets
+    // ============================================================
+    
+    /// <summary>
+    /// Just compile the solution (no publish/package)
+    /// </summary>
+    Target Compile => _ => _
+        .DependsOn(Restore)
+        .Description("Compile the solution")
+        .Executes(() =>
+        {
+            DotNetTasks.DotNetBuild(s => s
+                .SetProjectFile(Solution)
+                .SetConfiguration(Configuration)
+                .EnableNoRestore());
+        });
+    
+    /// <summary>
+    /// Build and publish host application to artifacts/
+    /// Usage: nuke build-app [--target-host avalonia|blazor|all]
+    /// </summary>
+    Target BuildApp => _ => _
+        .DependsOn(Restore)
+        .Description("Build and publish host application to artifacts/")
+        .Executes(() =>
+        {
+            var hostProjects = GetTargetHostProjects();
+            
+            foreach (var hostProjectName in hostProjects)
+            {
+                var hostProject = Solution.AllProjects.FirstOrDefault(p => p.Name == hostProjectName);
+                if (hostProject == null)
+                {
+                    LogError($"Host project not found: {hostProjectName}");
+                    continue;
+                }
+                
+                var outputDir = ArtifactsDirectory / hostProjectName;
+                
+                LogHeader($"Building {hostProjectName}");
+                
+                DotNetTasks.DotNetPublish(s => s
+                    .SetProject(hostProject)
+                    .SetConfiguration(Configuration)
+                    .SetOutput(outputDir)
+                    .EnableNoRestore());
+                
+                LogSuccess($"Published {hostProjectName} to {outputDir}");
+            }
+        });
+    
+    /// <summary>
+    /// Build and package modules to artifacts/{Host}/Modules/
+    /// Usage: nuke build-module [--target-host avalonia|blazor|all] [--name ModuleName]
+    /// </summary>
+    Target BuildModule => _ => _
+        .DependsOn(Restore)
+        .Description("Build and package modules to artifacts/{Host}/Modules/")
+        .Executes(() =>
+        {
+            var hostProjects = GetTargetHostProjects();
+            
+            // Get module directories to build
+            var moduleDirectories = string.IsNullOrEmpty(PluginName)
+                ? Directory.GetDirectories(ModulesDirectory).Select(d => (AbsolutePath)d).ToArray()
+                : new[] { ModulesDirectory / PluginName };
+            
+            foreach (var moduleDir in moduleDirectories)
+            {
+                if (!Directory.Exists(moduleDir))
+                {
+                    LogWarning($"Module directory not found: {moduleDir}");
+                    continue;
+                }
+                
+                var moduleName = Path.GetFileName(moduleDir);
+                var manifestPath = Path.Combine(moduleDir, "manifest.json");
+                
+                if (!File.Exists(manifestPath))
+                {
+                    LogWarning($"No manifest.json in {moduleName}, skipping");
+                    continue;
+                }
+                
+                LogHeader($"Building Module: {moduleName}");
+                
+                // Build all projects in this module
+                var moduleProjects = Directory.GetFiles(moduleDir, "*.csproj", SearchOption.AllDirectories);
+                foreach (var projectPath in moduleProjects)
+                {
+                    DotNetTasks.DotNetBuild(s => s
+                        .SetProjectFile(projectPath)
+                        .SetConfiguration(Configuration)
+                        .EnableNoRestore());
+                }
+                
+                // Package to each target host's Modules directory
+                foreach (var hostProjectName in hostProjects)
+                {
+                    var hostType = hostProjectName.Contains("Avalonia") ? "Avalonia" : "Blazor";
+                    var moduleOutputDir = ArtifactsDirectory / hostProjectName / "Modules" / moduleName;
+                    
+                    // Clean and create output directory
+                    if (Directory.Exists(moduleOutputDir))
+                        Directory.Delete(moduleOutputDir, true);
+                    Directory.CreateDirectory(moduleOutputDir);
+                    
+                    // Copy manifest.json
+                    File.Copy(manifestPath, moduleOutputDir / "manifest.json");
+                    
+                    // Copy DLLs from each project's output
+                    foreach (var projectPath in moduleProjects)
+                    {
+                        var projectDir = Path.GetDirectoryName(projectPath);
+                        var projectName = Path.GetFileNameWithoutExtension(projectPath);
+                        
+                        // Skip UI projects that don't match the host type
+                        if (projectName.Contains(".UI."))
+                        {
+                            var isAvaloniaUi = projectName.Contains(".UI.Avalonia");
+                            var isBlazorUi = projectName.Contains(".UI.Blazor");
+                            
+                            if (isAvaloniaUi && hostType != "Avalonia") continue;
+                            if (isBlazorUi && hostType != "Blazor") continue;
+                        }
+                        
+                        // Find the output directory
+                        var binDir = Path.Combine(projectDir, "bin", Configuration.ToString());
+                        if (!Directory.Exists(binDir)) continue;
+                        
+                        // Find the target framework folder
+                        var tfmDirs = Directory.GetDirectories(binDir);
+                        var tfmDir = tfmDirs.FirstOrDefault(d => d.Contains("net"));
+                        if (tfmDir == null) continue;
+                        
+                        // Copy DLL and PDB
+                        var dllPath = Path.Combine(tfmDir, $"{projectName}.dll");
+                        var pdbPath = Path.Combine(tfmDir, $"{projectName}.pdb");
+                        
+                        if (File.Exists(dllPath))
+                            File.Copy(dllPath, moduleOutputDir / $"{projectName}.dll", true);
+                        if (File.Exists(pdbPath))
+                            File.Copy(pdbPath, moduleOutputDir / $"{projectName}.pdb", true);
+                    }
+                    
+                    LogSuccess($"  → {hostType}: {moduleOutputDir}");
+                }
+            }
+        });
+    
+    /// <summary>
+    /// Full build: host application + all modules
+    /// Usage: nuke build [--target-host avalonia|blazor|all]
+    /// </summary>
+    Target Build => _ => _
+        .DependsOn(BuildApp, BuildModule)
+        .Description("Full build: host application + all modules");
+    
+    // Helper to get target host projects based on --target-host parameter
+    private string[] GetTargetHostProjects()
+    {
+        return TargetHost?.ToLower() switch
+        {
+            "blazor" => new[] { BlazorHostProject },
+            "all" => new[] { AvaloniaHostProject, BlazorHostProject },
+            _ => new[] { AvaloniaHostProject }  // default to avalonia
+        };
+    }
 
     Target CleanPluginsArtifacts => _ => _
         .Executes(() =>

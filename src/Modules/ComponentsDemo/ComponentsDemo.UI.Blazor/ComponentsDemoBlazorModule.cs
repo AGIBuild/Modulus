@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Modulus.Modules.ComponentsDemo.ViewModels;
+using Modulus.Modules.ComponentsDemo;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 
@@ -8,8 +9,9 @@ namespace Modulus.Modules.ComponentsDemo.UI.Blazor;
 /// <summary>
 /// Components Demo Blazor UI - declares Blazor-specific navigation.
 /// </summary>
-[BlazorMenu("Components", "/components", Icon = IconKind.add, Order = 15)]
-public class ComponentsDemoBlazorModule : ModuleBase
+[DependsOn(typeof(ComponentsDemoModule))]
+[BlazorMenu("Components", "/components", Icon = IconKind.Add, Order = 15)]
+public class ComponentsDemoBlazorModule : ModulusComponent
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {

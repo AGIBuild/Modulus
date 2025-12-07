@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Architecture;
 using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
 using Modulus.Sdk;
@@ -14,6 +18,7 @@ public class ModuleLoaderTests : IDisposable
     private readonly IManifestValidator _validator;
     private readonly ILogger<ModuleLoader> _logger;
     private readonly ModuleLoader _loader;
+    private readonly ISharedAssemblyCatalog _sharedCatalog;
 
     public ModuleLoaderTests()
     {
@@ -22,11 +27,12 @@ public class ModuleLoaderTests : IDisposable
 
         _runtimeContext = new RuntimeContext();
         _runtimeContext.SetCurrentHost(HostType.Avalonia);
-        
+        _sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+
         _validator = Substitute.For<IManifestValidator>();
         _logger = Substitute.For<ILogger<ModuleLoader>>();
         
-        _loader = new ModuleLoader(_runtimeContext, _validator, _logger);
+        _loader = new ModuleLoader(_runtimeContext, _validator, _sharedCatalog, _logger);
     }
 
     public void Dispose()
@@ -46,7 +52,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "test-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(true);
 
         // Act
@@ -57,7 +63,7 @@ public class ModuleLoaderTests : IDisposable
         Assert.Equal(moduleId, result.Id);
         
         Assert.True(_runtimeContext.TryGetModule(moduleId, out var runtimeModule));
-        Assert.Equal(ModuleState.Loaded, runtimeModule!.State);
+        Assert.Equal(ModuleState.Active, runtimeModule!.State);
     }
     
     [Fact]
@@ -67,7 +73,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "invalid-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(false);
 
         // Act
@@ -98,7 +104,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "duplicate-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(true);
 
         // Act
@@ -117,7 +123,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "unload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(true);
         
         await _loader.LoadAsync(modulePath);
@@ -136,7 +142,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "system-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(true);
         
         await _loader.LoadAsync(modulePath, isSystem: true);
@@ -151,7 +157,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "reload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(true);
         
         await _loader.LoadAsync(modulePath);
@@ -164,7 +170,7 @@ public class ModuleLoaderTests : IDisposable
         Assert.NotNull(result);
         Assert.True(_runtimeContext.TryGetModule(moduleId, out var reloadedModule));
         Assert.NotSame(originalModule, reloadedModule);
-        Assert.Equal(ModuleState.Loaded, reloadedModule!.State);
+        Assert.Equal(ModuleState.Active, reloadedModule!.State);
     }
     
     [Fact]
@@ -193,7 +199,24 @@ public class ModuleLoaderTests : IDisposable
         Assert.Equal("2.0.0", result.Version);
     }
 
-    private string CreateTestModule(string id, string version)
+    [Fact]
+    public async Task LoadAsync_MissingDependency_ReturnsNull()
+    {
+        // Arrange
+        var moduleId = "dependent-module-001";
+        var modulePath = CreateTestModule(moduleId, "1.0.0", new Dictionary<string, string> { { "missing-dep", "[1.0.0]" } });
+
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        // Act
+        var result = await _loader.LoadAsync(modulePath);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    private string CreateTestModule(string id, string version, Dictionary<string, string>? dependencies = null)
     {
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
@@ -206,7 +229,8 @@ public class ModuleLoaderTests : IDisposable
             SupportedHosts = new List<string> { HostType.Avalonia, HostType.Blazor },
             CoreAssemblies = new List<string>(),
             DisplayName = $"Test Module {id}",
-            Description = "A test module for unit testing"
+            Description = "A test module for unit testing",
+            Dependencies = dependencies ?? new Dictionary<string, string>()
         };
 
         var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });

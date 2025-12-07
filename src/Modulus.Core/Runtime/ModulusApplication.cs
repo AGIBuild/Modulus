@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 
@@ -20,7 +19,7 @@ public interface IModulusApplication : IDisposable
     Task ShutdownAsync();
     
     /// <summary>
-    /// Gets all scanned module metadata (from declarative attributes).
+    /// Gets all scanned module metadata.
     /// </summary>
     IReadOnlyList<ModuleMetadata> ModuleMetadataList { get; }
     
@@ -36,7 +35,6 @@ public class ModulusApplication : IModulusApplication
     private IServiceProvider? _serviceProvider;
     private readonly ModuleManager _moduleManager;
     private readonly ILogger<ModulusApplication> _logger;
-    private readonly ModuleMetadataScanner _metadataScanner;
     private readonly List<ModuleMetadata> _moduleMetadataList = new();
     private bool _initialized;
 
@@ -53,23 +51,12 @@ public class ModulusApplication : IModulusApplication
         _services = services;
         _moduleManager = moduleManager;
         _logger = logger;
-        _metadataScanner = new ModuleMetadataScanner(logger);
     }
 
     public void ConfigureServices()
     {
         var context = new ModuleLifecycleContext(_services);
         var sortedModules = _moduleManager.GetSortedModules();
-
-        // Scan core module metadata
-        foreach (var module in sortedModules)
-        {
-            var metadata = _metadataScanner.ScanCoreModule(module.GetType());
-            if (metadata != null)
-            {
-                _moduleMetadataList.Add(metadata);
-            }
-        }
 
         foreach (var module in sortedModules)
         {
@@ -90,6 +77,11 @@ public class ModulusApplication : IModulusApplication
     public void SetServiceProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+
+        if (_serviceProvider.GetService<IModuleLoader>() is IHostAwareModuleLoader hostAwareLoader)
+        {
+            hostAwareLoader.BindHostServices(_serviceProvider);
+        }
     }
 
     public async Task InitializeAsync()
@@ -102,8 +94,26 @@ public class ModulusApplication : IModulusApplication
             throw new InvalidOperationException("ServiceProvider not set.");
         }
 
-        // Auto-register menu items from UI module attributes
-        RegisterMenuItemsFromAttributes();
+        // Initialize pre-loaded modules (those loaded during CreateAsync with skipModuleInitialization=true)
+        var moduleLoader = _serviceProvider.GetService<IModuleLoader>();
+        _logger.LogInformation("ModuleLoader type: {Type}, IsHostAware: {IsHostAware}", 
+            moduleLoader?.GetType().Name ?? "null", 
+            moduleLoader is IHostAwareModuleLoader);
+        
+        if (moduleLoader is IHostAwareModuleLoader hostAwareLoader)
+        {
+            await hostAwareLoader.InitializeLoadedModulesAsync();
+        }
+        else
+        {
+            _logger.LogWarning("ModuleLoader is not IHostAwareModuleLoader, cannot initialize pre-loaded modules.");
+        }
+
+        // Register menus from Database
+        await RegisterMenuItemsFromDatabaseAsync();
+        
+        // Populate metadata from Database
+        await LoadModuleMetadataAsync();
 
         var context = new ModuleInitializationContext(_serviceProvider);
         var sortedModules = _moduleManager.GetSortedModules();
@@ -122,58 +132,71 @@ public class ModulusApplication : IModulusApplication
         }
     }
 
-    /// <summary>
-    /// Automatically registers menu items from UI module attributes (Avalonia/Blazor).
-    /// </summary>
-    private void RegisterMenuItemsFromAttributes()
+    private async Task RegisterMenuItemsFromDatabaseAsync()
     {
-        var menuRegistry = _serviceProvider?.GetService<IMenuRegistry>();
-        if (menuRegistry == null)
+        using var scope = _serviceProvider!.CreateScope();
+        var menuRepo = scope.ServiceProvider.GetService<IMenuRepository>();
+        var menuRegistry = _serviceProvider!.GetService<IMenuRegistry>();
+        
+        if (menuRepo == null || menuRegistry == null)
         {
-            _logger.LogDebug("IMenuRegistry not registered. Skipping declarative menu registration.");
+            _logger.LogWarning("MenuRepository or MenuRegistry missing. Skipping menu registration.");
             return;
         }
-
-        var runtimeContext = _serviceProvider?.GetService<RuntimeContext>();
-        var currentHost = runtimeContext?.HostType;
-
-        var sortedModules = _moduleManager.GetSortedModules();
-
-        foreach (var module in sortedModules)
+        
+        // Only load enabled menus
+        var menus = await menuRepo.GetAllEnabledAsync();
+        
+        foreach (var menu in menus)
         {
-            var moduleType = module.GetType();
-            List<ModuleMenuMetadata> menus;
-
-            // Scan based on host type
-            if (currentHost == HostType.Avalonia)
+            IconKind iconKind = IconKind.Grid; // Default
+            if (Enum.TryParse<IconKind>(menu.Icon, true, out var parsedIcon))
             {
-                menus = _metadataScanner.ScanAvaloniaMenus(moduleType);
-            }
-            else if (currentHost == HostType.Blazor)
-            {
-                menus = _metadataScanner.ScanBlazorMenus(moduleType);
-            }
-            else
-            {
-                continue;
+                iconKind = parsedIcon;
             }
 
-            foreach (var menu in menus)
+            var isSystemModule = menu.Module?.IsSystem ?? false;
+            var location = isSystemModule ? menu.Location : MenuLocation.Main;
+
+            if (!isSystemModule && menu.Location == MenuLocation.Bottom)
             {
-                var navigationKey = !string.IsNullOrEmpty(menu.Route) ? menu.Route : menu.ViewModelType ?? menu.Id;
-
-                var item = new MenuItem(
-                    $"{moduleType.Name}.{menu.Id}",
-                    menu.DisplayName,
-                    menu.Icon,
-                    navigationKey,
-                    menu.Location,
-                    menu.Order
-                );
-
-                menuRegistry.Register(item);
-                _logger.LogDebug("Registered menu: {DisplayName} -> {NavigationKey}", menu.DisplayName, navigationKey);
+                _logger.LogWarning("Module {ModuleId} is not system-managed but has Bottom menu location. Forcing to Main.", menu.ModuleId);
             }
+
+            var item = new MenuItem(
+                menu.Id, 
+                menu.DisplayName,
+                iconKind,
+                menu.Route ?? menu.Id, 
+                location,
+                menu.Order
+            );
+            
+            item.ModuleId = menu.ModuleId;
+
+            menuRegistry.Register(item);
+        }
+        
+        _logger.LogInformation("Registered {Count} menu items from database.", menus.Count);
+    }
+
+    private async Task LoadModuleMetadataAsync()
+    {
+        using var scope = _serviceProvider!.CreateScope();
+        var moduleRepo = scope.ServiceProvider.GetService<IModuleRepository>();
+        if (moduleRepo == null) return;
+
+        var modules = await moduleRepo.GetEnabledModulesAsync();
+        foreach (var m in modules)
+        {
+            _moduleMetadataList.Add(new ModuleMetadata
+            {
+                Id = m.Id,
+                DisplayName = m.Name,
+                Version = m.Version,
+                Author = m.Author ?? "",
+                // Type is not strictly necessary for display purposes
+            });
         }
     }
 

@@ -13,6 +13,7 @@ public sealed class RuntimeContext
     // Use ConcurrentDictionary for thread safety
     private readonly ConcurrentDictionary<string, RuntimeModule> _modules = new();
     private readonly ConcurrentDictionary<string, HostDescriptor> _hosts = new();
+    private readonly ConcurrentDictionary<string, RuntimeModuleHandle> _moduleHandles = new();
 
     /// <summary>
     /// Gets the identifier of the currently running host (e.g. HostType.Blazor).
@@ -23,6 +24,7 @@ public sealed class RuntimeContext
     
     // Allow access to full runtime info internally or for advanced scenarios
     public IReadOnlyCollection<RuntimeModule> RuntimeModules => _modules.Values.ToList();
+    public IReadOnlyCollection<RuntimeModuleHandle> ModuleHandles => _moduleHandles.Values.ToList();
 
     public IReadOnlyCollection<HostDescriptor> Hosts => _hosts.Values.ToList();
 
@@ -53,6 +55,15 @@ public sealed class RuntimeContext
         }
     }
 
+    public void RegisterModuleHandle(RuntimeModuleHandle handle)
+    {
+        ArgumentNullException.ThrowIfNull(handle);
+        if (!_moduleHandles.TryAdd(handle.RuntimeModule.Descriptor.Id, handle))
+        {
+            throw new InvalidOperationException($"Module handle {handle.RuntimeModule.Descriptor.Id} is already registered.");
+        }
+    }
+
     public bool TryGetModule(string moduleId, out RuntimeModule? module)
     {
         return _modules.TryGetValue(moduleId, out module);
@@ -62,5 +73,16 @@ public sealed class RuntimeContext
     {
         _modules.TryRemove(moduleId, out var module);
         return module;
+    }
+
+    public RuntimeModuleHandle? RemoveModuleHandle(string moduleId)
+    {
+        _moduleHandles.TryRemove(moduleId, out var handle);
+        return handle;
+    }
+
+    public bool TryGetModuleHandle(string moduleId, out RuntimeModuleHandle? handle)
+    {
+        return _moduleHandles.TryGetValue(moduleId, out handle);
     }
 }

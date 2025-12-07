@@ -51,7 +51,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         var modulePath = CreateTestModule("integration-test-module", "1.0.0");
         var providers = new List<IModuleProvider>
         {
-            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: false)
+            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: true)
         };
 
         // Act
@@ -110,7 +110,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         var modulePath = CreateTestModule("reload-test-module", "1.0.0");
         var providers = new List<IModuleProvider>
         {
-            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: false)
+            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: true)
         };
 
         var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Avalonia);
@@ -123,7 +123,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
 
         // Act & Assert - Verify module is loaded
         Assert.True(runtimeContext.TryGetModule("reload-test-module", out var module));
-        Assert.Equal(ModuleState.Loaded, module!.State);
+        Assert.Equal(ModuleState.Active, module!.State);
 
         // Unload
         await loader.UnloadAsync("reload-test-module");
@@ -133,7 +133,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         var reloaded = await loader.LoadAsync(modulePath);
         Assert.NotNull(reloaded);
         Assert.True(runtimeContext.TryGetModule("reload-test-module", out var reloadedModule));
-        Assert.Equal(ModuleState.Loaded, reloadedModule!.State);
+        Assert.Equal(ModuleState.Active, reloadedModule!.State);
     }
 
     private string CreateTestModule(string id, string version)
@@ -159,7 +159,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
     }
 
     // Test host module
-    private class TestHostModule : ModuleBase
+    private class TestHostModule : ModulusComponent
     {
         public override void ConfigureServices(IModuleLifecycleContext context)
         {

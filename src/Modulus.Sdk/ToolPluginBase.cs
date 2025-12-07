@@ -8,7 +8,7 @@ namespace Modulus.Sdk;
 /// <summary>
 /// Base class for plugins that primarily provide a "Tool" (e.g. a utility panel).
 /// </summary>
-public abstract class ToolPluginBase : ModuleBase
+public abstract class ToolPluginBase : ModulusComponent
 {
     // In the future, this can provide helper methods to register the tool with the Shell
     // e.g. RegisterTool<TView, TViewModel>(...)

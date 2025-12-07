@@ -23,23 +23,38 @@ public class AvaloniaUIFactory : IUIFactory
     public object CreateView(object viewModel)
     {
         var vmType = viewModel.GetType();
-        // Console.WriteLine($"CreateView for {vmType.Name}");
 
         // 1. Try Registry
         var registeredViewType = _viewRegistry.GetViewType(vmType);
         if (registeredViewType != null)
         {
-             // Console.WriteLine($"Found registered view {registeredViewType.Name}");
              return CreateViewInstance(registeredViewType, viewModel);
         }
-        else 
+
+        // 2. Try RuntimeModuleHandle assemblies (more reliable)
+        var viewName = vmType.Name.Replace("ViewModel", "View");
+        foreach (var module in _runtimeContext.RuntimeModules)
         {
-            // Console.WriteLine("No registered view found.");
+            if (module.State != ModuleState.Active && module.State != ModuleState.Loaded) continue;
+
+            if (_runtimeContext.TryGetModuleHandle(module.Descriptor.Id, out var handle) && handle != null)
+            {
+                foreach (var asm in handle.Assemblies)
+                {
+                    Type? type = null;
+                    try { type = asm.GetTypes().FirstOrDefault(t => t.Name == viewName); }
+                    catch { continue; }
+
+                    if (type != null && typeof(Control).IsAssignableFrom(type))
+                    {
+                        _viewRegistry.Register(vmType, type);
+                        return CreateViewInstance(type, viewModel);
+                    }
+                }
+            }
         }
 
-        // 2. Try Scan (Fallback)
-        var viewName = vmType.Name.Replace("ViewModel", "View");
-        // Console.WriteLine($"Scanning for {viewName}...");
+        // 3. Try LoadContext.Assemblies (Fallback)
 
         foreach (var module in _runtimeContext.RuntimeModules)
         {

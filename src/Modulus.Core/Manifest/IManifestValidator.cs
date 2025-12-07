@@ -6,6 +6,6 @@ namespace Modulus.Core.Manifest;
 
 public interface IManifestValidator
 {
-    Task<bool> ValidateAsync(string packagePath, string manifestPath, ModuleManifest manifest, CancellationToken cancellationToken = default);
+    Task<bool> ValidateAsync(string packagePath, string manifestPath, ModuleManifest manifest, string? hostType = null, CancellationToken cancellationToken = default);
 }
 

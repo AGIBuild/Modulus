@@ -27,6 +27,18 @@ public sealed class ModuleManifest
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
+    /// <summary>
+    /// Fully-qualified type name of the entry component (optional).
+    /// </summary>
+    [JsonPropertyName("entryComponent")]
+    public string? EntryComponent { get; init; }
+
+    [JsonPropertyName("author")]
+    public string? Author { get; init; }
+
+    [JsonPropertyName("website")]
+    public string? Website { get; init; }
+
     [JsonPropertyName("supportedHosts")]
     public List<string> SupportedHosts { get; init; } = new();
 
@@ -38,6 +50,9 @@ public sealed class ModuleManifest
 
     [JsonPropertyName("dependencies")]
     public Dictionary<string, string> Dependencies { get; init; } = new();
+
+    [JsonPropertyName("assemblyHashes")]
+    public Dictionary<string, string> AssemblyHashes { get; init; } = new();
 
     [JsonPropertyName("signature")]
     public ManifestSignature? Signature { get; init; }
