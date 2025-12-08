@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Modulus.Core.Architecture;
 using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
@@ -17,6 +18,7 @@ public class ModuleLoaderTests : IDisposable
     private readonly RuntimeContext _runtimeContext;
     private readonly IManifestValidator _validator;
     private readonly ILogger<ModuleLoader> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ModuleLoader _loader;
     private readonly ISharedAssemblyCatalog _sharedCatalog;
 
@@ -31,8 +33,9 @@ public class ModuleLoaderTests : IDisposable
 
         _validator = Substitute.For<IManifestValidator>();
         _logger = Substitute.For<ILogger<ModuleLoader>>();
+        _loggerFactory = NullLoggerFactory.Instance;
         
-        _loader = new ModuleLoader(_runtimeContext, _validator, _sharedCatalog, _logger);
+        _loader = new ModuleLoader(_runtimeContext, _validator, _sharedCatalog, _logger, _loggerFactory);
     }
 
     public void Dispose()

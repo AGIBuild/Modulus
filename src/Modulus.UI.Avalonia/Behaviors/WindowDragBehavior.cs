@@ -30,12 +30,32 @@ public class WindowDragBehavior : Behavior<Control>
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(AssociatedObject).Properties.IsLeftButtonPressed)
+        if (AssociatedObject == null)
         {
-            if (TopLevel.GetTopLevel(AssociatedObject) is Window window)
+            return;
+        }
+
+        var point = e.GetCurrentPoint(AssociatedObject);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(AssociatedObject) is Window window)
+        {
+            if (e.ClickCount >= 2)
             {
-                window.BeginMoveDrag(e);
+                if (window.CanResize)
+                {
+                    window.WindowState = window.WindowState == WindowState.Maximized
+                        ? WindowState.Normal
+                        : WindowState.Maximized;
+                }
+                e.Handled = true;
+                return;
             }
+
+            window.BeginMoveDrag(e);
         }
     }
 }

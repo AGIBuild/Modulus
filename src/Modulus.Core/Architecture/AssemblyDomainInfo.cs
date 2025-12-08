@@ -9,15 +9,6 @@ namespace Modulus.Core.Architecture;
 /// </summary>
 public static class AssemblyDomainInfo
 {
-    private static readonly HashSet<string> KnownSharedAssemblies = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Modulus.Core",
-        "Modulus.Sdk",
-        "Modulus.UI.Abstractions",
-        "Modulus.UI.Avalonia",
-        "Modulus.UI.Blazor"
-    };
-
     /// <summary>
     /// Gets the domain type of the specified assembly.
     /// First checks for [AssemblyDomain] attribute, then falls back to known assemblies list.
@@ -31,13 +22,6 @@ public static class AssemblyDomainInfo
         if (attr != null)
         {
             return attr.DomainType;
-        }
-        
-        // Fallback to known assemblies
-        var assemblyName = assembly.GetName().Name;
-        if (assemblyName != null && KnownSharedAssemblies.Contains(assemblyName))
-        {
-            return AssemblyDomainType.Shared;
         }
         
         // Check if loaded in default context (likely shared) or isolated context (module)

@@ -38,7 +38,6 @@ public static class ModulusApplicationFactory
         }
 
         var effectiveConfig = configuration ?? new ConfigurationBuilder()
-            .AddEnvironmentVariables()
             .Build();
 
         loggerFactory ??= ModulusLogging.CreateLoggerFactory(effectiveConfig, hostType ?? "Host");

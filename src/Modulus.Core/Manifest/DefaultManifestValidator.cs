@@ -35,14 +35,24 @@ public sealed class DefaultManifestValidator : IManifestValidator
             errors.Add("Manifest is missing required field 'id'.");
         }
 
+        if (string.IsNullOrWhiteSpace(manifest.DisplayName))
+        {
+            errors.Add("Manifest is missing required field 'displayName'.");
+        }
+
         if (string.IsNullOrWhiteSpace(manifest.Version) || !NuGetVersion.TryParse(manifest.Version, out _))
         {
             errors.Add($"Manifest version '{manifest.Version}' is not a valid semantic version.");
         }
 
-        if (manifest.CoreAssemblies == null || manifest.UiAssemblies == null)
+        if (manifest.CoreAssemblies == null || manifest.CoreAssemblies.Count == 0)
         {
-            errors.Add("Manifest must include coreAssemblies and uiAssemblies.");
+            errors.Add("Manifest must include at least one core assembly in 'coreAssemblies'.");
+        }
+
+        if (manifest.UiAssemblies == null)
+        {
+            errors.Add("Manifest must include uiAssemblies object (may be empty per host).");
         }
 
         if (hostType != null)
@@ -52,14 +62,30 @@ public sealed class DefaultManifestValidator : IManifestValidator
                 errors.Add($"Host '{hostType}' is not supported by this module.");
             }
 
-            if (manifest.UiAssemblies != null && manifest.UiAssemblies.Count > 0 && !manifest.UiAssemblies.ContainsKey(hostType))
+            if (manifest.UiAssemblies == null || !manifest.UiAssemblies.TryGetValue(hostType, out var hostAssemblies) || hostAssemblies == null || hostAssemblies.Count == 0)
             {
-                errors.Add($"Manifest does not declare UI assemblies for host '{hostType}'.");
+                errors.Add($"Manifest declares host '{hostType}' but no UI assemblies are provided.");
             }
+        }
+
+        if (manifest.SupportedHosts == null || !manifest.SupportedHosts.Any())
+        {
+            errors.Add("Manifest must declare at least one supported host in 'supportedHosts'.");
         }
 
         foreach (var (dependencyId, dependencyRange) in manifest.Dependencies)
         {
+            if (string.IsNullOrWhiteSpace(dependencyId))
+            {
+                errors.Add("Dependency id cannot be empty.");
+                continue;
+            }
+
+            if (string.Equals(dependencyId, manifest.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add("Module cannot depend on itself.");
+            }
+
             if (!VersionRange.TryParse(dependencyRange, out _))
             {
                 errors.Add($"Dependency '{dependencyId}' has invalid version range '{dependencyRange}'.");

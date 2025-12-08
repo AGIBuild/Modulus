@@ -74,7 +74,22 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
         _logger.LogInformation("Found {Count} module handles to initialize.", _runtimeContext.ModuleHandles.Count);
         
-        foreach (var handle in _runtimeContext.ModuleHandles)
+        IReadOnlyList<RuntimeModuleHandle> sortedHandles;
+        try
+        {
+            sortedHandles = RuntimeDependencyGraph.TopologicallySort(_runtimeContext.ModuleHandles, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to build runtime dependency graph. Module initialization aborted.");
+            foreach (var handle in _runtimeContext.ModuleHandles)
+            {
+                handle.RuntimeModule.State = ModuleState.Error;
+            }
+            return;
+        }
+
+        foreach (var handle in sortedHandles)
         {
             var module = handle.RuntimeModule;
             using (_logger.BeginScope(new Dictionary<string, object>
@@ -91,8 +106,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                 _logger.LogInformation("Initializing pre-loaded module {ModuleName} ({ModuleId}) with {InstanceCount} instances...", 
                     module.Descriptor.DisplayName, module.Descriptor.Id, handle.ModuleInstances.Count);
 
-                var compositeProvider = new CompositeServiceProvider(handle.ServiceProvider, _hostServices);
-                var initContext = new ModuleInitializationContext(compositeProvider);
+                handle.UpdateCompositeServiceProvider(_hostServices);
+                var initContext = new ModuleInitializationContext(handle.CompositeServiceProvider);
 
                 try
                 {
@@ -324,7 +339,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             module.ConfigureServices(lifecycleContext);
         }
 
-            foreach (var module in sortedModules)
+        foreach (var module in sortedModules)
         {
             module.PostConfigureServices(lifecycleContext);
         }

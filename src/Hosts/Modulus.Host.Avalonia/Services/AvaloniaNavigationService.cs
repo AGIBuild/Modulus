@@ -298,7 +298,7 @@ public class AvaloniaNavigationService : INavigationService
             // Fall back to ActivatorUtilities
             return ActivatorUtilities.CreateInstance(_serviceProvider, vmType);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return null;
         }
