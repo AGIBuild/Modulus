@@ -110,6 +110,10 @@
   "allOf": [
     {
       "properties": {
+        "app": {
+          "type": "string",
+          "description": "Target host to build for: 'avalonia' (default), 'blazor', or 'all'"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
@@ -129,10 +133,6 @@
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
-        },
-        "target-host": {
-          "type": "string",
-          "description": "Target host to build for: 'avalonia' (default), 'blazor', or 'all'"
         }
       }
     },
