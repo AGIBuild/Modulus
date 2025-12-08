@@ -53,14 +53,10 @@ class BuildTasks : NukeBuild
     [Parameter("Name of the plugin to pack (required when op=single)", Name = "name")]
     readonly string PluginName;
     
-    [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "target-host")]
+    [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "host")]
     readonly string TargetHost = "avalonia";
-    
-    // Alias to support `--host` (common typo/short form)
-    [Parameter("Alias for target host: 'avalonia', 'blazor', or 'all'", Name = "host")]
-    readonly string TargetHostAlias;
 
-    private string EffectiveTargetHost => (TargetHostAlias ?? TargetHost ?? "avalonia").ToLower();
+    private string EffectiveTargetHost => (TargetHost ?? "avalonia").ToLower();
 
     [Solution] readonly Solution Solution;
 
