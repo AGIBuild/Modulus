@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Modulus.Sdk;
 using SimpleNotes.Core.Application;
 using SimpleNotes.Core.Application.ViewModels;
@@ -18,5 +19,12 @@ public class SimpleNotesModule : ModulusComponent
     {
         context.Services.AddSingleton<INoteService, NoteService>();
         context.Services.AddTransient<NoteListViewModel>();
+    }
+
+    public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
+    {
+        var logger = context.ServiceProvider.GetService<ILogger<SimpleNotesModule>>();
+        logger?.LogInformation("SimpleNotes module initialized.");
+        return Task.CompletedTask;
     }
 }

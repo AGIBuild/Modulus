@@ -2,9 +2,13 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Modulus.Core;
 using Modulus.Core.Data;
 using Modulus.Core.Installation;
+using Modulus.Core.Logging;
 using Modulus.Core.Runtime;
 using Modulus.Host.Avalonia.Services;
 using Modulus.Host.Avalonia.Shell.Services;
@@ -13,10 +17,6 @@ using Modulus.Host.Avalonia.Shell.Views;
 using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -72,10 +72,17 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var services = new ServiceCollection();
-            
-            // Add Logging
-            services.AddLogging();
-            
+
+            // Configuration
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Avalonia);
+            ModulusLogging.AddLoggerFactory(services, loggerFactory);
+
             // Module Providers - load from Modules/ directory
             var providers = new System.Collections.Generic.List<IModuleProvider>();
 
@@ -88,7 +95,7 @@ public partial class App : Application
                 if (Directory.Exists(artifactsModules))
                 {
                     // User modules from artifacts - NOT system modules
-                    providers.Add(new DirectoryModuleProvider(artifactsModules, NullLogger.Instance, isSystem: false));
+                    providers.Add(new DirectoryModuleProvider(artifactsModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: false));
                 }
             }
 #else
@@ -96,7 +103,7 @@ public partial class App : Application
             var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
             if (Directory.Exists(appModules))
             {
-                providers.Add(new DirectoryModuleProvider(appModules, NullLogger.Instance, isSystem: true));
+                providers.Add(new DirectoryModuleProvider(appModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: true));
             }
 #endif
 
@@ -104,15 +111,8 @@ public partial class App : Application
             var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
             if (Directory.Exists(userModules))
             {
-                providers.Add(new DirectoryModuleProvider(userModules, NullLogger.Instance, isSystem: false));
+                providers.Add(new DirectoryModuleProvider(userModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: false));
             }
-
-            // Configuration
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                .AddEnvironmentVariables()
-                .Build();
 
             // Database (configurable name; defaults to framework/solution name)
             var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
@@ -129,7 +129,7 @@ public partial class App : Application
 
             // Bootstrap Modulus
             var appTask = Task.Run(async () => 
-                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, providers, HostType.Avalonia, dbPath)
+                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, providers, HostType.Avalonia, dbPath, configuration, loggerFactory)
             );
             _modulusApp = appTask.GetAwaiter().GetResult();
             

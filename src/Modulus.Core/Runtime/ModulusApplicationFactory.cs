@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Modulus.Core.Architecture;
 using Modulus.Core.Installation;
+using Modulus.Core.Logging;
 using Modulus.Core.Manifest;
 using Modulus.Infrastructure.Data;
 using Modulus.Infrastructure.Data.Models;
@@ -20,38 +22,49 @@ namespace Modulus.Core.Runtime;
 public static class ModulusApplicationFactory
 {
     public static async Task<ModulusApplication> CreateAsync<TStartupModule>(
-        IServiceCollection services, 
-        IEnumerable<IModuleProvider> moduleProviders, 
+        IServiceCollection services,
+        IEnumerable<IModuleProvider> moduleProviders,
         string? hostType = null,
-        string? databasePath = null) 
+        string? databasePath = null,
+        IConfiguration? configuration = null,
+        ILoggerFactory? loggerFactory = null)
         where TStartupModule : IModule, new()
     {
         // 1. Setup Runtime Components
         var runtimeContext = new RuntimeContext();
-        if (hostType != null) 
+        if (hostType != null)
         {
             runtimeContext.SetCurrentHost(hostType);
         }
-        
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+
+        var effectiveConfig = configuration ?? new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+
+        loggerFactory ??= ModulusLogging.CreateLoggerFactory(effectiveConfig, hostType ?? "Host");
         var logger = loggerFactory.CreateLogger<ModulusApplication>();
-        
-        var signatureVerifier = new Sha256ManifestSignatureVerifier(NullLogger<Sha256ManifestSignatureVerifier>.Instance);
-        var manifestValidator = new DefaultManifestValidator(signatureVerifier, NullLogger<DefaultManifestValidator>.Instance);
+
+        using var hostScope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["HostType"] = hostType ?? "UnknownHost"
+        });
+
+        var signatureVerifier = new Sha256ManifestSignatureVerifier(loggerFactory.CreateLogger<Sha256ManifestSignatureVerifier>());
+        var manifestValidator = new DefaultManifestValidator(signatureVerifier, loggerFactory.CreateLogger<DefaultManifestValidator>());
         var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
-        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, loggerFactory.CreateLogger<ModuleLoader>());
+        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, loggerFactory.CreateLogger<ModuleLoader>(), loggerFactory);
         var moduleManager = new ModuleManager(loggerFactory.CreateLogger<ModuleManager>());
 
-        // 2. Setup Temporary Services for DB & Seeding
+        // 2. Setup Temporary Services for DB & Seeding (shared logger factory)
         var tempServices = new ServiceCollection();
-        tempServices.AddLogging(builder => builder.AddConsole());
+        ModulusLogging.AddLoggerFactory(tempServices, loggerFactory);
         tempServices.AddSingleton<ISharedAssemblyCatalog>(sharedAssemblies);
         tempServices.AddSingleton<IManifestValidator>(manifestValidator);
-        
+
         // Use Sqlite default for now
         var connectionString = string.IsNullOrWhiteSpace(databasePath) ? "Data Source=modulus.db" : $"Data Source={databasePath}";
         tempServices.AddDbContext<ModulusDbContext>(options => options.UseSqlite(connectionString));
-        
+
         tempServices.AddScoped<IModuleRepository, ModuleRepository>();
         tempServices.AddScoped<IMenuRepository, MenuRepository>();
         tempServices.AddScoped<IModuleInstallerService, ModuleInstallerService>();
@@ -65,7 +78,7 @@ public static class ModulusApplicationFactory
             await db.Database.MigrateAsync();
 
             var seeder = scope.ServiceProvider.GetRequiredService<SystemModuleSeeder>();
-            
+
             // Seed All Modules (system flag determined by provider.IsSystemSource)
             if (moduleProviders != null)
             {
@@ -79,7 +92,7 @@ public static class ModulusApplicationFactory
                     }
                 }
             }
-            
+
             // Ensure all changes are persisted before querying
             await db.SaveChangesAsync();
 
@@ -92,9 +105,9 @@ public static class ModulusApplicationFactory
                 .AsNoTracking()
                 .Where(m => m.IsEnabled)
                 .ToListAsync();
-            
-            logger.LogDebug("Found {Count} enabled modules to load.", enabledModules.Count);
-            
+
+            logger.LogInformation("Found {Count} enabled modules to load.", enabledModules.Count);
+
             // 3.1 Order Modules
             var orderedModules = await OrderModulesAsync(enabledModules, runtimeContext, logger);
 
@@ -107,27 +120,27 @@ public static class ModulusApplicationFactory
                     logger.LogDebug("Skipping built-in module {ModuleId}.", module.Id);
                     continue;
                 }
-                
+
                 try
                 {
                     // Resolve absolute path (module.Path is stored as manifest.json path)
                     var manifestPath = Path.GetFullPath(module.Path);
                     var packagePath = Path.GetDirectoryName(manifestPath);
-                    
+
                     if (packagePath != null)
                     {
-                        logger.LogDebug("Loading module {ModuleId} from {Path}...", module.Id, packagePath);
+                        logger.LogInformation("Loading module {ModuleName} ({ModuleId}) from {Path}...", module.Name, module.Id, packagePath);
                         // Skip module initialization - it will be done after host services are bound
                         var descriptor = await moduleLoader.LoadAsync(packagePath, module.IsSystem, skipModuleInitialization: true).ConfigureAwait(false);
                         if (descriptor == null)
                         {
-                            logger.LogWarning("Module {ModuleId} failed to load.", module.Id);
+                            logger.LogWarning("Module {ModuleName} ({ModuleId}) failed to load.", module.Name, module.Id);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to load module {ModuleId} from {Path}", module.Id, module.Path);
+                    logger.LogError(ex, "Failed to load module {ModuleName} ({ModuleId}) from {Path}", module.Name, module.Id, module.Path);
                 }
             }
         }
@@ -139,29 +152,30 @@ public static class ModulusApplicationFactory
         {
             foreach (var assembly in runtimeModule.LoadContext.Assemblies)
             {
-                 var moduleTypes = assembly.GetTypes()
+                var moduleTypes = assembly.GetTypes()
                     .Where(t => typeof(IModule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface);
-                 
-                 foreach (var type in moduleTypes)
-                 {
-                     if (type == typeof(TStartupModule)) continue;
-                     
-                     try 
-                     {
-                         var instance = (IModule)Activator.CreateInstance(type)!;
-                         // Let ModuleManager resolve the ID from [Module] attribute or type name
-                         // Pass package-level dependencies from manifest
-                         moduleManager.AddModule(instance, manifestDependencies: runtimeModule.Manifest.Dependencies.Keys);
-                     }
-                     catch (Exception ex)
-                     {
-                         logger.LogError(ex, "Failed to instantiate module {Type}", type.Name);
-                     }
-                 }
+
+                foreach (var type in moduleTypes)
+                {
+                    if (type == typeof(TStartupModule)) continue;
+
+                    try
+                    {
+                        var instance = (IModule)Activator.CreateInstance(type)!;
+                        // Let ModuleManager resolve the ID from [Module] attribute or type name
+                        // Pass package-level dependencies from manifest
+                        moduleManager.AddModule(instance, manifestDependencies: runtimeModule.Manifest.Dependencies.Keys);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to instantiate module {Type}", type.Name);
+                    }
+                }
             }
         }
 
         // 5. Register Services to FINAL ServiceCollection
+        ModulusLogging.AddLoggerFactory(services, loggerFactory);
         services.AddSingleton(runtimeContext);
         services.AddSingleton<IModuleLoader>(moduleLoader);
         services.AddSingleton(moduleManager);
@@ -170,7 +184,7 @@ public static class ModulusApplicationFactory
 
         var app = new ModulusApplication(services, moduleManager, logger);
         app.ConfigureServices();
-        
+
         return app;
     }
 

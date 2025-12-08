@@ -94,6 +94,12 @@ public class ModulusApplication : IModulusApplication
             throw new InvalidOperationException("ServiceProvider not set.");
         }
 
+        var runtimeContext = _serviceProvider.GetService<RuntimeContext>();
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["HostType"] = runtimeContext?.HostType ?? "unknown"
+        });
+
         // Initialize pre-loaded modules (those loaded during CreateAsync with skipModuleInitialization=true)
         var moduleLoader = _serviceProvider.GetService<IModuleLoader>();
         _logger.LogInformation("ModuleLoader type: {Type}, IsHostAware: {IsHostAware}", 
@@ -203,7 +209,13 @@ public class ModulusApplication : IModulusApplication
     public async Task ShutdownAsync()
     {
         if (!_initialized) return;
-        
+
+        var runtimeContext = _serviceProvider?.GetService<RuntimeContext>();
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["HostType"] = runtimeContext?.HostType ?? "unknown"
+        });
+
         var context = new ModuleInitializationContext(_serviceProvider!);
         var sortedModules = _moduleManager.GetSortedModules();
         

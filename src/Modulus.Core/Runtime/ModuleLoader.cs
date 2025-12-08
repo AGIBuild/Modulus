@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Modulus.Core;
 using Modulus.Core.Architecture;
@@ -24,15 +25,23 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     private readonly RuntimeContext _runtimeContext;
     private readonly IManifestValidator _manifestValidator;
     private readonly ILogger<ModuleLoader> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ISharedAssemblyCatalog _sharedAssemblyCatalog;
     private IServiceProvider? _hostServices;
 
-    public ModuleLoader(RuntimeContext runtimeContext, IManifestValidator manifestValidator, ISharedAssemblyCatalog sharedAssemblyCatalog, ILogger<ModuleLoader> logger, IServiceProvider? hostServices = null)
+    public ModuleLoader(
+        RuntimeContext runtimeContext,
+        IManifestValidator manifestValidator,
+        ISharedAssemblyCatalog sharedAssemblyCatalog,
+        ILogger<ModuleLoader> logger,
+        ILoggerFactory loggerFactory,
+        IServiceProvider? hostServices = null)
     {
         _runtimeContext = runtimeContext;
         _manifestValidator = manifestValidator;
         _sharedAssemblyCatalog = sharedAssemblyCatalog;
         _logger = logger;
+        _loggerFactory = loggerFactory;
         _hostServices = hostServices;
     }
 
@@ -68,29 +77,38 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         foreach (var handle in _runtimeContext.ModuleHandles)
         {
             var module = handle.RuntimeModule;
-            _logger.LogInformation("Checking module {ModuleId}, State={State}", module.Descriptor.Id, module.State);
-            if (module.State != ModuleState.Loaded) continue; // Skip already initialized or errored modules
-
-            _logger.LogInformation("Initializing pre-loaded module {ModuleId} with {InstanceCount} instances...", 
-                module.Descriptor.Id, handle.ModuleInstances.Count);
-
-            var compositeProvider = new CompositeServiceProvider(handle.ServiceProvider, _hostServices);
-            var initContext = new ModuleInitializationContext(compositeProvider);
-
-            try
+            using (_logger.BeginScope(new Dictionary<string, object>
             {
-                foreach (var moduleInstance in handle.ModuleInstances)
+                ["HostType"] = _runtimeContext.HostType ?? "unknown",
+                ["ModuleId"] = module.Descriptor.Id,
+                ["ModuleName"] = module.Descriptor.DisplayName,
+                ["ModuleVersion"] = module.Descriptor.Version
+            }))
+            {
+                _logger.LogInformation("Checking module {ModuleName} ({ModuleId}), State={State}", module.Descriptor.DisplayName, module.Descriptor.Id, module.State);
+                if (module.State != ModuleState.Loaded) continue; // Skip already initialized or errored modules
+
+                _logger.LogInformation("Initializing pre-loaded module {ModuleName} ({ModuleId}) with {InstanceCount} instances...", 
+                    module.Descriptor.DisplayName, module.Descriptor.Id, handle.ModuleInstances.Count);
+
+                var compositeProvider = new CompositeServiceProvider(handle.ServiceProvider, _hostServices);
+                var initContext = new ModuleInitializationContext(compositeProvider);
+
+                try
                 {
-                    _logger.LogInformation("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
-                    await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                    foreach (var moduleInstance in handle.ModuleInstances)
+                    {
+                        _logger.LogInformation("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
+                        await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                    }
+                    module.State = ModuleState.Active;
+                    _logger.LogInformation("Module {ModuleName} initialized successfully.", module.Descriptor.DisplayName);
                 }
-                module.State = ModuleState.Active;
-                _logger.LogInformation("Module {ModuleId} initialized successfully.", module.Descriptor.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error initializing module {ModuleId}", module.Descriptor.Id);
-                module.State = ModuleState.Error;
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error initializing module {ModuleName}", module.Descriptor.DisplayName);
+                    module.State = ModuleState.Error;
+                }
             }
         }
     }
@@ -98,6 +116,11 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     public async Task<ModuleDescriptor?> LoadAsync(string packagePath, bool isSystem = false, bool skipModuleInitialization = false, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        using var hostScope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["HostType"] = _runtimeContext.HostType ?? "unknown"
+        });
 
         if (!Directory.Exists(packagePath))
         {
@@ -127,6 +150,17 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return null;
         }
 
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["HostType"] = hostType,
+            ["ModuleId"] = manifest.Id,
+            ["ModuleName"] = manifest.DisplayName ?? manifest.Id,
+            ["ModuleVersion"] = manifest.Version
+        });
+
+        _logger.LogInformation("Loaded manifest for module {ModuleName} ({ModuleId}) v{ModuleVersion}.", manifest.DisplayName ?? manifest.Id, manifest.Id, manifest.Version);
+        _logger.LogInformation("Validating manifest for host {HostType}.", hostType);
+
         // Check if already loaded
         if (_runtimeContext.TryGetModule(manifest.Id, out var existingModule))
         {
@@ -151,7 +185,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             manifest.DisplayName, 
             manifest.Description,
             manifest.SupportedHosts);
-        var alc = new ModuleLoadContext(manifest.Id, packagePath, _sharedAssemblyCatalog, _logger);
+        var alc = new ModuleLoadContext(manifest.Id, packagePath, _sharedAssemblyCatalog, _loggerFactory.CreateLogger<ModuleLoadContext>());
         var loadedAssemblies = new List<Assembly>();
 
         // Get Current Host ID from RuntimeContext
@@ -251,6 +285,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             _logger.LogError(ex, "Failed to resolve component dependencies for module {ModuleId}.", manifest.Id);
             return null;
         }
+        _logger.LogInformation("Resolved {Count} module components after dependency graph build.", sortedTypes.Count);
 
         var sortedModules = new List<IModule>();
         foreach (var type in sortedTypes)
@@ -271,6 +306,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         }
 
         var services = new ServiceCollection();
+        services.TryAddSingleton(_loggerFactory);
+        services.TryAddSingleton(typeof(ILogger<>), typeof(Logger<>));
         services.AddSingleton(_runtimeContext);
         services.AddSingleton(descriptor);
         services.AddSingleton(manifest);
@@ -287,10 +324,12 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             module.ConfigureServices(lifecycleContext);
         }
 
-        foreach (var module in sortedModules)
+            foreach (var module in sortedModules)
         {
             module.PostConfigureServices(lifecycleContext);
         }
+
+        EnforceHostLogging(services, descriptor);
 
         var moduleProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var moduleScope = moduleProvider.CreateScope();
@@ -332,8 +371,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             _runtimeContext.RegisterModuleHandle(handle);
             initialized = true;
 
-            _logger.LogInformation("Module {ModuleId} (v{Version}) loaded from {PackagePath} for host {HostType} (System: {IsSystem}, Initialized: {Initialized}).", 
-                manifest.Id, manifest.Version, packagePath, currentHostId ?? "None", isSystem, !skipModuleInitialization);
+            _logger.LogInformation("Module {ModuleName} ({ModuleId}) v{Version} loaded from {PackagePath} for host {HostType} (System: {IsSystem}, Initialized: {Initialized}).",
+                descriptor.DisplayName, manifest.Id, manifest.Version, packagePath, currentHostId ?? "None", isSystem, !skipModuleInitialization);
 
             return descriptor;
         }
@@ -352,6 +391,14 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     {
         if (_runtimeContext.TryGetModule(moduleId, out var runtimeModule))
         {
+            using var scope = _logger.BeginScope(new Dictionary<string, object?>
+            {
+                ["HostType"] = _runtimeContext.HostType ?? "unknown",
+                ["ModuleId"] = runtimeModule!.Descriptor.Id,
+                ["ModuleName"] = runtimeModule.Descriptor.DisplayName,
+                ["ModuleVersion"] = runtimeModule.Descriptor.Version
+            });
+
             if (runtimeModule!.IsSystem)
             {
                 _logger.LogWarning("Cannot unload system module {ModuleId}.", moduleId);
@@ -422,6 +469,13 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         {
             var packagePath = runtimeModule!.PackagePath;
             var isSystem = runtimeModule.IsSystem;
+            using var scope = _logger.BeginScope(new Dictionary<string, object?>
+            {
+                ["HostType"] = _runtimeContext.HostType ?? "unknown",
+                ["ModuleId"] = runtimeModule.Descriptor.Id,
+                ["ModuleName"] = runtimeModule.Descriptor.DisplayName,
+                ["ModuleVersion"] = runtimeModule.Descriptor.Version
+            });
             await UnloadAsync(moduleId);
             
             // Allow some time for cleanup if necessary
@@ -530,5 +584,22 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             deps.AddRange(attr.DependedModuleTypes);
         }
         return deps;
+    }
+
+    private void EnforceHostLogging(IServiceCollection services, ModuleDescriptor descriptor)
+    {
+        var providerDescriptors = services.Where(d => typeof(ILoggerProvider).IsAssignableFrom(d.ServiceType)).ToList();
+        if (providerDescriptors.Count > 0)
+        {
+            foreach (var descriptorToRemove in providerDescriptors)
+            {
+                services.Remove(descriptorToRemove);
+            }
+
+            _logger.LogWarning("Module {ModuleName} attempted to register logging providers; ignoring to keep host pipeline.", descriptor.DisplayName);
+        }
+
+        services.Replace(ServiceDescriptor.Singleton<ILoggerFactory>(_loggerFactory));
+        services.Replace(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
     }
 }

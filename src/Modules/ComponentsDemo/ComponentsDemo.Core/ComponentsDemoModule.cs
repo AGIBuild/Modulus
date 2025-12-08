@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Modulus.Modules.ComponentsDemo.ViewModels;
 using Modulus.Sdk;
 
@@ -24,6 +25,13 @@ public class ComponentsDemoModule : ModulusComponent
         context.Services.AddTransient<ContextMenuDemoViewModel>();
         context.Services.AddTransient<KeyboardDemoViewModel>();
         context.Services.AddTransient<LifecycleDemoViewModel>();
+    }
+
+    public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
+    {
+        var logger = context.ServiceProvider.GetService<ILogger<ComponentsDemoModule>>();
+        logger?.LogInformation("ComponentsDemo module initialized.");
+        return Task.CompletedTask;
     }
 }
 

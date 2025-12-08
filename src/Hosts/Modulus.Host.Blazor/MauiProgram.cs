@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Configuration;
 using MudBlazor.Services;
 using Modulus.Core;
 using Modulus.Core.Data;
 using Modulus.Core.Installation;
+using Modulus.Core.Logging;
 using Modulus.Core.Runtime;
 using Modulus.Host.Blazor.Services;
 using Modulus.Host.Blazor.Shell.Services;
@@ -68,6 +68,16 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
             });
 
+        // Configuration
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
+
+        var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Blazor);
+        ModulusLogging.AddLoggerFactory(builder.Services, loggerFactory);
+
         // Module Providers - load from Modules/ directory relative to executable
         var providers = new List<IModuleProvider>();
 
@@ -75,22 +85,15 @@ public static class MauiProgram
         var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
         if (Directory.Exists(appModules))
         {
-            providers.Add(new DirectoryModuleProvider(appModules, NullLogger.Instance, isSystem: true));
+            providers.Add(new DirectoryModuleProvider(appModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: true));
         }
 
         // User-installed modules (for runtime installation)
         var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
         if (Directory.Exists(userModules))
         {
-            providers.Add(new DirectoryModuleProvider(userModules, NullLogger.Instance, isSystem: false));
+            providers.Add(new DirectoryModuleProvider(userModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: false));
         }
-
-        // Configuration
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-            .AddEnvironmentVariables()
-            .Build();
 
         // Database (configurable name; defaults to framework/solution name)
         var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
@@ -103,7 +106,7 @@ public static class MauiProgram
         builder.Services.AddScoped<HostModuleSeeder>();
 
         // Create Modulus App (use same DB path to align migrations and runtime)
-        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, providers, HostType.Blazor, dbPath);
+        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, providers, HostType.Blazor, dbPath, configuration, loggerFactory);
         var modulusApp = appTask.GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected

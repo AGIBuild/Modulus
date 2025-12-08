@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Modulus.Core.Paths;
 using Modulus.Infrastructure.Data;
 
 namespace Modulus.Core.Data;
@@ -41,18 +42,12 @@ public static class DatabaseServiceExtensions
     /// Gets the default database path for the application.
     /// </summary>
     /// <param name="databaseName">
-    /// Optional database name (without extension). If null, resolves from
-    /// environment variable MODULUS_DB_NAME, otherwise falls back to "Modulus".
+    /// Optional database name (without extension). If null, falls back to "Modulus".
     /// </param>
     public static string GetDefaultDatabasePath(string? databaseName = null)
     {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var resolvedName = databaseName
-            ?? Environment.GetEnvironmentVariable("MODULUS_DB_NAME")
-            ?? "Modulus";
-
-        var sanitizedName = string.IsNullOrWhiteSpace(resolvedName) ? "Modulus" : resolvedName;
-        return Path.Combine(appDataPath, "Modulus", $"{sanitizedName}.db");
+        var resolvedName = string.IsNullOrWhiteSpace(databaseName) ? "Modulus" : databaseName;
+        return LocalStorage.GetDatabasePath(resolvedName);
     }
 }
 
