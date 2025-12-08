@@ -55,6 +55,12 @@ class BuildTasks : NukeBuild
     
     [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "target-host")]
     readonly string TargetHost = "avalonia";
+    
+    // Alias to support `--host` (common typo/short form)
+    [Parameter("Alias for target host: 'avalonia', 'blazor', or 'all'", Name = "host")]
+    readonly string TargetHostAlias;
+
+    private string EffectiveTargetHost => (TargetHostAlias ?? TargetHost ?? "avalonia").ToLower();
 
     [Solution] readonly Solution Solution;
 
@@ -110,7 +116,7 @@ class BuildTasks : NukeBuild
         .Description("Build all and run the host application")
         .Executes(() =>
         {
-            var hostProjectName = TargetHost?.ToLower() == "blazor" ? BlazorHostProject : AvaloniaHostProject;
+            var hostProjectName = EffectiveTargetHost == "blazor" ? BlazorHostProject : AvaloniaHostProject;
             var outputDir = ArtifactsDirectory / hostProjectName;
             
             var executable = outputDir / hostProjectName;
@@ -321,7 +327,7 @@ class BuildTasks : NukeBuild
     // Helper to get target host projects based on --target-host parameter
     private string[] GetTargetHostProjects()
     {
-        return TargetHost?.ToLower() switch
+        return EffectiveTargetHost switch
         {
             "blazor" => new[] { BlazorHostProject },
             "all" => new[] { AvaloniaHostProject, BlazorHostProject },
