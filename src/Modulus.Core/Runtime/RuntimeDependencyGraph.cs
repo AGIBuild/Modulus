@@ -54,6 +54,13 @@ public static class RuntimeDependencyGraph
                             logger?.LogError("Module {ModuleId} depends on {DependencyType} which is not loaded.", moduleId, depType.FullName ?? depType.Name);
                             throw new InvalidOperationException($"Missing dependency type '{depType.FullName ?? depType.Name}' for module '{moduleId}'.");
                         }
+                        
+                        // Skip self-dependency (UI components depending on Core within the same module package)
+                        if (string.Equals(targetModuleId, moduleId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+                        
                         deps.Add(targetModuleId);
                     }
                 }
