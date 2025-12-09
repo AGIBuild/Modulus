@@ -1,11 +1,12 @@
 {
   "profiles": {
-    "Modulus.Host.Blazor": {
+    "Modulus.Host.Avalonia": {
       "commandName": "Project",
       "workingDirectory": "../../../artifacts",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
-      }
+      },
+      "sqlDebugging": true
     }
   }
 }

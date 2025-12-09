@@ -77,10 +77,12 @@ public partial class App : Application
         {
             var services = new ServiceCollection();
 
-            // Configuration
+            // Configuration (environment-aware via DOTNET_ENVIRONMENT)
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables()
                 .Build();
 
