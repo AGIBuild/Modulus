@@ -240,3 +240,14 @@ public class ModulusApplication : IModulusApplication
         // cleanup
     }
 }
+
+/// <summary>
+/// Metadata for a loaded module.
+/// </summary>
+public class ModuleMetadata
+{
+    public string Id { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Version { get; set; } = "";
+    public string Author { get; set; } = "";
+}

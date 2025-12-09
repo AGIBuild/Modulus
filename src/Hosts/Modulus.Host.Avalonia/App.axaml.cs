@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace Modulus.Host.Avalonia;
 
-public class AvaloniaHostModule : ModulusComponent
+public class AvaloniaHostModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {
@@ -86,7 +86,7 @@ public partial class App : Application
                 .AddEnvironmentVariables()
                 .Build();
 
-            var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Avalonia);
+            var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Avalonia);
             ModulusLogging.AddLoggerFactory(services, loggerFactory);
 
             // Module Directories - explicit module installation paths
@@ -157,7 +157,7 @@ public partial class App : Application
             {
                 var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
                 hostSeeder.SeedAsync(
-                    HostType.Avalonia,
+                    ModulusHostIds.Avalonia,
                     typeof(ModuleListViewModel).FullName!,
                     typeof(SettingsViewModel).FullName!
                 ).GetAwaiter().GetResult();

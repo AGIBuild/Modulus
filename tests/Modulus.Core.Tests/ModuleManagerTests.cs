@@ -79,17 +79,17 @@ public class ModuleManagerTests
     }
 
     // Test module classes
-    private class TestModule : ModulusComponent { }
-    private class TestModule2 : ModulusComponent { }
+    private class TestModule : ModulusPackage { }
+    private class TestModule2 : ModulusPackage { }
     
-    private class TestModuleA : ModulusComponent { }
+    private class TestModuleA : ModulusPackage { }
     
     [DependsOn(typeof(TestModuleA))]
-    private class TestModuleB : ModulusComponent { }
+    private class TestModuleB : ModulusPackage { }
 
     [DependsOn(typeof(ExternalDependency))]
-    private class ModuleWithMissingDependency : ModulusComponent { }
+    private class ModuleWithMissingDependency : ModulusPackage { }
 
-    private class ExternalDependency : ModulusComponent { }
+    private class ExternalDependency : ModulusPackage { }
 }
 

@@ -76,7 +76,7 @@ public static class MauiProgram
             .Build();
 
         // Initialize logger first
-        var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Blazor);
+        var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Blazor);
         _logger = loggerFactory.CreateLogger<MauiApp>();
 
         // Setup global exception handlers (logger is now ready)
@@ -135,7 +135,7 @@ public static class MauiProgram
         {
             var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
             hostSeeder.SeedAsync(
-                HostType.Blazor,
+                ModulusHostIds.Blazor,
                 "/modules",  // Blazor uses route-based navigation
                 "/settings"
             ).GetAwaiter().GetResult();
