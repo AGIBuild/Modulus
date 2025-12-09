@@ -24,7 +24,8 @@ public class ModulusDbContext : DbContext
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.Version).IsRequired();
             entity.Property(e => e.Path).IsRequired();
-            entity.Property(e => e.EntryComponent);
+            entity.Property(e => e.ManifestHash);
+            entity.Property(e => e.ValidatedAt);
             entity.Property(e => e.MenuLocation).HasDefaultValue(MenuLocation.Main);
         });
 

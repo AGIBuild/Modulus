@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Modulus.Core;
 using Modulus.Core.Architecture;
+using Modulus.Core.Installation;
 using Modulus.Core.Manifest;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
@@ -147,14 +148,15 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return null;
         }
 
-        var manifestPath = Path.Combine(packagePath, "manifest.json");
-        var manifest = await ManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
+        var manifestPath = Path.Combine(packagePath, SystemModuleInstaller.VsixManifestFileName);
+        var manifest = await VsixManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
         if (manifest is null)
         {
             _logger.LogWarning("Failed to read manifest at {ManifestPath}.", manifestPath);
             return null;
         }
 
+        var identity = manifest.Metadata.Identity;
         var hostType = _runtimeContext.HostType;
         if (string.IsNullOrWhiteSpace(hostType))
         {
@@ -175,50 +177,24 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         using var scope = _logger.BeginScope(new Dictionary<string, object?>
         {
             ["HostType"] = hostType,
-            ["ModuleId"] = manifest.Id,
-            ["ModuleName"] = manifest.DisplayName ?? manifest.Id,
-            ["ModuleVersion"] = manifest.Version
+            ["ModuleId"] = identity.Id,
+            ["ModuleName"] = manifest.Metadata.DisplayName,
+            ["ModuleVersion"] = identity.Version
         });
 
-        _logger.LogInformation("Loaded manifest for module {ModuleName} ({ModuleId}) v{ModuleVersion}.", manifest.DisplayName ?? manifest.Id, manifest.Id, manifest.Version);
+        _logger.LogInformation("Loaded manifest for module {ModuleName} ({ModuleId}) v{ModuleVersion}.", manifest.Metadata.DisplayName, identity.Id, identity.Version);
         _logger.LogInformation("Validating manifest for host {HostType}.", hostType);
-        
-        // Process manifest shared assembly hints before loading
-        if (manifest.SharedAssemblyHints.Count > 0)
-        {
-            _logger.LogDebug("Module {ModuleId} declares {Count} shared assembly hints.", manifest.Id, manifest.SharedAssemblyHints.Count);
-            var hintMismatches = _sharedAssemblyCatalog.AddManifestHints(manifest.Id, manifest.SharedAssemblyHints);
-            if (hintMismatches.Count > 0)
-            {
-                foreach (var mismatch in hintMismatches)
-                {
-                    _logger.LogWarning(
-                        "Shared assembly hint mismatch for module {ModuleId}: {AssemblyName} - {Reason}",
-                        manifest.Id, mismatch.AssemblyName, mismatch.Reason);
-                    
-                    // Report to management diagnostics channel
-                    _resolutionReporter?.ReportFailure(new SharedAssemblyResolutionFailedEvent
-                    {
-                        ModuleId = manifest.Id,
-                        AssemblyName = mismatch.AssemblyName,
-                        Source = mismatch.RequestSource,
-                        DeclaredDomain = mismatch.DeclaredDomain,
-                        Reason = mismatch.Reason
-                    });
-                }
-            }
-        }
 
         // Check if already loaded
-        if (_runtimeContext.TryGetModule(manifest.Id, out var existingModule))
+        if (_runtimeContext.TryGetModule(identity.Id, out var existingModule))
         {
-            _logger.LogWarning("Module {ModuleId} is already loaded.", manifest.Id);
+            _logger.LogWarning("Module {ModuleId} is already loaded.", identity.Id);
             return existingModule!.Descriptor;
         }
 
-        if (!NuGetVersion.TryParse(manifest.Version, out _))
+        if (!NuGetVersion.TryParse(identity.Version, out _))
         {
-            _logger.LogWarning("Module {ModuleId} version {Version} is not a valid semantic version.", manifest.Id, manifest.Version);
+            _logger.LogWarning("Module {ModuleId} version {Version} is not a valid semantic version.", identity.Id, identity.Version);
             return null;
         }
 
@@ -227,27 +203,36 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return null;
         }
 
+        // Get supported hosts from Installation targets
+        var supportedHosts = manifest.Installation.Select(t => t.Id).ToList();
+        
         var descriptor = new ModuleDescriptor(
-            manifest.Id, 
-            manifest.Version, 
-            manifest.DisplayName, 
-            manifest.Description,
-            manifest.SupportedHosts);
-        var alc = new ModuleLoadContext(manifest.Id, packagePath, _sharedAssemblyCatalog, _loggerFactory.CreateLogger<ModuleLoadContext>());
+            identity.Id, 
+            identity.Version, 
+            manifest.Metadata.DisplayName, 
+            manifest.Metadata.Description,
+            supportedHosts);
+        var alc = new ModuleLoadContext(identity.Id, packagePath, _sharedAssemblyCatalog, _loggerFactory.CreateLogger<ModuleLoadContext>());
         var loadedAssemblies = new List<Assembly>();
-
-        // Get Current Host ID from RuntimeContext
-        var currentHostId = hostType;
 
         try
         {
-            // 1. Load Core Assemblies (Host-Agnostic)
-            foreach (var assemblyRelativePath in manifest.CoreAssemblies)
+            // Load assemblies from Assets based on type
+            var packageAssets = manifest.Assets
+                .Where(a => string.Equals(a.Type, ModulusAssetTypes.Package, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(a.Type, ModulusAssetTypes.Assembly, StringComparison.OrdinalIgnoreCase))
+                .Where(a => string.IsNullOrEmpty(a.TargetHost) || 
+                            ModulusHostIds.Matches(a.TargetHost, hostType))
+                .ToList();
+
+            foreach (var asset in packageAssets)
             {
-                var assemblyPath = Path.Combine(packagePath, assemblyRelativePath);
+                if (string.IsNullOrEmpty(asset.Path)) continue;
+                
+                var assemblyPath = Path.Combine(packagePath, asset.Path);
                 if (!File.Exists(assemblyPath))
                 {
-                    _logger.LogWarning("Assembly {AssemblyPath} not found for module {ModuleId}.", assemblyPath, manifest.Id);
+                    _logger.LogWarning("Assembly {AssemblyPath} not found for module {ModuleId}.", assemblyPath, identity.Id);
                     continue;
                 }
 
@@ -257,29 +242,10 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                     loadedAssemblies.Add(assembly);
                 }
             }
-
-            // 2. Load UI Assemblies (Host-Specific)
-            if (!string.IsNullOrEmpty(currentHostId) && manifest.UiAssemblies.TryGetValue(currentHostId, out var uiAssemblies))
-            {
-                foreach (var assemblyRelativePath in uiAssemblies)
-                {
-                    var assemblyPath = Path.Combine(packagePath, assemblyRelativePath);
-                    if (!File.Exists(assemblyPath))
-                    {
-                        _logger.LogWarning("UI Assembly {AssemblyPath} not found for module {ModuleId} host {HostType}.", assemblyPath, manifest.Id, currentHostId);
-                        continue;
-                    }
-                    var assembly = alc.LoadFromAssemblyPath(assemblyPath);
-                    if (assembly != null)
-                    {
-                        loadedAssemblies.Add(assembly);
-                    }
-                }
-            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading assemblies for module {ModuleId}.", manifest.Id);
+            _logger.LogError(ex, "Error loading assemblies for module {ModuleId}.", identity.Id);
             alc.Unload();
             return null;
         }
@@ -294,35 +260,6 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             .Where(t => typeof(IModule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
             .ToList();
 
-        // Entry component filtering (if specified)
-        if (!string.IsNullOrWhiteSpace(manifest.EntryComponent))
-        {
-            var entryName = manifest.EntryComponent!;
-            var map = componentTypes.ToDictionary(t => t.FullName ?? t.Name, StringComparer.OrdinalIgnoreCase);
-            if (map.TryGetValue(entryName, out var entryType))
-            {
-                var reachable = new HashSet<Type>();
-                void Dfs(Type t)
-                {
-                    if (!reachable.Add(t)) return;
-                    foreach (var dep in GetComponentDependencies(t))
-                    {
-                        var depId = dep.FullName ?? dep.Name;
-                        if (depId != null && map.TryGetValue(depId, out var depType))
-                        {
-                            Dfs(depType);
-                        }
-                    }
-                }
-                Dfs(entryType);
-                componentTypes = reachable.ToList();
-            }
-            else
-            {
-                _logger.LogWarning("Entry component {Entry} not found in module {ModuleId}; falling back to all components.", entryName, manifest.Id);
-            }
-        }
-
         IReadOnlyList<Type> sortedTypes;
         try
         {
@@ -330,7 +267,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to resolve component dependencies for module {ModuleId}.", manifest.Id);
+            _logger.LogError(ex, "Failed to resolve component dependencies for module {ModuleId}.", identity.Id);
             return null;
         }
         _logger.LogInformation("Resolved {Count} module components after dependency graph build.", sortedTypes.Count);
@@ -388,7 +325,6 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
         var registeredMenus = new List<MenuItem>();
         var runtimeModule = new RuntimeModule(descriptor, alc, packagePath, manifest, isSystem);
-        // State starts as Loaded in constructor; if we're initializing immediately, transition to Active after init
 
         var initialized = false;
         try
@@ -420,12 +356,12 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             if (skipModuleInitialization)
             {
                 _logger.LogDebug("Module {ModuleName} ({ModuleId}) v{Version} loaded (pending activation).",
-                    descriptor.DisplayName, manifest.Id, manifest.Version);
+                    descriptor.DisplayName, identity.Id, identity.Version);
             }
             else
             {
                 _logger.LogInformation("Module {ModuleName} ({ModuleId}) v{Version} loaded and activated.",
-                    descriptor.DisplayName, manifest.Id, manifest.Version);
+                    descriptor.DisplayName, identity.Id, identity.Version);
             }
 
             return descriptor;
@@ -553,15 +489,6 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             });
             await UnloadAsync(moduleId);
             
-            // Allow some time for cleanup if necessary
-            
-            // Pass false for isSystem (reloaded modules are usually user modules unless we track it)
-            // But we can check existing descriptor? No, existing module is gone.
-            // Let's assume reloaded module keeps its system status?
-            // We should probably store IsSystem in manifest? No, it's a provider property.
-            // For now, default to false (safe) or true if we could track it.
-            // Actually we can check the path again via providers? Too slow.
-            // Reload should initialize immediately (user-initiated action)
             return await LoadAsync(packagePath, isSystem, skipModuleInitialization: false, cancellationToken).ConfigureAwait(false);
         }
         
@@ -571,45 +498,48 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
     public async Task<ModuleDescriptor?> GetDescriptorAsync(string packagePath, CancellationToken cancellationToken = default)
     {
-        var manifestPath = Path.Combine(packagePath, "manifest.json");
-        var manifest = await ManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
+        var manifestPath = Path.Combine(packagePath, SystemModuleInstaller.VsixManifestFileName);
+        var manifest = await VsixManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
         if (manifest is null)
         {
             return null;
         }
+        var identity = manifest.Metadata.Identity;
+        var supportedHosts = manifest.Installation.Select(t => t.Id).ToList();
         return new ModuleDescriptor(
-            manifest.Id, 
-            manifest.Version, 
-            manifest.DisplayName,
-            manifest.Description,
-            manifest.SupportedHosts);
+            identity.Id, 
+            identity.Version, 
+            manifest.Metadata.DisplayName,
+            manifest.Metadata.Description,
+            supportedHosts);
     }
 
-    private bool EnsureDependenciesSatisfied(ModuleManifest manifest)
+    private bool EnsureDependenciesSatisfied(VsixManifest manifest)
     {
-        foreach (var (dependencyId, dependencyRange) in manifest.Dependencies)
+        var identity = manifest.Metadata.Identity;
+        foreach (var dep in manifest.Dependencies)
         {
-            if (!_runtimeContext.TryGetModule(dependencyId, out var dependencyModule) || dependencyModule == null)
+            if (!_runtimeContext.TryGetModule(dep.Id, out var dependencyModule) || dependencyModule == null)
             {
-                _logger.LogWarning("Module {ModuleId} requires dependency {DependencyId} which is not loaded.", manifest.Id, dependencyId);
+                _logger.LogWarning("Module {ModuleId} requires dependency {DependencyId} which is not loaded.", identity.Id, dep.Id);
                 return false;
             }
 
             if (!NuGetVersion.TryParse(dependencyModule.Descriptor.Version, out var dependencyVersion))
             {
-                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} has invalid version {DependencyVersion}.", manifest.Id, dependencyId, dependencyModule.Descriptor.Version);
+                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} has invalid version {DependencyVersion}.", identity.Id, dep.Id, dependencyModule.Descriptor.Version);
                 return false;
             }
 
-            if (!VersionRange.TryParse(dependencyRange, out var range))
+            if (!VersionRange.TryParse(dep.Version, out var range))
             {
-                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} has invalid version range {Range}.", manifest.Id, dependencyId, dependencyRange);
+                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} has invalid version range {Range}.", identity.Id, dep.Id, dep.Version);
                 return false;
             }
 
             if (!range.Satisfies(dependencyVersion))
             {
-                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} version {DependencyVersion} does not satisfy range {Range}.", manifest.Id, dependencyId, dependencyVersion, dependencyRange);
+                _logger.LogWarning("Module {ModuleId} dependency {DependencyId} version {DependencyVersion} does not satisfy range {Range}.", identity.Id, dep.Id, dependencyVersion, dep.Version);
                 return false;
             }
         }

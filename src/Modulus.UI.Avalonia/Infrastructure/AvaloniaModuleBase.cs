@@ -8,7 +8,9 @@ namespace Modulus.UI.Avalonia.Infrastructure;
 /// <summary>
 /// Base module that injects shared Avalonia resources before the module runs.
 /// </summary>
-public abstract class AvaloniaModuleBase : ModulusComponent
+#pragma warning disable CS0618 // Suppress obsolete warning - AvaloniaModuleBase itself is the recommended base for Avalonia modules
+public abstract class AvaloniaModuleBase : ModulusPackage
+#pragma warning restore CS0618
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {

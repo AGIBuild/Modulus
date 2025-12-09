@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Modulus.Core.Architecture;
+using Modulus.Core.Installation;
 using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
 using Modulus.Sdk;
@@ -28,7 +29,7 @@ public class ModuleLoaderTests : IDisposable
         Directory.CreateDirectory(_testRoot);
 
         _runtimeContext = new RuntimeContext();
-        _runtimeContext.SetCurrentHost(HostType.Avalonia);
+        _runtimeContext.SetCurrentHost(ModulusHostIds.Avalonia);
         _sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         _validator = Substitute.For<IManifestValidator>();
@@ -55,7 +56,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "test-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Success());
 
         // Act
@@ -76,7 +77,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "invalid-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Failure(new[] { "Test error" }));
 
         // Act
@@ -107,7 +108,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "duplicate-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Success());
 
         // Act
@@ -126,7 +127,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "unload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath);
@@ -145,7 +146,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "system-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath, isSystem: true);
@@ -160,7 +161,7 @@ public class ModuleLoaderTests : IDisposable
         // Arrange
         var moduleId = "reload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
                   .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath);
@@ -207,9 +208,9 @@ public class ModuleLoaderTests : IDisposable
     {
         // Arrange
         var moduleId = "dependent-module-001";
-        var modulePath = CreateTestModule(moduleId, "1.0.0", new Dictionary<string, string> { { "missing-dep", "[1.0.0]" } });
+        var modulePath = CreateTestModule(moduleId, "1.0.0", new List<ManifestDependency> { new() { Id = "missing-dep", Version = "[1.0.0]" } });
 
-        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(ManifestValidationResult.Success());
 
         // Act
@@ -219,27 +220,38 @@ public class ModuleLoaderTests : IDisposable
         Assert.Null(result);
     }
 
-    private string CreateTestModule(string id, string version, Dictionary<string, string>? dependencies = null)
+    private string CreateTestModule(string id, string version, List<ManifestDependency>? dependencies = null)
     {
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
 
-        var manifest = new ModuleManifest
-        {
-            Id = id,
-            Version = version,
-            ManifestVersion = "1.0",
-            SupportedHosts = new List<string> { HostType.Avalonia, HostType.Blazor },
-            CoreAssemblies = new List<string>(),
-            DisplayName = $"Test Module {id}",
-            Description = "A test module for unit testing",
-            Dependencies = dependencies ?? new Dictionary<string, string>()
-        };
+        XNamespace ns = "http://schemas.microsoft.com/developer/vsx-schema/2011";
+        var depElements = (dependencies ?? new List<ManifestDependency>())
+            .Select(d => new XElement(ns + "Dependency",
+                new XAttribute("Id", d.Id),
+                new XAttribute("Version", d.Version)));
 
-        var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(Path.Combine(modulePath, "manifest.json"), manifestJson);
+        var doc = new XDocument(
+            new XElement(ns + "PackageManifest",
+                new XAttribute("Version", "2.0.0"),
+                new XElement(ns + "Metadata",
+                    new XElement(ns + "Identity",
+                        new XAttribute("Id", id),
+                        new XAttribute("Version", version),
+                        new XAttribute("Publisher", "Test")),
+                    new XElement(ns + "DisplayName", $"Test Module {id}"),
+                    new XElement(ns + "Description", "A test module for unit testing")),
+                new XElement(ns + "Installation",
+                    new XElement(ns + "InstallationTarget", new XAttribute("Id", ModulusHostIds.Avalonia)),
+                    new XElement(ns + "InstallationTarget", new XAttribute("Id", ModulusHostIds.Blazor))),
+                new XElement(ns + "Dependencies", depElements),
+                new XElement(ns + "Assets",
+                    new XElement(ns + "Asset",
+                        new XAttribute("Type", ModulusAssetTypes.Package),
+                        new XAttribute("Path", "Test.dll")))));
+
+        doc.Save(Path.Combine(modulePath, SystemModuleInstaller.VsixManifestFileName));
         
         return modulePath;
     }
 }
-

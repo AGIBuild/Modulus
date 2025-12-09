@@ -35,10 +35,10 @@ public static class RuntimeDependencyGraph
             var deps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // 1) Manifest dependency edges (id + version range).
-            foreach (var (dependencyId, dependencyRange) in handle.Manifest.Dependencies)
+            foreach (var dep in handle.Manifest.Dependencies)
             {
-                ValidateDependencyVersion(handle, dependencyId, dependencyRange, handleList, logger);
-                deps.Add(dependencyId);
+                ValidateDependencyVersion(handle, dep.Id, dep.Version, handleList, logger);
+                deps.Add(dep.Id);
             }
 
             // 2) [DependsOn] edges between modules.

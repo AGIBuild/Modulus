@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Modulus.Core;
 using Modulus.Core.Logging;
+using Modulus.Sdk;
 using Xunit;
 
 namespace Modulus.Core.Tests.Logging;
@@ -41,7 +42,7 @@ public class ModulusLoggingTests : IDisposable
             .AddInMemoryCollection(configDict!)
             .Build();
 
-        using (var factory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Avalonia))
+        using (var factory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Avalonia))
         {
             var logger = factory.CreateLogger("file-test");
             var payload = new string('x', 4096);
@@ -79,7 +80,7 @@ public class ModulusLoggingTests : IDisposable
         Console.SetOut(writer);
         try
         {
-            using (var factory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Avalonia))
+            using (var factory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Avalonia))
             {
                 var logger = factory.CreateLogger("console-test");
                 logger.LogInformation("console-message-{Number}", 42);

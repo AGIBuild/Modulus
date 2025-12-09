@@ -11,7 +11,7 @@ namespace SimpleNotes.UI.Blazor;
 /// </summary>
 [DependsOn(typeof(SimpleNotesModule))]
 [BlazorMenu("Notes", "/notes", Icon = IconKind.Document, Order = 30)]
-public class SimpleNotesBlazorModule : ModulusComponent
+public class SimpleNotesBlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
     {

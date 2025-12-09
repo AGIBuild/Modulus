@@ -55,7 +55,8 @@ public class ModuleRepository : IModuleRepository
             existing.Author = module.Author;
             existing.Website = module.Website;
             existing.MenuLocation = module.MenuLocation;
-            existing.EntryComponent = module.EntryComponent;
+            existing.ManifestHash = module.ManifestHash;
+            existing.ValidatedAt = module.ValidatedAt;
             existing.State = module.State;
             // Note: IsEnabled is preserved unless explicitly reset logic is needed
         }

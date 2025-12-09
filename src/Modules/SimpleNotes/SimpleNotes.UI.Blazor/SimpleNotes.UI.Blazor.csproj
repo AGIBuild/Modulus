@@ -27,9 +27,9 @@
     <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
   </ItemGroup>
 
-  <!-- Copy manifest.json to output directory -->
+  <!-- Copy extension.vsixmanifest to output directory -->
   <ItemGroup>
-    <None Include="..\manifest.json" CopyToOutputDirectory="PreserveNewest" Link="manifest.json" />
+    <None Include="..\extension.vsixmanifest" CopyToOutputDirectory="PreserveNewest" Link="extension.vsixmanifest" />
   </ItemGroup>
 
 </Project>

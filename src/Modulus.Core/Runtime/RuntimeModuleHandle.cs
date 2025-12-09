@@ -10,7 +10,7 @@ namespace Modulus.Core.Runtime;
 public sealed class RuntimeModuleHandle : IAsyncDisposable, IDisposable
 {
     public RuntimeModule RuntimeModule { get; }
-    public ModuleManifest Manifest { get; }
+    public VsixManifest Manifest { get; }
     public IServiceProvider ServiceProvider { get; }
     public IServiceProvider CompositeServiceProvider { get; private set; }
     public IReadOnlyCollection<IModule> ModuleInstances { get; }
@@ -21,7 +21,7 @@ public sealed class RuntimeModuleHandle : IAsyncDisposable, IDisposable
 
     public RuntimeModuleHandle(
         RuntimeModule runtimeModule,
-        ModuleManifest manifest,
+        VsixManifest manifest,
         IServiceScope? serviceScope,
         IServiceProvider serviceProvider,
         IServiceProvider compositeServiceProvider,
