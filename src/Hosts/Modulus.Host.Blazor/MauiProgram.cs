@@ -15,6 +15,10 @@ using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
+#if ANDROID
+using Android.Runtime;
+#endif
+
 namespace Modulus.Host.Blazor;
 
 [DependsOn()]
@@ -56,10 +60,27 @@ public class BlazorHostModule : ModulusComponent
 
 public static class MauiProgram
 {
+    private static ILogger _logger = null!;
+
     public static void Main(string[] args) {} // Dummy entry point for net10.0 target without MAUI
 
     public static MauiApp CreateMauiApp()
     {
+        // Configuration (needed for logger)
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
+
+        // Initialize logger first
+        var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Blazor);
+        _logger = loggerFactory.CreateLogger<MauiApp>();
+
+        // Setup global exception handlers (logger is now ready)
+        SetupGlobalExceptionHandlers();
+        _logger.LogInformation("Global exception handlers initialized.");
+
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
@@ -68,14 +89,6 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
             });
 
-        // Configuration
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-            .AddEnvironmentVariables()
-            .Build();
-
-        var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, HostType.Blazor);
         ModulusLogging.AddLoggerFactory(builder.Services, loggerFactory);
 
         // Module Providers - load from Modules/ directory relative to executable
@@ -129,4 +142,51 @@ public static class MauiProgram
         return app;
     }
 
+    private static void SetupGlobalExceptionHandlers()
+    {
+        // Handle all unhandled exceptions in the AppDomain
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
+        // Handle unobserved task exceptions
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+#if ANDROID
+        // Android-specific unhandled exception handler
+        AndroidEnvironment.UnhandledExceptionRaiser += OnAndroidUnhandledException;
+#endif
+    }
+
+    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var exception = e.ExceptionObject as Exception;
+
+        if (e.IsTerminating)
+        {
+            _logger.LogCritical(exception, "Fatal unhandled exception - application will terminate: {Message}",
+                exception?.Message ?? "Unknown error");
+        }
+        else
+        {
+            _logger.LogError(exception, "Unhandled exception caught: {Message}",
+                exception?.Message ?? "Unknown error");
+        }
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        // Mark as observed to prevent process termination
+        e.SetObserved();
+
+        _logger.LogError(e.Exception, "Unobserved task exception: {Message}", e.Exception.Message);
+    }
+
+#if ANDROID
+    private static void OnAndroidUnhandledException(object? sender, RaiseThrowableEventArgs e)
+    {
+        _logger.LogError(e.Exception, "Android unhandled exception: {Message}", e.Exception.Message);
+        
+        // Set handled to prevent crash where possible
+        e.Handled = true;
+    }
+#endif
 }

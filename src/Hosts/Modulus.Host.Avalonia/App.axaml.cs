@@ -62,6 +62,10 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        
+        // Register UI thread exception handler after Avalonia is initialized
+        Program.RegisterDispatcherExceptionHandler();
+        
 #if DEBUG
         this.AttachDeveloperTools();
 #endif

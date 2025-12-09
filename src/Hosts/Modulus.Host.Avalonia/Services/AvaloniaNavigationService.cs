@@ -377,7 +377,7 @@ public class AvaloniaNavigationService : INavigationService
             _singletonViews.TryRemove(key, out _);
         }
 
-        // If current navigation is from this module, clear it
+        // If current navigation is from this module, navigate away to clear the view
         if (_currentViewModel != null && _runtimeContext.TryGetModuleHandle(moduleId, out var currentHandle) && currentHandle != null)
         {
             var currentAssembly = _currentViewModel.GetType().Assembly;
@@ -386,6 +386,9 @@ public class AvaloniaNavigationService : INavigationService
                 _currentViewModel = null;
                 _currentView = null;
                 _currentNavigationKey = null;
+                
+                // Notify shell to clear the current view before module unload
+                OnViewChanged?.Invoke(null, string.Empty);
             }
         }
     }
