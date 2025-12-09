@@ -16,21 +16,43 @@ The Modulus framework uses `AssemblyLoadContext` for module isolation. Every pro
 
 ### How to Declare
 
-Add `<ModulusAssemblyDomain>` to your `.csproj`:
+1. **Import the architecture props file** (path varies by project depth):
+
+```xml
+<!-- Example for src/Modulus.Core/ -->
+<Import Project="..\..\build\Modulus.Architecture.props" />
+```
+
+2. **Add `<ModulusAssemblyDomain>` and output path** to your `.csproj`:
 
 ```xml
 <!-- For shared assemblies -->
 <PropertyGroup>
   <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
+  <OutputPath>..\..\artifacts\</OutputPath>
+  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 </PropertyGroup>
 
 <!-- For module assemblies -->
 <PropertyGroup>
   <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+  <OutputPath>..\..\..\..\artifacts\Modules\{ModuleName}\</OutputPath>
+  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 </PropertyGroup>
 ```
 
 This automatically generates `[AssemblyDomain]` attribute and `MODULUS_SHARED_DOMAIN` / `MODULUS_MODULE_DOMAIN` compile-time constants.
+
+### Output Path Rules
+
+| Project Location | Import Path | OutputPath |
+|-----------------|-------------|------------|
+| `src/*/*.csproj` | `..\..\build\` | `..\..\artifacts\` |
+| `src/*/*/*.csproj` | `..\..\..\build\` | `..\..\..\artifacts\` |
+| `tests/*/*.csproj` | `..\..\build\` | `..\..\artifacts\` |
+| `src/Modules/*/*/*.csproj` | `..\..\..\..\build\` | `..\..\..\..\artifacts\Modules\{ModuleName}\` |
 
 ### Shared Assembly Allowlist
 

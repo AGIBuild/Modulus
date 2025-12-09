@@ -27,6 +27,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     private readonly ILogger<ModuleLoader> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ISharedAssemblyCatalog _sharedAssemblyCatalog;
+    private readonly ISharedAssemblyResolutionReporter? _resolutionReporter;
     private IServiceProvider? _hostServices;
 
     public ModuleLoader(
@@ -35,7 +36,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         ISharedAssemblyCatalog sharedAssemblyCatalog,
         ILogger<ModuleLoader> logger,
         ILoggerFactory loggerFactory,
-        IServiceProvider? hostServices = null)
+        IServiceProvider? hostServices = null,
+        ISharedAssemblyResolutionReporter? resolutionReporter = null)
     {
         _runtimeContext = runtimeContext;
         _manifestValidator = manifestValidator;
@@ -43,17 +45,19 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         _logger = logger;
         _loggerFactory = loggerFactory;
         _hostServices = hostServices;
+        _resolutionReporter = resolutionReporter;
     }
 
     public void BindHostServices(IServiceProvider hostServices)
     {
-        _logger.LogInformation("BindHostServices called. Updating {Count} module handles...", _runtimeContext.ModuleHandles.Count);
+        _logger.LogDebug("BindHostServices called. Updating {Count} module handles...", _runtimeContext.ModuleHandles.Count);
         _hostServices = hostServices;
         
         // Update all existing module handles with the new host services
         foreach (var handle in _runtimeContext.ModuleHandles)
         {
-            _logger.LogInformation("  Updating composite provider for module {ModuleId}", handle.RuntimeModule.Descriptor.Id);
+            _logger.LogDebug("  Binding host services to module {ModuleName} ({ModuleId})", 
+                handle.RuntimeModule.Descriptor.DisplayName, handle.RuntimeModule.Descriptor.Id);
             handle.UpdateCompositeServiceProvider(hostServices);
         }
     }
@@ -64,7 +68,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     /// </summary>
     public async Task InitializeLoadedModulesAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("InitializeLoadedModulesAsync called. HostServices bound: {Bound}", _hostServices != null);
+        _logger.LogDebug("InitializeLoadedModulesAsync called. HostServices bound: {Bound}", _hostServices != null);
         
         if (_hostServices == null)
         {
@@ -72,7 +76,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return;
         }
 
-        _logger.LogInformation("Found {Count} module handles to initialize.", _runtimeContext.ModuleHandles.Count);
+        _logger.LogDebug("Found {Count} module handles to initialize.", _runtimeContext.ModuleHandles.Count);
         
         IReadOnlyList<RuntimeModuleHandle> sortedHandles;
         try
@@ -100,10 +104,10 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                 ["ModuleVersion"] = module.Descriptor.Version
             }))
             {
-                _logger.LogInformation("Checking module {ModuleName} ({ModuleId}), State={State}", module.Descriptor.DisplayName, module.Descriptor.Id, module.State);
+                _logger.LogDebug("Checking module {ModuleName} ({ModuleId}), State={State}", module.Descriptor.DisplayName, module.Descriptor.Id, module.State);
                 if (module.State != ModuleState.Loaded) continue; // Skip already initialized or errored modules
 
-                _logger.LogInformation("Initializing pre-loaded module {ModuleName} ({ModuleId}) with {InstanceCount} instances...", 
+                _logger.LogDebug("Initializing pre-loaded module {ModuleName} ({ModuleId}) with {InstanceCount} instances...", 
                     module.Descriptor.DisplayName, module.Descriptor.Id, handle.ModuleInstances.Count);
 
                 handle.UpdateCompositeServiceProvider(_hostServices);
@@ -113,11 +117,11 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                 {
                     foreach (var moduleInstance in handle.ModuleInstances)
                     {
-                        _logger.LogInformation("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
+                        _logger.LogDebug("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
                         await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
                     }
                     module.TransitionTo(ModuleState.Active, "Host binding initialization completed");
-                    _logger.LogInformation("Module {ModuleName} initialized successfully.", module.Descriptor.DisplayName);
+                    _logger.LogInformation("Module {ModuleName} ({ModuleId}) activated.", module.Descriptor.DisplayName, module.Descriptor.Id);
                 }
                 catch (Exception ex)
                 {
@@ -178,6 +182,32 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
         _logger.LogInformation("Loaded manifest for module {ModuleName} ({ModuleId}) v{ModuleVersion}.", manifest.DisplayName ?? manifest.Id, manifest.Id, manifest.Version);
         _logger.LogInformation("Validating manifest for host {HostType}.", hostType);
+        
+        // Process manifest shared assembly hints before loading
+        if (manifest.SharedAssemblyHints.Count > 0)
+        {
+            _logger.LogDebug("Module {ModuleId} declares {Count} shared assembly hints.", manifest.Id, manifest.SharedAssemblyHints.Count);
+            var hintMismatches = _sharedAssemblyCatalog.AddManifestHints(manifest.Id, manifest.SharedAssemblyHints);
+            if (hintMismatches.Count > 0)
+            {
+                foreach (var mismatch in hintMismatches)
+                {
+                    _logger.LogWarning(
+                        "Shared assembly hint mismatch for module {ModuleId}: {AssemblyName} - {Reason}",
+                        manifest.Id, mismatch.AssemblyName, mismatch.Reason);
+                    
+                    // Report to management diagnostics channel
+                    _resolutionReporter?.ReportFailure(new SharedAssemblyResolutionFailedEvent
+                    {
+                        ModuleId = manifest.Id,
+                        AssemblyName = mismatch.AssemblyName,
+                        Source = mismatch.RequestSource,
+                        DeclaredDomain = mismatch.DeclaredDomain,
+                        Reason = mismatch.Reason
+                    });
+                }
+            }
+        }
 
         // Check if already loaded
         if (_runtimeContext.TryGetModule(manifest.Id, out var existingModule))
@@ -387,8 +417,16 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             _runtimeContext.RegisterModuleHandle(handle);
             initialized = true;
 
-            _logger.LogInformation("Module {ModuleName} ({ModuleId}) v{Version} loaded from {PackagePath} for host {HostType} (System: {IsSystem}, Initialized: {Initialized}).",
-                descriptor.DisplayName, manifest.Id, manifest.Version, packagePath, currentHostId ?? "None", isSystem, !skipModuleInitialization);
+            if (skipModuleInitialization)
+            {
+                _logger.LogDebug("Module {ModuleName} ({ModuleId}) v{Version} loaded (pending activation).",
+                    descriptor.DisplayName, manifest.Id, manifest.Version);
+            }
+            else
+            {
+                _logger.LogInformation("Module {ModuleName} ({ModuleId}) v{Version} loaded and activated.",
+                    descriptor.DisplayName, manifest.Id, manifest.Version);
+            }
 
             return descriptor;
         }
@@ -421,7 +459,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                 throw new InvalidOperationException($"Cannot unload system module {moduleId}.");
             }
 
-            _logger.LogInformation("Unloading module {ModuleId}...", moduleId);
+            _logger.LogDebug("Unloading module {ModuleName} ({ModuleId})...", runtimeModule.Descriptor.DisplayName, moduleId);
 
             RuntimeModuleHandle? handle = null;
             if (_runtimeContext.TryGetModuleHandle(moduleId, out var storedHandle))
@@ -492,7 +530,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             runtimeModule.TransitionTo(ModuleState.Unloaded, "Module unloaded and context disposed");
             runtimeModule.LoadContext.Unload();
 
-            _logger.LogInformation("Module {ModuleId} unloaded.", moduleId);
+            _logger.LogInformation("Module {ModuleName} ({ModuleId}) unloaded.", runtimeModule.Descriptor.DisplayName, moduleId);
         }
         else
         {

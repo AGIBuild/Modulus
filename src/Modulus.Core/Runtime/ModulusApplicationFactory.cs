@@ -50,8 +50,43 @@ public static class ModulusApplicationFactory
 
         var signatureVerifier = new Sha256ManifestSignatureVerifier(loggerFactory.CreateLogger<Sha256ManifestSignatureVerifier>());
         var manifestValidator = new DefaultManifestValidator(signatureVerifier, loggerFactory.CreateLogger<DefaultManifestValidator>());
-        var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
-        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, loggerFactory.CreateLogger<ModuleLoader>(), loggerFactory);
+        
+        // Build shared assembly catalog from domain metadata + host configuration
+        var configuredSharedAssemblies = effectiveConfig.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();
+        var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(
+            AppDomain.CurrentDomain.GetAssemblies(),
+            configuredSharedAssemblies,
+            loggerFactory.CreateLogger<SharedAssemblyCatalog>());
+        
+        // Create resolution reporter for diagnostics
+        var resolutionReporter = new SharedAssemblyResolutionReporter(loggerFactory.CreateLogger<SharedAssemblyResolutionReporter>());
+        
+        // Log initial catalog state with source breakdown
+        var catalogEntries = sharedAssemblies.GetEntries();
+        var domainCount = catalogEntries.Count(e => e.Source == SharedAssemblySource.DomainAttribute);
+        var configCount = catalogEntries.Count(e => e.Source == SharedAssemblySource.HostConfig);
+        logger.LogInformation(
+            "Shared assembly catalog initialized: {Total} total (domain: {Domain}, config: {Config})",
+            catalogEntries.Count, domainCount, configCount);
+        foreach (var entry in catalogEntries.Where(e => e.Source == SharedAssemblySource.HostConfig))
+        {
+            logger.LogDebug("Shared assembly from config: {Name}", entry.Name);
+        }
+        var initialMismatches = sharedAssemblies.GetMismatches();
+        foreach (var mismatch in initialMismatches)
+        {
+            logger.LogWarning("Shared assembly mismatch: {Name} - {Reason}", mismatch.AssemblyName, mismatch.Reason);
+            resolutionReporter.ReportFailure(new SharedAssemblyResolutionFailedEvent
+            {
+                ModuleId = mismatch.ModuleId ?? "(host-config)",
+                AssemblyName = mismatch.AssemblyName,
+                Source = mismatch.RequestSource,
+                DeclaredDomain = mismatch.DeclaredDomain,
+                Reason = mismatch.Reason
+            });
+        }
+        
+        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, loggerFactory.CreateLogger<ModuleLoader>(), loggerFactory, resolutionReporter: resolutionReporter);
         var moduleManager = new ModuleManager(loggerFactory.CreateLogger<ModuleManager>());
 
         // 2. Setup Temporary Services for DB & Seeding (shared logger factory)
@@ -156,6 +191,8 @@ public static class ModulusApplicationFactory
         services.AddSingleton<IModuleLoader>(moduleLoader);
         services.AddSingleton(moduleManager);
         services.AddSingleton<ISharedAssemblyCatalog>(sharedAssemblies);
+        services.AddSingleton<ISharedAssemblyDiagnosticsService>(new SharedAssemblyDiagnosticsService(sharedAssemblies));
+        services.AddSingleton<ISharedAssemblyResolutionReporter>(resolutionReporter);
         services.AddSingleton<IManifestValidator>(manifestValidator);
 
         var app = new ModulusApplication(services, moduleManager, logger);

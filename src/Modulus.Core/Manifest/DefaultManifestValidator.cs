@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Architecture;
 using Modulus.Sdk;
 using NuGet.Versioning;
 
@@ -108,6 +109,26 @@ public sealed class DefaultManifestValidator : IManifestValidator
             }
         }
 
+        // Validate sharedAssemblyHints
+        if (manifest.SharedAssemblyHints.Count > SharedAssemblyOptions.MaxManifestHints)
+        {
+            errors.Add($"sharedAssemblyHints contains {manifest.SharedAssemblyHints.Count} entries, exceeding maximum of {SharedAssemblyOptions.MaxManifestHints}.");
+        }
+
+        foreach (var hint in manifest.SharedAssemblyHints)
+        {
+            if (string.IsNullOrWhiteSpace(hint))
+            {
+                errors.Add("sharedAssemblyHints contains empty or whitespace entry.");
+                continue;
+            }
+
+            if (hint.Length > SharedAssemblyOptions.MaxAssemblyNameLength)
+            {
+                errors.Add($"sharedAssemblyHints entry '{hint[..50]}...' exceeds maximum length of {SharedAssemblyOptions.MaxAssemblyNameLength}.");
+            }
+        }
+
         if (errors.Count > 0)
         {
             foreach (var error in errors)
@@ -119,7 +140,7 @@ public sealed class DefaultManifestValidator : IManifestValidator
 
         if (manifest.Signature is null)
         {
-            _logger.LogWarning("Manifest {ManifestPath} does not declare a signature. Skipping verification (Development Mode).", manifestPath);
+            _logger.LogDebug("Manifest {ManifestPath} has no signature, skipping verification (dev mode).", manifestPath);
             return ManifestValidationResult.Success();
         }
 

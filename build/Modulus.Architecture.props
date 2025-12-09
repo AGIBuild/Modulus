@@ -2,6 +2,7 @@
   Modulus Architecture Props
   
   This file provides MSBuild infrastructure for declaring assembly domain types.
+  Output path configuration is in Directory.Build.targets (evaluated after project files).
   
   Usage in .csproj:
     <PropertyGroup>

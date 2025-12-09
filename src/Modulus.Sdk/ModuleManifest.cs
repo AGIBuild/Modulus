@@ -54,6 +54,14 @@ public sealed class ModuleManifest
     [JsonPropertyName("assemblyHashes")]
     public Dictionary<string, string> AssemblyHashes { get; init; } = new();
 
+    /// <summary>
+    /// Assembly names expected to be shared with the host.
+    /// These assemblies will be resolved from the host's default context instead of
+    /// being loaded into the module's isolated context.
+    /// </summary>
+    [JsonPropertyName("sharedAssemblyHints")]
+    public List<string> SharedAssemblyHints { get; init; } = new();
+
     [JsonPropertyName("signature")]
     public ManifestSignature? Signature { get; init; }
 }

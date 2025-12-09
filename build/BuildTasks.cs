@@ -72,11 +72,22 @@ class BuildTasks : NukeBuild
     Target Clean => _ => _
         .Executes(() =>
         {
+            // Clean artifacts directory (contains all build output and obj files)
             if (Directory.Exists(ArtifactsDirectory))
                 Directory.Delete(ArtifactsDirectory, true);
-            var binDirs = Directory.GetDirectories(RootDirectory / "src", "bin", SearchOption.AllDirectories);
-            var objDirs = Directory.GetDirectories(RootDirectory / "src", "obj", SearchOption.AllDirectories);
-            foreach (var dir in binDirs.Concat(objDirs))
+            
+            // Clean any legacy bin/obj directories in src (for backwards compatibility)
+            var legacyBinDirs = Directory.GetDirectories(RootDirectory / "src", "bin", SearchOption.AllDirectories);
+            var legacyObjDirs = Directory.GetDirectories(RootDirectory / "src", "obj", SearchOption.AllDirectories);
+            foreach (var dir in legacyBinDirs.Concat(legacyObjDirs))
+            {
+                Directory.Delete(dir, true);
+            }
+            
+            // Clean legacy bin/obj directories in tests
+            var testBinDirs = Directory.GetDirectories(RootDirectory / "tests", "bin", SearchOption.AllDirectories);
+            var testObjDirs = Directory.GetDirectories(RootDirectory / "tests", "obj", SearchOption.AllDirectories);
+            foreach (var dir in testBinDirs.Concat(testObjDirs))
             {
                 Directory.Delete(dir, true);
             }
@@ -113,11 +124,11 @@ class BuildTasks : NukeBuild
         .Executes(() =>
         {
             var hostProjectName = EffectiveTargetHost == "blazor" ? BlazorHostProject : AvaloniaHostProject;
-            var outputDir = ArtifactsDirectory / hostProjectName;
             
-            var executable = outputDir / hostProjectName;
+            // All binaries are now in artifacts/ (unified output path)
+            var executable = ArtifactsDirectory / hostProjectName;
             if (OperatingSystem.IsWindows())
-                executable = outputDir / $"{hostProjectName}.exe";
+                executable = ArtifactsDirectory / $"{hostProjectName}.exe";
             
             if (!File.Exists(executable))
             {
@@ -129,11 +140,11 @@ class BuildTasks : NukeBuild
             LogHeader($"Running {hostProjectName}");
             LogHighlight($"Executable: {executable}");
             
-            // Run the application
+            // Run the application from artifacts directory
             var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = executable,
-                WorkingDirectory = outputDir,
+                WorkingDirectory = ArtifactsDirectory,
                 UseShellExecute = false
             });
             
@@ -166,7 +177,7 @@ class BuildTasks : NukeBuild
     // ============================================================
     
     /// <summary>
-    /// Just compile the solution (no publish/package)
+    /// Just compile the solution (default bin/Debug output)
     /// </summary>
     Target Compile => _ => _
         .DependsOn(Restore)
@@ -180,12 +191,13 @@ class BuildTasks : NukeBuild
         });
     
     /// <summary>
-    /// Build and publish host application to artifacts/
+    /// Build host application to artifacts/
+    /// OutputPath is configured in each .csproj file
     /// Usage: nuke build-app [--target-host avalonia|blazor|all]
     /// </summary>
     Target BuildApp => _ => _
         .DependsOn(Restore)
-        .Description("Build and publish host application to artifacts/")
+        .Description("Build host application to artifacts/")
         .Executes(() =>
         {
             var hostProjects = GetTargetHostProjects();
@@ -199,31 +211,28 @@ class BuildTasks : NukeBuild
                     continue;
                 }
                 
-                var outputDir = ArtifactsDirectory / hostProjectName;
-                
                 LogHeader($"Building {hostProjectName}");
                 
-                DotNetTasks.DotNetPublish(s => s
-                    .SetProject(hostProject)
+                // Build - OutputPath is configured in .csproj
+                DotNetTasks.DotNetBuild(s => s
+                    .SetProjectFile(hostProject)
                     .SetConfiguration(Configuration)
-                    .SetOutput(outputDir)
                     .EnableNoRestore());
                 
-                LogSuccess($"Published {hostProjectName} to {outputDir}");
+                LogSuccess($"Built {hostProjectName} to {ArtifactsDirectory}");
             }
         });
     
     /// <summary>
-    /// Build and package modules to artifacts/{Host}/Modules/
-    /// Usage: nuke build-module [--target-host avalonia|blazor|all] [--name ModuleName]
+    /// Build modules to artifacts/Modules/{ModuleName}/
+    /// OutputPath is configured in each .csproj file
+    /// Usage: nuke build-module [--name ModuleName]
     /// </summary>
     Target BuildModule => _ => _
         .DependsOn(Restore)
-        .Description("Build and package modules to artifacts/{Host}/Modules/")
+        .Description("Build modules to artifacts/Modules/{ModuleName}/")
         .Executes(() =>
         {
-            var hostProjects = GetTargetHostProjects();
-            
             // Get module directories to build
             var moduleDirectories = string.IsNullOrEmpty(PluginName)
                 ? Directory.GetDirectories(ModulesDirectory).Select(d => (AbsolutePath)d).ToArray()
@@ -248,7 +257,9 @@ class BuildTasks : NukeBuild
                 
                 LogHeader($"Building Module: {moduleName}");
                 
-                // Build all projects in this module
+                var moduleOutputDir = ArtifactsDirectory / "Modules" / moduleName;
+                
+                // Build all projects - OutputPath is configured in .csproj
                 var moduleProjects = Directory.GetFiles(moduleDir, "*.csproj", SearchOption.AllDirectories);
                 foreach (var projectPath in moduleProjects)
                 {
@@ -258,57 +269,7 @@ class BuildTasks : NukeBuild
                         .EnableNoRestore());
                 }
                 
-                // Package to each target host's Modules directory
-                foreach (var hostProjectName in hostProjects)
-                {
-                    var hostType = hostProjectName.Contains("Avalonia") ? "Avalonia" : "Blazor";
-                    var moduleOutputDir = ArtifactsDirectory / hostProjectName / "Modules" / moduleName;
-                    
-                    // Clean and create output directory
-                    if (Directory.Exists(moduleOutputDir))
-                        Directory.Delete(moduleOutputDir, true);
-                    Directory.CreateDirectory(moduleOutputDir);
-                    
-                    // Copy manifest.json
-                    File.Copy(manifestPath, moduleOutputDir / "manifest.json");
-                    
-                    // Copy DLLs from each project's output
-                    foreach (var projectPath in moduleProjects)
-                    {
-                        var projectDir = Path.GetDirectoryName(projectPath);
-                        var projectName = Path.GetFileNameWithoutExtension(projectPath);
-                        
-                        // Skip UI projects that don't match the host type
-                        if (projectName.Contains(".UI."))
-                        {
-                            var isAvaloniaUi = projectName.Contains(".UI.Avalonia");
-                            var isBlazorUi = projectName.Contains(".UI.Blazor");
-                            
-                            if (isAvaloniaUi && hostType != "Avalonia") continue;
-                            if (isBlazorUi && hostType != "Blazor") continue;
-                        }
-                        
-                        // Find the output directory
-                        var binDir = Path.Combine(projectDir, "bin", Configuration.ToString());
-                        if (!Directory.Exists(binDir)) continue;
-                        
-                        // Find the target framework folder
-                        var tfmDirs = Directory.GetDirectories(binDir);
-                        var tfmDir = tfmDirs.FirstOrDefault(d => d.Contains("net"));
-                        if (tfmDir == null) continue;
-                        
-                        // Copy DLL and PDB
-                        var dllPath = Path.Combine(tfmDir, $"{projectName}.dll");
-                        var pdbPath = Path.Combine(tfmDir, $"{projectName}.pdb");
-                        
-                        if (File.Exists(dllPath))
-                            File.Copy(dllPath, moduleOutputDir / $"{projectName}.dll", true);
-                        if (File.Exists(pdbPath))
-                            File.Copy(pdbPath, moduleOutputDir / $"{projectName}.pdb", true);
-                    }
-                    
-                    LogSuccess($"  → {hostType}: {moduleOutputDir}");
-                }
+                LogSuccess($"Built {moduleName} to {moduleOutputDir}");
             }
         });
     
