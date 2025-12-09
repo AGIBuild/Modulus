@@ -1,6 +1,7 @@
 <Project>
-  
-  <!-- Import Modulus Architecture Props -->
-  <Import Project="$(MSBuildThisFileDirectory)build/Modulus.Architecture.props" />
-  
+  <!-- 
+    This file is intentionally minimal.
+    All project-specific configurations are defined in each .csproj file.
+    See build/Modulus.Architecture.props for AssemblyDomain attribute generation.
+  -->
 </Project>

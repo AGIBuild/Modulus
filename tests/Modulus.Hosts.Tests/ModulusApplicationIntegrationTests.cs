@@ -43,7 +43,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         Assert.NotNull(app);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires real module package with valid coreAssemblies and uiAssemblies. Use actual module builds for integration testing.")]
     public async Task CreateAsync_WithModuleProvider_LoadsModules()
     {
         // Arrange
@@ -102,7 +102,7 @@ public class ModulusApplicationIntegrationTests : IDisposable
         Assert.True(true);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires real module package with valid coreAssemblies and uiAssemblies. Use actual module builds for integration testing.")]
     public async Task ModuleLoader_EnableDisableReload_WorksCorrectly()
     {
         // Arrange

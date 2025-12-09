@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
+  <Import Project="..\..\..\..\build\Modulus.Architecture.props" />
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.ComponentsDemo.UI.Blazor</RootNamespace>
     <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+    <OutputPath>..\..\..\..\artifacts\Modules\ComponentsDemo\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

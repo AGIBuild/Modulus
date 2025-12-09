@@ -1,5 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\..\..\..\build\Modulus.Architecture.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.ComponentsDemo</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+    <OutputPath>..\..\..\..\artifacts\Modules\ComponentsDemo\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
     <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
@@ -10,13 +23,5 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>Modulus.Modules.ComponentsDemo</RootNamespace>
-    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-  </PropertyGroup>
 
 </Project>

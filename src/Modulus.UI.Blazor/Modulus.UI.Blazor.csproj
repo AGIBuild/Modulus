@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
+  <Import Project="..\..\build\Modulus.Architecture.props" />
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,6 +9,9 @@
     <RootNamespace>Modulus.UI.Blazor</RootNamespace>
     <Description>Blazor UI components library for Modulus framework</Description>
     <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
+    <OutputPath>..\..\artifacts\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
