@@ -158,10 +158,13 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return null;
         }
 
-        var manifestValid = await _manifestValidator.ValidateAsync(packagePath, manifestPath, manifest, hostType, cancellationToken).ConfigureAwait(false);
-        if (!manifestValid)
+        var validationResult = await _manifestValidator.ValidateAsync(packagePath, manifestPath, manifest, hostType, cancellationToken).ConfigureAwait(false);
+        if (!validationResult.IsValid)
         {
-            _logger.LogWarning("Manifest validation failed for {ManifestPath}.", manifestPath);
+            foreach (var error in validationResult.Errors)
+            {
+                _logger.LogWarning("Manifest validation error for {ManifestPath}: {Error}", manifestPath, error);
+            }
             return null;
         }
 

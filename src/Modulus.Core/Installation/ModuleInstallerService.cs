@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -54,10 +55,15 @@ public class ModuleInstallerService : IModuleInstallerService
             throw new InvalidOperationException($"Failed to read manifest from {manifestPath}");
         }
 
-        // Validate basic integrity
-        if (!await _manifestValidator.ValidateAsync(packagePath, manifestPath, manifest, null, cancellationToken))
+        // Validate manifest with host-aware validation
+        var validationResult = await _manifestValidator.ValidateAsync(packagePath, manifestPath, manifest, hostType, cancellationToken);
+        
+        if (!validationResult.IsValid)
         {
-             _logger.LogWarning("Manifest validation failed for {ModuleId}. Installation may proceed but issues are expected.", manifest.Id);
+            foreach (var error in validationResult.Errors)
+            {
+                _logger.LogError("Manifest validation error for {ModuleId}: {Error}", manifest.Id, error);
+            }
         }
 
         // Isolation context for inspection
@@ -136,6 +142,15 @@ public class ModuleInstallerService : IModuleInstallerService
             }
 
             // Prepare Entities
+            // Set state based on validation result
+            var moduleState = validationResult.IsValid
+                ? Modulus.Infrastructure.Data.Models.ModuleState.Ready
+                : Modulus.Infrastructure.Data.Models.ModuleState.Incompatible;
+            
+            var validationErrors = validationResult.IsValid
+                ? null
+                : JsonSerializer.Serialize(validationResult.Errors);
+            
             var moduleEntity = new ModuleEntity
             {
                 Id = manifest.Id,
@@ -147,9 +162,10 @@ public class ModuleInstallerService : IModuleInstallerService
                 EntryComponent = manifest.EntryComponent,
                 Path = Path.GetRelativePath(Directory.GetCurrentDirectory(), manifestPath), // Store relative path
                 IsSystem = isSystem,
-                IsEnabled = true, // Default to enabled on install
+                IsEnabled = validationResult.IsValid, // Only enable if validation passes
                 MenuLocation = moduleLocation,
-                State = Modulus.Infrastructure.Data.Models.ModuleState.Ready
+                State = moduleState,
+                ValidationErrors = validationErrors
             };
 
             var menuEntities = new List<MenuEntity>();

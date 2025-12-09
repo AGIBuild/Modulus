@@ -21,7 +21,7 @@ public sealed class DefaultManifestValidator : IManifestValidator
         _logger = logger;
     }
 
-    public async Task<bool> ValidateAsync(string packagePath, string manifestPath, ModuleManifest manifest, string? hostType = null, CancellationToken cancellationToken = default)
+    public async Task<ManifestValidationResult> ValidateAsync(string packagePath, string manifestPath, ModuleManifest manifest, string? hostType = null, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -59,12 +59,12 @@ public sealed class DefaultManifestValidator : IManifestValidator
         {
             if (manifest.SupportedHosts == null || !manifest.SupportedHosts.Any(h => string.Equals(h, hostType, StringComparison.OrdinalIgnoreCase)))
             {
-                errors.Add($"Host '{hostType}' is not supported by this module.");
+                errors.Add($"Host '{hostType}' is not supported by this module. Supported hosts: {FormatHosts(manifest.SupportedHosts)}.");
             }
 
             if (manifest.UiAssemblies == null || !manifest.UiAssemblies.TryGetValue(hostType, out var hostAssemblies) || hostAssemblies == null || hostAssemblies.Count == 0)
             {
-                errors.Add($"Manifest declares host '{hostType}' but no UI assemblies are provided.");
+                errors.Add($"Host '{hostType}' requires UI assemblies but none are provided in uiAssemblies.");
             }
         }
 
@@ -114,24 +114,27 @@ public sealed class DefaultManifestValidator : IManifestValidator
             {
                 _logger.LogWarning(error);
             }
-            return false;
+            return ManifestValidationResult.Failure(errors);
         }
 
         if (manifest.Signature is null)
         {
             _logger.LogWarning("Manifest {ManifestPath} does not declare a signature. Skipping verification (Development Mode).", manifestPath);
-            return true;
+            return ManifestValidationResult.Success();
         }
 
         var validSignature = await _signatureVerifier.VerifyAsync(manifestPath, manifest.Signature, cancellationToken);
         if (!validSignature)
         {
             _logger.LogWarning("Manifest signature verification failed for {ManifestPath}.", manifestPath);
-            return false;
+            return ManifestValidationResult.Failure(new[] { "Manifest signature verification failed." });
         }
 
-        return true;
+        return ManifestValidationResult.Success();
     }
+
+    private static string FormatHosts(List<string>? hosts) =>
+        hosts == null || hosts.Count == 0 ? "(none)" : string.Join(", ", hosts);
 
     private static async Task<string> ComputeSha256Async(string path, CancellationToken cancellationToken)
     {

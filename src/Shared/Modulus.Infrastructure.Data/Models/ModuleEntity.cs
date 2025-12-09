@@ -52,6 +52,12 @@ public class ModuleEntity
 
     public ModuleState State { get; set; } = ModuleState.Ready;
 
+    /// <summary>
+    /// Validation errors from install-time validation (JSON array of strings).
+    /// Null or empty when module is valid.
+    /// </summary>
+    public string? ValidationErrors { get; set; }
+
     public virtual ICollection<MenuEntity> Menus { get; set; } = new List<MenuEntity>();
 }
 

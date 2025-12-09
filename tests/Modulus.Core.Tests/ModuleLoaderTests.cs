@@ -56,7 +56,7 @@ public class ModuleLoaderTests : IDisposable
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(true);
+                  .Returns(ManifestValidationResult.Success());
 
         // Act
         var result = await _loader.LoadAsync(modulePath);
@@ -77,7 +77,7 @@ public class ModuleLoaderTests : IDisposable
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(false);
+                  .Returns(ManifestValidationResult.Failure(new[] { "Test error" }));
 
         // Act
         var result = await _loader.LoadAsync(modulePath);
@@ -108,7 +108,7 @@ public class ModuleLoaderTests : IDisposable
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(true);
+                  .Returns(ManifestValidationResult.Success());
 
         // Act
         var result1 = await _loader.LoadAsync(modulePath);
@@ -127,7 +127,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "unload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(true);
+                  .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath);
         Assert.True(_runtimeContext.TryGetModule(moduleId, out _));
@@ -146,7 +146,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "system-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(true);
+                  .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath, isSystem: true);
 
@@ -161,7 +161,7 @@ public class ModuleLoaderTests : IDisposable
         var moduleId = "reload-module-001";
         var modulePath = CreateTestModule(moduleId, "1.0.0");
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-                  .Returns(true);
+                  .Returns(ManifestValidationResult.Success());
         
         await _loader.LoadAsync(modulePath);
         Assert.True(_runtimeContext.TryGetModule(moduleId, out var originalModule));
@@ -210,7 +210,7 @@ public class ModuleLoaderTests : IDisposable
         var modulePath = CreateTestModule(moduleId, "1.0.0", new Dictionary<string, string> { { "missing-dep", "[1.0.0]" } });
 
         _validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<ModuleManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns(true);
+            .Returns(ManifestValidationResult.Success());
 
         // Act
         var result = await _loader.LoadAsync(modulePath);
