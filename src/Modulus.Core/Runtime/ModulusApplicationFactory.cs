@@ -144,34 +144,11 @@ public static class ModulusApplicationFactory
             }
         }
 
-        // 4. Register Loaded Modules to Manager
+        // 4. Register Host Startup Module to Manager
+        // Note: Package-loaded modules are managed via RuntimeModuleHandle.ModuleInstances
+        // and initialized through IHostAwareModuleLoader.InitializeLoadedModulesAsync().
+        // Only the host startup module goes through ModuleManager to avoid double initialization.
         moduleManager.AddModule(new TStartupModule());
-
-        foreach (var runtimeModule in runtimeContext.RuntimeModules)
-        {
-            foreach (var assembly in runtimeModule.LoadContext.Assemblies)
-            {
-                var moduleTypes = assembly.GetTypes()
-                    .Where(t => typeof(IModule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface);
-
-                foreach (var type in moduleTypes)
-                {
-                    if (type == typeof(TStartupModule)) continue;
-
-                    try
-                    {
-                        var instance = (IModule)Activator.CreateInstance(type)!;
-                        // Let ModuleManager resolve the ID from [Module] attribute or type name
-                        // Pass package-level dependencies from manifest
-                        moduleManager.AddModule(instance, manifestDependencies: runtimeModule.Manifest.Dependencies.Keys);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Failed to instantiate module {Type}", type.Name);
-                    }
-                }
-            }
-        }
 
         // 5. Register Services to FINAL ServiceCollection
         ModulusLogging.AddLoggerFactory(services, loggerFactory);
