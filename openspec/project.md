@@ -56,16 +56,17 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 - PR descriptions: Brief, clear structure, English only
 
 ## Domain Context
-- **Module**: A vertical slice feature unit with Core + UI assemblies, identified by GUID
-- **Host**: The shell application providing environment (window, navigation, menu) - currently Avalonia or Blazor
-- **PluginPackage**: Deployable artifact containing manifest.json + assemblies (conceptually `.modpkg`)
-- **Manifest**: JSON descriptor with id, version, supportedHosts, coreAssemblies, uiAssemblies
+- **Extension**: A vertical slice feature unit with Core + UI assemblies, identified by GUID (deployable as `.modpkg`)
+- **Host**: The shell application providing environment (window, navigation, menu) - `Modulus.Host.Avalonia` or `Modulus.Host.Blazor`
+- **Package**: Entry point class inheriting `ModulusPackage`, similar to VS VsPackage
+- **Manifest**: `extension.vsixmanifest` (XML) with Identity, InstallationTarget, Dependencies, Assets
 
 ## Important Constraints
 - Core/Application assemblies MUST be UI-agnostic (no direct Avalonia/Blazor references)
-- System modules cannot be unloaded at runtime
-- Module manifests must be versioned (`manifestVersion: "1.0"`)
-- Host must only load UI assemblies matching its type
+- System extensions cannot be unloaded at runtime
+- Extensions require explicit installation (no directory scanning)
+- Host loads only UI assemblies matching its type (`TargetHost` attribute in manifest)
+- Menu declarations in manifest Assets, not assembly attributes
 - **Blazor UI**: Prefer MudBlazor components over custom implementations; avoid reinventing the wheel
 - **Avalonia UI**: Follow Avalonia component best practices (proper DataContext binding, TemplatedControl for reusable controls, StyledProperty for bindable properties)
 
