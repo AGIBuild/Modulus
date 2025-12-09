@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using Modulus.Core.Installation;
-using Modulus.Core.Manifest;
 using Modulus.Core.Runtime;
 using Modulus.Infrastructure.Data.Models;
 using Modulus.Infrastructure.Data.Repositories;
@@ -24,6 +25,8 @@ public partial class ModuleListViewModel : ObservableObject
     private readonly IModuleLoader _moduleLoader;
     private readonly IModuleRepository _moduleRepository;
     private readonly IModuleInstallerService _moduleInstaller;
+    private readonly ModuleDetailLoader _detailLoader;
+    private CancellationTokenSource? _detailLoadCts;
 
     public ObservableCollection<ModuleViewModel> Modules { get; } = new();
 
@@ -47,19 +50,27 @@ public partial class ModuleListViewModel : ObservableObject
         IModuleLoader moduleLoader,
         IModuleRepository moduleRepository,
         IModuleInstallerService moduleInstaller,
+        ILoggerFactory loggerFactory,
         IEnumerable<IModuleProvider> moduleProviders)
     {
         _runtimeContext = runtimeContext;
         _moduleLoader = moduleLoader;
         _moduleRepository = moduleRepository;
         _moduleInstaller = moduleInstaller;
+        _detailLoader = new ModuleDetailLoader(loggerFactory.CreateLogger<ModuleDetailLoader>());
     }
 
     partial void OnSelectedModuleChanged(ModuleViewModel? value)
     {
+        // Cancel any ongoing detail load
+        _detailLoadCts?.Cancel();
+        _detailLoadCts?.Dispose();
+        _detailLoadCts = null;
+
         if (value != null)
         {
-            _ = LoadModuleDetailsAsync(value);
+            _detailLoadCts = new CancellationTokenSource();
+            _ = LoadModuleDetailsAsync(value, _detailLoadCts.Token);
         }
         else
         {
@@ -67,40 +78,28 @@ public partial class ModuleListViewModel : ObservableObject
         }
     }
 
-    private async Task LoadModuleDetailsAsync(ModuleViewModel module)
+    private async Task LoadModuleDetailsAsync(ModuleViewModel module, CancellationToken cancellationToken)
     {
-        SelectedModuleDetails = "Loading..."; 
-        
-        try 
+        SelectedModuleDetails = "Loading...";
+
+        var result = await _detailLoader.LoadDetailAsync(module.Entity.Path, cancellationToken);
+
+        if (result.WasCancelled)
         {
-            var manifestPath = Path.GetFullPath(module.Entity.Path);
-            var dir = Path.GetDirectoryName(manifestPath);
-            
-            // 1. Try README.md
-            if (dir != null)
-            {
-                var readmePath = Path.Combine(dir, "README.md");
-                if (File.Exists(readmePath))
-                {
-                    SelectedModuleDetails = await File.ReadAllTextAsync(readmePath);
-                    return;
-                }
-            }
-
-            // 2. Fallback to Manifest Description
-            if (File.Exists(manifestPath))
-            {
-                var manifest = await ManifestReader.ReadFromFileAsync(manifestPath);
-                if (!string.IsNullOrWhiteSpace(manifest?.Description))
-                {
-                    SelectedModuleDetails = manifest.Description;
-                    return;
-                }
-            }
+            // User selected different module, ignore this result
+            return;
         }
-        catch { /* Ignore file access errors */ }
 
-        SelectedModuleDetails = "No description provided.";
+        SelectedModuleDetails = result.Content;
+
+        // If detail load failed and module is in runtime, update its state
+        if (!result.Success && !result.WasCancelled && module.RuntimeModule != null)
+        {
+            module.RuntimeModule.TransitionTo(
+                RuntimeModuleState.Error,
+                result.WasTimedOut ? "Detail load timed out" : "Detail load failed",
+                result.Error);
+        }
     }
 
     [RelayCommand]

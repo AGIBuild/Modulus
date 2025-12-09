@@ -454,6 +454,14 @@ public class NavigationServiceTests
             _guards.Remove(guard);
         }
 
+        public void ClearModuleCache(string moduleId)
+        {
+            // Simple implementation: clear all instances that might be related
+            // In real implementation, this would filter by module ID
+            _singletonInstances.Clear();
+            _lastInstances.Clear();
+        }
+
         /// <summary>
         /// Get the last created instance for a navigation key (for testing lifecycle).
         /// </summary>

@@ -79,15 +79,15 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         {
             sortedHandles = RuntimeDependencyGraph.TopologicallySort(_runtimeContext.ModuleHandles, _logger);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to build runtime dependency graph. Module initialization aborted.");
-            foreach (var handle in _runtimeContext.ModuleHandles)
-            {
-                handle.RuntimeModule.State = ModuleState.Error;
-            }
-            return;
-        }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to build runtime dependency graph. Module initialization aborted.");
+                    foreach (var handle in _runtimeContext.ModuleHandles)
+                    {
+                        handle.RuntimeModule.TransitionTo(ModuleState.Error, "Dependency graph build failed", ex);
+                    }
+                    return;
+                }
 
         foreach (var handle in sortedHandles)
         {
@@ -116,13 +116,13 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                         _logger.LogInformation("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
                         await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
                     }
-                    module.State = ModuleState.Active;
+                    module.TransitionTo(ModuleState.Active, "Host binding initialization completed");
                     _logger.LogInformation("Module {ModuleName} initialized successfully.", module.Descriptor.DisplayName);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error initializing module {ModuleName}", module.Descriptor.DisplayName);
-                    module.State = ModuleState.Error;
+                    module.TransitionTo(ModuleState.Error, "Initialization failed", ex);
                 }
             }
         }
@@ -354,10 +354,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             : scopedProvider;
 
         var registeredMenus = new List<MenuItem>();
-        var runtimeModule = new RuntimeModule(descriptor, alc, packagePath, manifest, isSystem)
-        {
-            State = skipModuleInitialization ? ModuleState.Loaded : ModuleState.Active
-        };
+        var runtimeModule = new RuntimeModule(descriptor, alc, packagePath, manifest, isSystem);
+        // State starts as Loaded in constructor; if we're initializing immediately, transition to Active after init
 
         var initialized = false;
         try
@@ -378,7 +376,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                         return null;
                     }
                 }
-                runtimeModule.State = ModuleState.Active;
+                runtimeModule.TransitionTo(ModuleState.Active, "Module initialization completed");
             }
 
             _runtimeContext.RegisterModule(runtimeModule);
@@ -430,6 +428,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
             if (handle != null)
             {
+                // 1. Invoke module shutdown hooks (reverse order)
+                _logger.LogDebug("Invoking shutdown hooks for {Count} module instances...", handle.ModuleInstances.Count);
                 var shutdownContext = new ModuleInitializationContext(handle.CompositeServiceProvider);
                 var moduleInstances = handle.ModuleInstances.ToList();
                 for (var i = moduleInstances.Count - 1; i >= 0; i--)
@@ -444,6 +444,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                     }
                 }
 
+                // 2. Unregister menus
+                _logger.LogDebug("Unregistering menu items...");
                 if (_hostServices?.GetService<IMenuRegistry>() is IMenuRegistry menuRegistry)
                 {
                     menuRegistry.UnregisterModuleItems(moduleId);
@@ -453,21 +455,38 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                     compositeRegistry.UnregisterModuleItems(moduleId);
                 }
 
+                // 3. Clear navigation cache for this module
+                _logger.LogDebug("Clearing navigation cache...");
+                if (_hostServices?.GetService<INavigationService>() is INavigationService navigationService)
+                {
+                    navigationService.ClearModuleCache(moduleId);
+                }
+                else if (handle.CompositeServiceProvider.GetService<INavigationService>() is INavigationService compositeNavService)
+                {
+                    compositeNavService.ClearModuleCache(moduleId);
+                }
+
+                // 4. Dispose scoped resources
+                _logger.LogDebug("Disposing scoped resources...");
                 await handle.DisposeAsync().ConfigureAwait(false);
                 _runtimeContext.RemoveModuleHandle(moduleId);
             }
             else
             {
-                // Fallback: try to clean up menus if handle is missing (e.g. startup modules)
+                // Fallback: try to clean up menus and navigation if handle is missing (e.g. startup modules)
                 if (_hostServices?.GetService<IMenuRegistry>() is IMenuRegistry menuRegistry)
                 {
                     menuRegistry.UnregisterModuleItems(moduleId);
+                }
+                if (_hostServices?.GetService<INavigationService>() is INavigationService navigationService)
+                {
+                    navigationService.ClearModuleCache(moduleId);
                 }
             }
 
             _runtimeContext.RemoveModule(moduleId);
 
-            runtimeModule.State = ModuleState.Unloaded;
+            runtimeModule.TransitionTo(ModuleState.Unloaded, "Module unloaded and context disposed");
             runtimeModule.LoadContext.Unload();
 
             _logger.LogInformation("Module {ModuleId} unloaded.", moduleId);

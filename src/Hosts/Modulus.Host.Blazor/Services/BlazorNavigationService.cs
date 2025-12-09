@@ -164,4 +164,38 @@ public class BlazorNavigationService : INavigationService
     {
         _singletonViewModels.Clear();
     }
+
+    /// <summary>
+    /// Clears cached navigation instances for a specific module.
+    /// </summary>
+    public void ClearModuleCache(string moduleId)
+    {
+        // Find all navigation keys associated with this module
+        var keysToRemove = new List<string>();
+
+        // Check menu items to find module's navigation keys
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
+        {
+            if (item.ModuleId == moduleId)
+            {
+                keysToRemove.Add(item.NavigationKey);
+            }
+
+            if (item.Children != null)
+            {
+                keysToRemove.AddRange(item.Children
+                    .Where(c => c.ModuleId == moduleId)
+                    .Select(c => c.NavigationKey));
+            }
+        }
+
+        // Remove from cache
+        foreach (var key in keysToRemove)
+        {
+            _singletonViewModels.TryRemove(key, out _);
+        }
+    }
 }

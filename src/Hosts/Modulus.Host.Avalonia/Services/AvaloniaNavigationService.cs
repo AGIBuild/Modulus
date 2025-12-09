@@ -324,6 +324,71 @@ public class AvaloniaNavigationService : INavigationService
         _singletonViewModels.Clear();
         _singletonViews.Clear();
     }
+
+    /// <summary>
+    /// Clears cached navigation instances for a specific module.
+    /// </summary>
+    public void ClearModuleCache(string moduleId)
+    {
+        // Find all navigation keys associated with this module
+        var keysToRemove = new List<string>();
+
+        // Check menu items to find module's navigation keys
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
+        {
+            if (item.ModuleId == moduleId)
+            {
+                keysToRemove.Add(item.NavigationKey);
+            }
+
+            if (item.Children != null)
+            {
+                keysToRemove.AddRange(item.Children
+                    .Where(c => c.ModuleId == moduleId)
+                    .Select(c => c.NavigationKey));
+            }
+        }
+
+        // Also check if module handle has assemblies we can identify
+        if (_runtimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+        {
+            var moduleAssemblies = handle.Assemblies.ToHashSet();
+            
+            // Remove cached ViewModels from this module's assemblies
+            foreach (var kvp in _singletonViewModels)
+            {
+                if (moduleAssemblies.Contains(kvp.Value.GetType().Assembly))
+                {
+                    if (!keysToRemove.Contains(kvp.Key))
+                    {
+                        keysToRemove.Add(kvp.Key);
+                    }
+                }
+            }
+        }
+
+        // Remove from caches
+        foreach (var key in keysToRemove)
+        {
+            _singletonViewModels.TryRemove(key, out _);
+            _singletonViews.TryRemove(key, out _);
+        }
+
+        // If current navigation is from this module, clear it
+        if (_currentViewModel != null && _runtimeContext.TryGetModuleHandle(moduleId, out var currentHandle) && currentHandle != null)
+        {
+            var currentAssembly = _currentViewModel.GetType().Assembly;
+            if (currentHandle.Assemblies.Contains(currentAssembly))
+            {
+                _currentViewModel = null;
+                _currentView = null;
+                _currentNavigationKey = null;
+            }
+        }
+    }
 }
 
 /// <summary>

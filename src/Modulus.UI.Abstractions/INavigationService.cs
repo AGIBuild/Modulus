@@ -45,5 +45,12 @@ public interface INavigationService
     /// Raised after successful navigation.
     /// </summary>
     event EventHandler<NavigationEventArgs>? Navigated;
+
+    /// <summary>
+    /// Clears cached navigation instances for a specific module.
+    /// Called during module unload to release module resources.
+    /// </summary>
+    /// <param name="moduleId">The module ID to clear caches for.</param>
+    void ClearModuleCache(string moduleId);
 }
 
