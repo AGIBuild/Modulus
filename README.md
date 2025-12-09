@@ -6,19 +6,19 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 
 ### Multi-Host Architecture
 - **UI-Agnostic Core**: Business logic independent of any UI framework
-- **Pluggable Hosts**: Currently supports Blazor Hybrid (MAUI) and Avalonia, extensible to other UI technologies
-- **Shared Core Logic**: Same Domain/Application code runs across all supported hosts
+- **Pluggable Hosts**: Supports Avalonia (desktop) and Blazor Hybrid (MAUI)
+- **Shared Core Logic**: Same Domain/Application code runs across all hosts
 
-### Plugin System
-- Hot-reloadable and dynamically unloadable plugins (AssemblyLoadContext)
-- Manifest-driven module discovery and loading
-- Dependency injection for plugins (DI container isolation)
-- System module protection (prevent accidental unloading)
+### Extension System
+- **VS Extension Compatible**: Uses `extension.vsixmanifest` (XML) format
+- **Hot-Reloadable**: AssemblyLoadContext-based isolation for dynamic load/unload
+- **Explicit Installation**: Extensions installed via CLI or UI, not auto-discovered
+- **Type-Safe Entry Points**: `ModulusPackage` base class similar to VS VsPackage
 
 ### Developer Experience
-- Plugin development SDK with declarative attributes
+- Extension SDK with declarative attributes
 - AI Agent plugin support (LLM integration)
-- Plugin signature verification and version control
+- Signature verification and version control
 - Cross-platform: Windows / macOS / Linux
 
 ## 🏗️ Architecture
@@ -26,21 +26,26 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 ```
 src/
 ├── Modulus.Core/              # Runtime, module loader, DI
-├── Modulus.Sdk/               # SDK base classes, attributes
-├── Modulus.UI.Abstractions/   # UI contracts (IMenuRegistry, IThemeService)
+├── Modulus.Sdk/               # SDK: ModulusPackage, attributes
+├── Modulus.UI.Abstractions/   # UI contracts (IMenuRegistry, INavigationService)
 ├── Hosts/
-│   ├── Modulus.Host.Blazor/   # Blazor Hybrid (MAUI + MudBlazor)
-│   └── Modulus.Host.Avalonia/ # Avalonia desktop
+│   ├── Modulus.Host.Avalonia/ # Avalonia desktop (ID: Modulus.Host.Avalonia)
+│   └── Modulus.Host.Blazor/   # Blazor Hybrid (ID: Modulus.Host.Blazor)
 └── Modules/
     ├── EchoPlugin/            # Example: Echo plugin
-    └── SimpleNotes/           # Example: Notes module
+    ├── SimpleNotes/           # Example: Notes module
+    └── ComponentsDemo/        # Example: UI components demo
 ```
 
-## 📦 Use Cases
-- Desktop data tools / UI automation tools
-- Rapid development of developer utilities (Log Viewer, Code Generator)
-- Task framework for AI plugin development
-- Internal tool platforms (multi-team collaboration)
+## 📦 Extension Structure
+
+```
+MyExtension/
+├── extension.vsixmanifest     # XML manifest (VS Extension format)
+├── MyExtension.Core.dll       # Core logic (host-agnostic)
+├── MyExtension.UI.Avalonia.dll
+└── MyExtension.UI.Blazor.dll
+```
 
 ## 🚀 Getting Started
 
@@ -59,25 +64,79 @@ dotnet run --project src/Hosts/Modulus.Host.Blazor
 dotnet test
 ```
 
-## 🔌 Creating a Module
+## 🔌 Creating an Extension
 
-1. Create three projects: `MyModule.Core`, `MyModule.UI.Avalonia`, `MyModule.UI.Blazor`
-2. Define your module class with `[Module]` attribute
-3. Add UI-specific menu attributes (`[AvaloniaMenu]`, `[BlazorMenu]`)
-4. Create `manifest.json` with module metadata
+### 1. Create Projects
 
-See [Quickstart Guide](./specs/001-core-architecture/quickstart.md) for detailed instructions.
+```
+MyExtension/
+├── MyExtension.Core/
+├── MyExtension.UI.Avalonia/
+└── MyExtension.UI.Blazor/
+```
+
+### 2. Define Entry Point
+
+```csharp
+// MyExtension.Core/MyExtensionPackage.cs
+public class MyExtensionPackage : ModulusPackage
+{
+    public override void ConfigureServices(IModuleLifecycleContext context)
+    {
+        context.Services.AddSingleton<IMyService, MyService>();
+    }
+}
+```
+
+### 3. Create Manifest
+
+```xml
+<!-- extension.vsixmanifest -->
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" 
+    xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Metadata>
+    <Identity Id="your-guid" Version="1.0.0" Publisher="You" />
+    <DisplayName>My Extension</DisplayName>
+    <Description>My awesome extension</Description>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Modulus.Host.Avalonia" Version="[1.0,)" />
+    <InstallationTarget Id="Modulus.Host.Blazor" Version="[1.0,)" />
+  </Installation>
+  <Assets>
+    <Asset Type="Modulus.Package" Path="MyExtension.Core.dll" />
+    <Asset Type="Modulus.Package" Path="MyExtension.UI.Avalonia.dll" 
+           TargetHost="Modulus.Host.Avalonia" />
+    <Asset Type="Modulus.Menu" Id="my-menu" DisplayName="My Tool" 
+           Icon="Home" Route="MyExtension.ViewModels.MainViewModel" 
+           TargetHost="Modulus.Host.Avalonia" />
+  </Assets>
+</PackageManifest>
+```
+
+### 4. Install Extension
+
+```bash
+modulus install ./MyExtension
+```
 
 ## 📚 Documentation
-- [Core Architecture Spec](./specs/001-core-architecture/spec.md)
-- [Quickstart Guide](./specs/001-core-architecture/quickstart.md)
-- [Data Model](./specs/001-core-architecture/data-model.md)
-- [Runtime Contracts](./specs/001-core-architecture/contracts/runtime-contracts.md)
+
+- [OpenSpec Specifications](./openspec/specs/)
+- [Project Context](./openspec/project.md)
+- [Contributing Guide](./CONTRIBUTING.md)
 
 ## Project Status
-- Current Branch: `001-core-architecture`
-- Phase: MVP Complete (User Stories 1-3)
-- Test Coverage: 30 tests passing
+
+- **Phase**: Active Development
+- **Test Coverage**: 30+ tests passing
+- **Platforms**: Windows, macOS, Linux
 
 ## Contributing
+
 Pull requests and issues are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+[MIT License](./LICENSE)
