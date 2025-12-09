@@ -8,6 +8,11 @@ namespace Modulus.Sdk;
 /// Base class for code components (logical units) that participate in the Modulus runtime.
 /// Compatible with existing IModule pipeline.
 /// </summary>
+/// <remarks>
+/// This class is obsolete. Use <see cref="ModulusPackage"/> instead for new extensions.
+/// ModulusComponent will be removed in v2.0.
+/// </remarks>
+[Obsolete("Use ModulusPackage instead. ModulusComponent will be removed in v2.0.")]
 public abstract class ModulusComponent : IModule
 {
     public virtual void PreConfigureServices(IModuleLifecycleContext context)

@@ -13,7 +13,7 @@ namespace SimpleNotes.Core;
 [DependsOn()] // no explicit deps
 [Module("SimpleNotes", "Notes",
     Description = "A simple note taking module to demonstrate Modulus vertical slice architecture.")]
-public class SimpleNotesModule : ModulusComponent
+public class SimpleNotesModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {

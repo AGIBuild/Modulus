@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
-using Modulus.Core.Architecture;
 using Modulus.Sdk;
 using NuGet.Versioning;
 
@@ -11,121 +9,134 @@ namespace Modulus.Core.Manifest;
 
 public sealed class DefaultManifestValidator : IManifestValidator
 {
-    private const string SupportedManifestVersion = "1.0";
-
-    private readonly IManifestSignatureVerifier _signatureVerifier;
     private readonly ILogger<DefaultManifestValidator> _logger;
 
-    public DefaultManifestValidator(IManifestSignatureVerifier signatureVerifier, ILogger<DefaultManifestValidator> logger)
+    public DefaultManifestValidator(ILogger<DefaultManifestValidator> logger)
     {
-        _signatureVerifier = signatureVerifier;
         _logger = logger;
     }
 
-    public async Task<ManifestValidationResult> ValidateAsync(string packagePath, string manifestPath, ModuleManifest manifest, string? hostType = null, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public Task<ManifestValidationResult> ValidateAsync(string packagePath, string manifestPath, VsixManifest manifest, string? hostType = null, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
-        if (!string.Equals(manifest.ManifestVersion, SupportedManifestVersion, StringComparison.OrdinalIgnoreCase))
+        // Validate version
+        if (!manifest.Version.StartsWith("2."))
         {
-            errors.Add($"Manifest version {manifest.ManifestVersion} is not supported. Expected {SupportedManifestVersion}.");
+            errors.Add($"Manifest version {manifest.Version} is not supported. Expected 2.x.");
         }
 
-        if (string.IsNullOrWhiteSpace(manifest.Id))
+        // Validate Identity
+        var identity = manifest.Metadata.Identity;
+        if (string.IsNullOrWhiteSpace(identity.Id))
         {
-            errors.Add("Manifest is missing required field 'id'.");
+            errors.Add("Manifest is missing required Identity/@Id attribute.");
         }
 
-        if (string.IsNullOrWhiteSpace(manifest.DisplayName))
+        if (string.IsNullOrWhiteSpace(identity.Publisher))
         {
-            errors.Add("Manifest is missing required field 'displayName'.");
+            errors.Add("Manifest is missing required Identity/@Publisher attribute.");
         }
 
-        if (string.IsNullOrWhiteSpace(manifest.Version) || !NuGetVersion.TryParse(manifest.Version, out _))
+        if (string.IsNullOrWhiteSpace(identity.Version) || !NuGetVersion.TryParse(identity.Version, out _))
         {
-            errors.Add($"Manifest version '{manifest.Version}' is not a valid semantic version.");
+            errors.Add($"Identity version '{identity.Version}' is not a valid semantic version.");
         }
 
-        if (manifest.CoreAssemblies == null || manifest.CoreAssemblies.Count == 0)
+        if (string.IsNullOrWhiteSpace(manifest.Metadata.DisplayName))
         {
-            errors.Add("Manifest must include at least one core assembly in 'coreAssemblies'.");
+            errors.Add("Manifest is missing required DisplayName element.");
         }
 
-        if (manifest.UiAssemblies == null)
+        // Validate Installation targets
+        if (manifest.Installation.Count == 0)
         {
-            errors.Add("Manifest must include uiAssemblies object (may be empty per host).");
+            errors.Add("Manifest must declare at least one InstallationTarget.");
         }
 
+        // Host-specific validation
         if (hostType != null)
         {
-            if (manifest.SupportedHosts == null || !manifest.SupportedHosts.Any(h => string.Equals(h, hostType, StringComparison.OrdinalIgnoreCase)))
-            {
-                errors.Add($"Host '{hostType}' is not supported by this module. Supported hosts: {FormatHosts(manifest.SupportedHosts)}.");
-            }
+            var hasHostTarget = manifest.Installation.Any(t =>
+                string.Equals(t.Id, hostType, StringComparison.OrdinalIgnoreCase));
 
-            if (manifest.UiAssemblies == null || !manifest.UiAssemblies.TryGetValue(hostType, out var hostAssemblies) || hostAssemblies == null || hostAssemblies.Count == 0)
+            if (!hasHostTarget)
             {
-                errors.Add($"Host '{hostType}' requires UI assemblies but none are provided in uiAssemblies.");
+                errors.Add($"Host '{hostType}' is not supported by this module. Supported hosts: {FormatInstallationTargets(manifest.Installation)}.");
             }
         }
 
-        if (manifest.SupportedHosts == null || !manifest.SupportedHosts.Any())
+        // Validate Dependencies version ranges
+        foreach (var dep in manifest.Dependencies)
         {
-            errors.Add("Manifest must declare at least one supported host in 'supportedHosts'.");
-        }
-
-        foreach (var (dependencyId, dependencyRange) in manifest.Dependencies)
-        {
-            if (string.IsNullOrWhiteSpace(dependencyId))
+            if (string.IsNullOrWhiteSpace(dep.Id))
             {
-                errors.Add("Dependency id cannot be empty.");
+                errors.Add("Dependency Id cannot be empty.");
                 continue;
             }
 
-            if (string.Equals(dependencyId, manifest.Id, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(dep.Id, identity.Id, StringComparison.OrdinalIgnoreCase))
             {
                 errors.Add("Module cannot depend on itself.");
             }
 
-            if (!VersionRange.TryParse(dependencyRange, out _))
+            if (!VersionRange.TryParse(dep.Version, out _))
             {
-                errors.Add($"Dependency '{dependencyId}' has invalid version range '{dependencyRange}'.");
+                errors.Add($"Dependency '{dep.Id}' has invalid version range '{dep.Version}'.");
             }
         }
 
-        foreach (var (assemblyRelativePath, expectedHash) in manifest.AssemblyHashes)
+        // Validate Assets - must have at least one Modulus.Package
+        var packageAssets = manifest.Assets
+            .Where(a => string.Equals(a.Type, ModulusAssetTypes.Package, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (packageAssets.Count == 0)
         {
-            var assemblyPath = Path.Combine(packagePath, assemblyRelativePath);
-            if (!File.Exists(assemblyPath))
+            errors.Add($"Manifest must include at least one Asset of type '{ModulusAssetTypes.Package}'.");
+        }
+
+        // Validate Asset paths exist
+        foreach (var asset in manifest.Assets)
+        {
+            if (!string.IsNullOrEmpty(asset.Path))
             {
-                errors.Add($"Assembly hash declared for missing file '{assemblyRelativePath}'.");
-                continue;
+                var assetPath = Path.Combine(packagePath, asset.Path);
+                if (!File.Exists(assetPath))
+                {
+                    errors.Add($"Asset '{asset.Type}' references missing file '{asset.Path}'.");
+                }
             }
 
-            var hash = await ComputeSha256Async(assemblyPath, cancellationToken).ConfigureAwait(false);
-            if (!hash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
+            // Validate Menu assets have required fields
+            if (string.Equals(asset.Type, ModulusAssetTypes.Menu, StringComparison.OrdinalIgnoreCase))
             {
-                errors.Add($"Assembly hash mismatch for '{assemblyRelativePath}'. Expected {expectedHash}, computed {hash}.");
+                if (string.IsNullOrWhiteSpace(asset.Id))
+                {
+                    errors.Add("Menu asset is missing required 'Id' attribute.");
+                }
+                if (string.IsNullOrWhiteSpace(asset.DisplayName))
+                {
+                    errors.Add($"Menu asset '{asset.Id}' is missing required 'DisplayName' attribute.");
+                }
+                if (string.IsNullOrWhiteSpace(asset.Route))
+                {
+                    errors.Add($"Menu asset '{asset.Id}' is missing required 'Route' attribute.");
+                }
             }
         }
 
-        // Validate sharedAssemblyHints
-        if (manifest.SharedAssemblyHints.Count > SharedAssemblyOptions.MaxManifestHints)
+        // Host-specific Asset validation
+        if (hostType != null)
         {
-            errors.Add($"sharedAssemblyHints contains {manifest.SharedAssemblyHints.Count} entries, exceeding maximum of {SharedAssemblyOptions.MaxManifestHints}.");
-        }
+            var hasHostPackage = packageAssets.Any(a =>
+                string.IsNullOrEmpty(a.TargetHost) || // No target = all hosts
+                string.Equals(a.TargetHost, hostType, StringComparison.OrdinalIgnoreCase));
 
-        foreach (var hint in manifest.SharedAssemblyHints)
-        {
-            if (string.IsNullOrWhiteSpace(hint))
+            if (!hasHostPackage)
             {
-                errors.Add("sharedAssemblyHints contains empty or whitespace entry.");
-                continue;
-            }
-
-            if (hint.Length > SharedAssemblyOptions.MaxAssemblyNameLength)
-            {
-                errors.Add($"sharedAssemblyHints entry '{hint[..50]}...' exceeds maximum length of {SharedAssemblyOptions.MaxAssemblyNameLength}.");
+                errors.Add($"No Package asset available for host '{hostType}'.");
             }
         }
 
@@ -135,34 +146,12 @@ public sealed class DefaultManifestValidator : IManifestValidator
             {
                 _logger.LogWarning(error);
             }
-            return ManifestValidationResult.Failure(errors);
+            return Task.FromResult(ManifestValidationResult.Failure(errors));
         }
 
-        if (manifest.Signature is null)
-        {
-            _logger.LogDebug("Manifest {ManifestPath} has no signature, skipping verification (dev mode).", manifestPath);
-            return ManifestValidationResult.Success();
-        }
-
-        var validSignature = await _signatureVerifier.VerifyAsync(manifestPath, manifest.Signature, cancellationToken);
-        if (!validSignature)
-        {
-            _logger.LogWarning("Manifest signature verification failed for {ManifestPath}.", manifestPath);
-            return ManifestValidationResult.Failure(new[] { "Manifest signature verification failed." });
-        }
-
-        return ManifestValidationResult.Success();
+        return Task.FromResult(ManifestValidationResult.Success());
     }
 
-    private static string FormatHosts(List<string>? hosts) =>
-        hosts == null || hosts.Count == 0 ? "(none)" : string.Join(", ", hosts);
-
-    private static async Task<string> ComputeSha256Async(string path, CancellationToken cancellationToken)
-    {
-        await using var stream = File.OpenRead(path);
-        using var sha = SHA256.Create();
-        var hashBytes = await sha.ComputeHashAsync(stream, cancellationToken).ConfigureAwait(false);
-        return Convert.ToHexString(hashBytes);
-    }
+    private static string FormatInstallationTargets(List<InstallationTarget> targets) =>
+        targets.Count == 0 ? "(none)" : string.Join(", ", targets.Select(t => t.Id));
 }
-

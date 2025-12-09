@@ -12,7 +12,7 @@ namespace Modulus.Modules.ComponentsDemo;
 [DependsOn()] // no explicit deps
 [Module("ComponentsDemo", "Components Demo",
     Description = "Demonstrates navigation and UI components for both Avalonia and Blazor hosts.")]
-public class ComponentsDemoModule : ModulusComponent
+public class ComponentsDemoModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {

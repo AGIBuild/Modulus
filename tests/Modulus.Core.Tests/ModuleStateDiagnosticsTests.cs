@@ -1,4 +1,5 @@
 using Modulus.Core.Runtime;
+using Modulus.Sdk;
 
 namespace Modulus.Core.Tests;
 
@@ -9,10 +10,10 @@ public class ModuleStateDiagnosticsTests
 {
     private RuntimeModule CreateTestModule(string id = "test-module")
     {
-        var descriptor = new ModuleDescriptor(id, "1.0.0", "Test", "Desc", new[] { "Avalonia" });
+        var descriptor = new ModuleDescriptor(id, "1.0.0", "Test", "Desc", new[] { ModulusHostIds.Avalonia });
         var sharedCatalog = Modulus.Core.Architecture.SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loadContext = new ModuleLoadContext(id, "/path/to/module", sharedCatalog);
-        var manifest = new Modulus.Sdk.ModuleManifest { Id = id, Version = "1.0.0" };
+        var manifest = CreateTestManifest(id, "1.0.0");
         return new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
     }
 
@@ -116,6 +117,21 @@ public class ModuleStateDiagnosticsTests
         Assert.NotNull(time);
         Assert.True(time.Value.TotalMilliseconds >= 10);
     }
+
+    private static VsixManifest CreateTestManifest(string id, string version)
+    {
+        return new VsixManifest
+        {
+            Version = "2.0.0",
+            Metadata = new ManifestMetadata
+            {
+                Identity = new ManifestIdentity { Id = id, Version = version, Publisher = "Test" },
+                DisplayName = id
+            },
+            Installation = new() { new InstallationTarget { Id = ModulusHostIds.Avalonia } },
+            Assets = new() { new ManifestAsset { Type = ModulusAssetTypes.Package, Path = "Test.dll" } }
+        };
+    }
 }
 
 /// <summary>
@@ -125,10 +141,10 @@ public class RuntimeModuleStateTests
 {
     private RuntimeModule CreateTestModule(string id = "test-module")
     {
-        var descriptor = new ModuleDescriptor(id, "1.0.0", "Test", "Desc", new[] { "Avalonia" });
+        var descriptor = new ModuleDescriptor(id, "1.0.0", "Test", "Desc", new[] { ModulusHostIds.Avalonia });
         var sharedCatalog = Modulus.Core.Architecture.SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loadContext = new ModuleLoadContext(id, "/path/to/module", sharedCatalog);
-        var manifest = new Modulus.Sdk.ModuleManifest { Id = id, Version = "1.0.0" };
+        var manifest = CreateTestManifest(id, "1.0.0");
         return new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
     }
 
@@ -231,5 +247,20 @@ public class RuntimeModuleStateTests
         // Assert
         Assert.Equal(ModuleState.Active, module.State);
         Assert.Equal(initialCount + 1, module.Diagnostics.Transitions.Count);
+    }
+
+    private static VsixManifest CreateTestManifest(string id, string version)
+    {
+        return new VsixManifest
+        {
+            Version = "2.0.0",
+            Metadata = new ManifestMetadata
+            {
+                Identity = new ManifestIdentity { Id = id, Version = version, Publisher = "Test" },
+                DisplayName = id
+            },
+            Installation = new() { new InstallationTarget { Id = ModulusHostIds.Avalonia } },
+            Assets = new() { new ManifestAsset { Type = ModulusAssetTypes.Package, Path = "Test.dll" } }
+        };
     }
 }

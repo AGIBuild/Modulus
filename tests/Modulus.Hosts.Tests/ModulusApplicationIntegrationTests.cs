@@ -1,6 +1,7 @@
-using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Modulus.Core;
+using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Sdk;
 
@@ -34,10 +35,10 @@ public class ModulusApplicationIntegrationTests : IDisposable
     {
         // Arrange
         var services = new ServiceCollection();
-        var providers = new List<IModuleProvider>();
+        var moduleDirectories = new List<ModuleDirectory>();
 
         // Act
-        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Avalonia);
+        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia);
 
         // Assert
         Assert.NotNull(app);
@@ -49,13 +50,13 @@ public class ModulusApplicationIntegrationTests : IDisposable
         // Arrange
         var services = new ServiceCollection();
         var modulePath = CreateTestModule("integration-test-module", "1.0.0");
-        var providers = new List<IModuleProvider>
+        var moduleDirectories = new List<ModuleDirectory>
         {
-            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: true)
+            new ModuleDirectory(_testRoot, IsSystem: true)
         };
 
         // Act
-        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Avalonia);
+        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia);
         var serviceProvider = services.BuildServiceProvider();
         app.SetServiceProvider(serviceProvider);
 
@@ -70,9 +71,9 @@ public class ModulusApplicationIntegrationTests : IDisposable
     {
         // Arrange
         var services = new ServiceCollection();
-        var providers = new List<IModuleProvider>();
+        var moduleDirectories = new List<ModuleDirectory>();
         
-        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Blazor);
+        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, moduleDirectories, ModulusHostIds.Blazor);
         var serviceProvider = services.BuildServiceProvider();
         app.SetServiceProvider(serviceProvider);
 
@@ -88,9 +89,9 @@ public class ModulusApplicationIntegrationTests : IDisposable
     {
         // Arrange
         var services = new ServiceCollection();
-        var providers = new List<IModuleProvider>();
+        var moduleDirectories = new List<ModuleDirectory>();
         
-        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Avalonia);
+        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia);
         var serviceProvider = services.BuildServiceProvider();
         app.SetServiceProvider(serviceProvider);
         await app.InitializeAsync();
@@ -108,12 +109,12 @@ public class ModulusApplicationIntegrationTests : IDisposable
         // Arrange
         var services = new ServiceCollection();
         var modulePath = CreateTestModule("reload-test-module", "1.0.0");
-        var providers = new List<IModuleProvider>
+        var moduleDirectories = new List<ModuleDirectory>
         {
-            new DirectoryModuleProvider(_testRoot, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, isSystem: true)
+            new ModuleDirectory(_testRoot, IsSystem: true)
         };
 
-        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, providers, HostType.Avalonia);
+        var app = await ModulusApplicationFactory.CreateAsync<TestHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia);
         var serviceProvider = services.BuildServiceProvider();
         app.SetServiceProvider(serviceProvider);
         await app.InitializeAsync();
@@ -141,25 +142,32 @@ public class ModulusApplicationIntegrationTests : IDisposable
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
 
-        var manifest = new ModuleManifest
-        {
-            Id = id,
-            Version = version,
-            ManifestVersion = "1.0",
-            SupportedHosts = new List<string> { HostType.Avalonia, HostType.Blazor },
-            CoreAssemblies = new List<string>(),
-            DisplayName = $"Test Module {id}",
-            Description = "A test module for integration testing"
-        };
+        XNamespace ns = "http://schemas.microsoft.com/developer/vsx-schema/2011";
+        var doc = new XDocument(
+            new XElement(ns + "PackageManifest",
+                new XAttribute("Version", "2.0.0"),
+                new XElement(ns + "Metadata",
+                    new XElement(ns + "Identity",
+                        new XAttribute("Id", id),
+                        new XAttribute("Version", version),
+                        new XAttribute("Publisher", "Test")),
+                    new XElement(ns + "DisplayName", $"Test Module {id}"),
+                    new XElement(ns + "Description", "A test module for integration testing")),
+                new XElement(ns + "Installation",
+                    new XElement(ns + "InstallationTarget", new XAttribute("Id", ModulusHostIds.Avalonia)),
+                    new XElement(ns + "InstallationTarget", new XAttribute("Id", ModulusHostIds.Blazor))),
+                new XElement(ns + "Assets",
+                    new XElement(ns + "Asset",
+                        new XAttribute("Type", ModulusAssetTypes.Package),
+                        new XAttribute("Path", "Test.dll")))));
 
-        var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(Path.Combine(modulePath, "manifest.json"), manifestJson);
+        doc.Save(Path.Combine(modulePath, SystemModuleInstaller.VsixManifestFileName));
 
         return modulePath;
     }
 
     // Test host module
-    private class TestHostModule : ModulusComponent
+    private class TestHostModule : ModulusPackage
     {
         public override void ConfigureServices(IModuleLifecycleContext context)
         {
@@ -167,4 +175,3 @@ public class ModulusApplicationIntegrationTests : IDisposable
         }
     }
 }
-

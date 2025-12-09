@@ -1,5 +1,6 @@
-using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
+using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Sdk;
 
@@ -119,7 +120,7 @@ public class ModuleDetailLoaderTests : IDisposable
     {
         // Arrange
         var modulePath = CreateModuleWithReadme("manifest-path-module", "README content");
-        var manifestPath = Path.Combine(modulePath, "manifest.json");
+        var manifestPath = Path.Combine(modulePath, SystemModuleInstaller.VsixManifestFileName);
 
         // Act
         var result = await _loader.LoadDetailAsync(manifestPath);
@@ -134,17 +135,7 @@ public class ModuleDetailLoaderTests : IDisposable
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
 
-        var manifest = new ModuleManifest
-        {
-            Id = id,
-            Version = "1.0.0",
-            ManifestVersion = "1.0",
-            SupportedHosts = new List<string>(),
-            CoreAssemblies = new List<string>()
-        };
-
-        File.WriteAllText(Path.Combine(modulePath, "manifest.json"),
-            JsonSerializer.Serialize(manifest));
+        WriteVsixManifest(modulePath, id, "1.0.0", null);
         File.WriteAllText(Path.Combine(modulePath, "README.md"), readmeContent);
 
         return modulePath;
@@ -155,18 +146,7 @@ public class ModuleDetailLoaderTests : IDisposable
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
 
-        var manifest = new ModuleManifest
-        {
-            Id = id,
-            Version = "1.0.0",
-            ManifestVersion = "1.0",
-            Description = description,
-            SupportedHosts = new List<string>(),
-            CoreAssemblies = new List<string>()
-        };
-
-        File.WriteAllText(Path.Combine(modulePath, "manifest.json"),
-            JsonSerializer.Serialize(manifest));
+        WriteVsixManifest(modulePath, id, "1.0.0", description);
 
         return modulePath;
     }
@@ -176,20 +156,31 @@ public class ModuleDetailLoaderTests : IDisposable
         var modulePath = Path.Combine(_testRoot, id);
         Directory.CreateDirectory(modulePath);
 
-        var manifest = new ModuleManifest
-        {
-            Id = id,
-            Version = "1.0.0",
-            ManifestVersion = "1.0",
-            SupportedHosts = new List<string>(),
-            CoreAssemblies = new List<string>()
-        };
-
-        File.WriteAllText(Path.Combine(modulePath, "manifest.json"),
-            JsonSerializer.Serialize(manifest));
+        WriteVsixManifest(modulePath, id, "1.0.0", null);
 
         return modulePath;
     }
+
+    private static void WriteVsixManifest(string modulePath, string id, string version, string? description)
+    {
+        XNamespace ns = "http://schemas.microsoft.com/developer/vsx-schema/2011";
+        var doc = new XDocument(
+            new XElement(ns + "PackageManifest",
+                new XAttribute("Version", "2.0.0"),
+                new XElement(ns + "Metadata",
+                    new XElement(ns + "Identity",
+                        new XAttribute("Id", id),
+                        new XAttribute("Version", version),
+                        new XAttribute("Publisher", "Test")),
+                    new XElement(ns + "DisplayName", id),
+                    description != null ? new XElement(ns + "Description", description) : null),
+                new XElement(ns + "Installation",
+                    new XElement(ns + "InstallationTarget", new XAttribute("Id", ModulusHostIds.Avalonia))),
+                new XElement(ns + "Assets",
+                    new XElement(ns + "Asset",
+                        new XAttribute("Type", ModulusAssetTypes.Package),
+                        new XAttribute("Path", "Test.dll")))));
+
+        doc.Save(Path.Combine(modulePath, SystemModuleInstaller.VsixManifestFileName));
+    }
 }
-
-

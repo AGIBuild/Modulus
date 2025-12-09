@@ -14,7 +14,7 @@ public sealed class RuntimeModule
     public ModuleDescriptor Descriptor { get; }
     public ModuleLoadContext LoadContext { get; }
     public string PackagePath { get; }
-    public ModuleManifest Manifest { get; }
+    public VsixManifest Manifest { get; }
     public bool IsSystem { get; }
     
     /// <summary>
@@ -42,7 +42,7 @@ public sealed class RuntimeModule
     /// </summary>
     public Exception? LastError => Diagnostics.GetLastError();
 
-    public RuntimeModule(ModuleDescriptor descriptor, ModuleLoadContext loadContext, string packagePath, ModuleManifest manifest, bool isSystem = false)
+    public RuntimeModule(ModuleDescriptor descriptor, ModuleLoadContext loadContext, string packagePath, VsixManifest manifest, bool isSystem = false)
     {
         Descriptor = descriptor;
         LoadContext = loadContext;

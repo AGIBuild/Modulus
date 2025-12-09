@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Installation;
 using Modulus.Core.Manifest;
 
 namespace Modulus.Core.Runtime;
@@ -52,7 +53,7 @@ public sealed class ModuleDetailLoader
     /// <summary>
     /// Loads module detail content asynchronously with cancellation and timeout support.
     /// </summary>
-    /// <param name="modulePath">Path to manifest.json or module directory.</param>
+    /// <param name="modulePath">Path to extension.vsixmanifest or module directory.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <param name="timeout">Optional timeout (defaults to 10 seconds).</param>
     /// <returns>Result containing content or error information.</returns>
@@ -101,7 +102,7 @@ public sealed class ModuleDetailLoader
         else if (Directory.Exists(modulePath))
         {
             dir = Path.GetFullPath(modulePath);
-            manifestPath = Path.Combine(dir, "manifest.json");
+            manifestPath = Path.Combine(dir, SystemModuleInstaller.VsixManifestFileName);
         }
         else
         {
@@ -125,16 +126,14 @@ public sealed class ModuleDetailLoader
         if (File.Exists(manifestPath))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var manifest = await ManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(manifest?.Description))
+            var manifest = await VsixManifestReader.ReadFromFileAsync(manifestPath).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(manifest?.Metadata.Description))
             {
                 _logger.LogDebug("Loaded description from manifest for module at: {Path}", dir);
-                return ModuleDetailResult.Succeeded(manifest.Description);
+                return ModuleDetailResult.Succeeded(manifest.Metadata.Description);
             }
         }
 
         return ModuleDetailResult.NoContent();
     }
 }
-
-

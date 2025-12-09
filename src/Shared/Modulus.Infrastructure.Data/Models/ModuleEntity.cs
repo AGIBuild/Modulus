@@ -25,15 +25,20 @@ public class ModuleEntity
     public string? Website { get; set; }
 
     /// <summary>
-    /// Relative path to manifest.json (e.g. "Modules/User/PluginA/manifest.json")
+    /// Relative path to extension.vsixmanifest (e.g. "Modules/User/PluginA/extension.vsixmanifest")
     /// </summary>
     [Required]
     public string Path { get; set; } = string.Empty;
 
     /// <summary>
-    /// Fully-qualified type name of the entry component (optional).
+    /// SHA256 hash of the manifest file for change detection.
     /// </summary>
-    public string? EntryComponent { get; set; }
+    public string? ManifestHash { get; set; }
+
+    /// <summary>
+    /// Timestamp when the manifest was last validated.
+    /// </summary>
+    public DateTime? ValidatedAt { get; set; }
 
     /// <summary>
     /// If true, this module is managed by the system seeder and cannot be uninstalled.

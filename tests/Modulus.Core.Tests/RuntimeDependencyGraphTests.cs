@@ -22,7 +22,7 @@ public class RuntimeDependencyGraphTests
     {
         var moduleA = CreateHandle("ModuleA", "1.0.0", new ModuleA());
         var moduleB = CreateHandle("ModuleB", "1.0.0", new ModuleB()); // DependsOn ModuleA
-        var moduleC = CreateHandle("ModuleC", "1.0.0", new ModuleC(), new Dictionary<string, string> { { "ModuleB", "[1.0.0]" } });
+        var moduleC = CreateHandle("ModuleC", "1.0.0", new ModuleC(), new List<ManifestDependency> { new() { Id = "ModuleB", Version = "[1.0.0]" } });
 
         var orderedList = RuntimeDependencyGraph.TopologicallySort(new[] { moduleC, moduleB, moduleA }, _logger).ToList();
 
@@ -38,7 +38,7 @@ public class RuntimeDependencyGraphTests
     public void TopologicallySort_MissingDependency_Throws()
     {
         var moduleA = CreateHandle("ModuleA", "1.0.0", new ModuleA());
-        var moduleB = CreateHandle("ModuleB", "1.0.0", new ModuleB(), new Dictionary<string, string> { { "Missing", "[1.0.0]" } });
+        var moduleB = CreateHandle("ModuleB", "1.0.0", new ModuleB(), new List<ManifestDependency> { new() { Id = "Missing", Version = "[1.0.0]" } });
 
         Assert.Throws<InvalidOperationException>(() =>
             RuntimeDependencyGraph.TopologicallySort(new[] { moduleA, moduleB }, _logger));
@@ -48,24 +48,26 @@ public class RuntimeDependencyGraphTests
     public void TopologicallySort_VersionMismatch_Throws()
     {
         var moduleA = CreateHandle("ModuleA", "1.0.0", new ModuleA());
-        var moduleB = CreateHandle("ModuleB", "1.0.0", new ModuleB(), new Dictionary<string, string> { { "ModuleA", "[2.0.0]" } });
+        var moduleB = CreateHandle("ModuleB", "1.0.0", new ModuleB(), new List<ManifestDependency> { new() { Id = "ModuleA", Version = "[2.0.0]" } });
 
         Assert.Throws<InvalidOperationException>(() =>
             RuntimeDependencyGraph.TopologicallySort(new[] { moduleA, moduleB }, _logger));
     }
 
-    private RuntimeModuleHandle CreateHandle(string id, string version, IModule moduleInstance, Dictionary<string, string>? manifestDeps = null)
+    private RuntimeModuleHandle CreateHandle(string id, string version, IModule moduleInstance, List<ManifestDependency>? manifestDeps = null)
     {
         var descriptor = new ModuleDescriptor(id, version);
-        var manifest = new ModuleManifest
+        var manifest = new VsixManifest
         {
-            Id = id,
-            Version = version,
-            DisplayName = id,
-            SupportedHosts = new List<string> { HostType.Avalonia },
-            CoreAssemblies = new List<string>(),
-            UiAssemblies = new Dictionary<string, List<string>>(),
-            Dependencies = manifestDeps ?? new Dictionary<string, string>()
+            Version = "2.0.0",
+            Metadata = new ManifestMetadata
+            {
+                Identity = new ManifestIdentity { Id = id, Version = version, Publisher = "Test" },
+                DisplayName = id
+            },
+            Installation = new List<InstallationTarget> { new() { Id = ModulusHostIds.Avalonia } },
+            Dependencies = manifestDeps ?? new List<ManifestDependency>(),
+            Assets = new List<ManifestAsset> { new() { Type = ModulusAssetTypes.Package, Path = "Test.dll" } }
         };
 
         var loadContext = new ModuleLoadContext(id, Path.GetTempPath(), _sharedCatalog);
@@ -76,11 +78,10 @@ public class RuntimeDependencyGraphTests
         return new RuntimeModuleHandle(runtimeModule, manifest, null, provider, provider, moduleInstances, Array.Empty<MenuItem>(), new[] { moduleInstance.GetType().Assembly });
     }
 
-    private sealed class ModuleA : ModulusComponent { }
+    private sealed class ModuleA : ModulusPackage { }
 
     [DependsOn(typeof(ModuleA))]
-    private sealed class ModuleB : ModulusComponent { }
+    private sealed class ModuleB : ModulusPackage { }
 
-    private sealed class ModuleC : ModulusComponent { }
+    private sealed class ModuleC : ModulusPackage { }
 }
-

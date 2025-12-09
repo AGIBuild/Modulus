@@ -21,9 +21,18 @@ namespace Modulus.Core.Runtime;
 
 public static class ModulusApplicationFactory
 {
+    /// <summary>
+    /// Creates a Modulus application with explicit module directories.
+    /// </summary>
+    /// <param name="services">Service collection for DI.</param>
+    /// <param name="moduleDirectories">Directories containing modules to install. Null = use defaults.</param>
+    /// <param name="hostType">Host type identifier (e.g., "Modulus.Host.Avalonia").</param>
+    /// <param name="databasePath">Path to SQLite database.</param>
+    /// <param name="configuration">Application configuration.</param>
+    /// <param name="loggerFactory">Logger factory.</param>
     public static async Task<ModulusApplication> CreateAsync<TStartupModule>(
         IServiceCollection services,
-        IEnumerable<IModuleProvider> moduleProviders,
+        IReadOnlyList<ModuleDirectory>? moduleDirectories = null,
         string? hostType = null,
         string? databasePath = null,
         IConfiguration? configuration = null,
@@ -48,8 +57,7 @@ public static class ModulusApplicationFactory
             ["HostType"] = hostType ?? "UnknownHost"
         });
 
-        var signatureVerifier = new Sha256ManifestSignatureVerifier(loggerFactory.CreateLogger<Sha256ManifestSignatureVerifier>());
-        var manifestValidator = new DefaultManifestValidator(signatureVerifier, loggerFactory.CreateLogger<DefaultManifestValidator>());
+        var manifestValidator = new DefaultManifestValidator(loggerFactory.CreateLogger<DefaultManifestValidator>());
         
         // Build shared assembly catalog from domain metadata + host configuration
         var configuredSharedAssemblies = effectiveConfig.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();
@@ -102,7 +110,7 @@ public static class ModulusApplicationFactory
         tempServices.AddScoped<IModuleRepository, ModuleRepository>();
         tempServices.AddScoped<IMenuRepository, MenuRepository>();
         tempServices.AddScoped<IModuleInstallerService, ModuleInstallerService>();
-        tempServices.AddScoped<SystemModuleSeeder>();
+        tempServices.AddScoped<SystemModuleInstaller>();
         tempServices.AddScoped<ModuleIntegrityChecker>();
 
         using (var sp = tempServices.BuildServiceProvider())
@@ -111,19 +119,14 @@ public static class ModulusApplicationFactory
             var db = scope.ServiceProvider.GetRequiredService<ModulusDbContext>();
             await db.Database.MigrateAsync();
 
-            var seeder = scope.ServiceProvider.GetRequiredService<SystemModuleSeeder>();
+            var installer = scope.ServiceProvider.GetRequiredService<SystemModuleInstaller>();
 
-            // Seed All Modules (system flag determined by provider.IsSystemSource)
-            if (moduleProviders != null)
+            // Install modules from specified directories
+            if (moduleDirectories != null)
             {
-                foreach (var provider in moduleProviders)
+                foreach (var dir in moduleDirectories)
                 {
-                    var paths = await provider.GetModulePackagesAsync();
-                    foreach (var path in paths)
-                    {
-                        // Pass isSystem flag and hostType from provider to seeder
-                        await seeder.SeedFromPathAsync(path, provider.IsSystemSource, hostType);
-                    }
+                    await installer.InstallFromDirectoryAsync(dir.Path, dir.IsSystem, hostType);
                 }
             }
 
@@ -220,20 +223,20 @@ public static class ModulusApplicationFactory
                 var manifestPath = Path.GetFullPath(module.Path);
                 if (File.Exists(manifestPath))
                 {
-                    var manifest = await ManifestReader.ReadFromFileAsync(manifestPath);
+                    var manifest = await VsixManifestReader.ReadFromFileAsync(manifestPath);
                     
                     if (manifest != null)
                     {
-                        foreach (var depId in manifest.Dependencies.Keys)
+                        foreach (var dep in manifest.Dependencies)
                         {
-                            if (moduleDict.ContainsKey(depId))
+                            if (moduleDict.ContainsKey(dep.Id))
                             {
-                                deps.Add(depId);
+                                deps.Add(dep.Id);
                             }
-                            else if (!runtimeContext.TryGetModule(depId, out _))
+                            else if (!runtimeContext.TryGetModule(dep.Id, out _))
                             {
                                  // Warn but don't crash
-                                 logger.LogDebug("Module {ModuleId} depends on {DepId} which is not in current load list.", module.Id, depId);
+                                 logger.LogDebug("Module {ModuleId} depends on {DepId} which is not in current load list.", module.Id, dep.Id);
                             }
                         }
                     }
@@ -258,3 +261,10 @@ public static class ModulusApplicationFactory
 
     private sealed record SortItem(ModuleEntity Entity, string Id, HashSet<string> Dependencies);
 }
+
+/// <summary>
+/// Represents a directory containing modules to install.
+/// </summary>
+/// <param name="Path">Path to the modules directory.</param>
+/// <param name="IsSystem">Whether modules in this directory are system modules (cannot be uninstalled).</param>
+public sealed record ModuleDirectory(string Path, bool IsSystem);

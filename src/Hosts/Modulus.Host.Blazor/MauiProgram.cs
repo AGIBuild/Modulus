@@ -22,7 +22,7 @@ using Android.Runtime;
 namespace Modulus.Host.Blazor;
 
 [DependsOn()]
-public class BlazorHostModule : ModulusComponent
+public class BlazorHostModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {
@@ -93,21 +93,21 @@ public static class MauiProgram
 
         ModulusLogging.AddLoggerFactory(builder.Services, loggerFactory);
 
-        // Module Providers - load from Modules/ directory relative to executable
-        var providers = new List<IModuleProvider>();
+        // Module Directories - explicit module installation paths
+        var moduleDirectories = new List<ModuleDirectory>();
 
         // App Modules: {AppBaseDir}/Modules/ (populated by nuke build)
         var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
         if (Directory.Exists(appModules))
         {
-            providers.Add(new DirectoryModuleProvider(appModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: true));
+            moduleDirectories.Add(new ModuleDirectory(appModules, IsSystem: true));
         }
 
         // User-installed modules (for runtime installation)
         var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
         if (Directory.Exists(userModules))
         {
-            providers.Add(new DirectoryModuleProvider(userModules, loggerFactory.CreateLogger<DirectoryModuleProvider>(), isSystem: false));
+            moduleDirectories.Add(new ModuleDirectory(userModules, IsSystem: false));
         }
 
         // Database (configurable name; defaults to framework/solution name)
@@ -121,7 +121,7 @@ public static class MauiProgram
         builder.Services.AddScoped<HostModuleSeeder>();
 
         // Create Modulus App (use same DB path to align migrations and runtime)
-        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, providers, HostType.Blazor, dbPath, configuration, loggerFactory);
+        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory);
         var modulusApp = appTask.GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected

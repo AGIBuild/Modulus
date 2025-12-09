@@ -247,11 +247,15 @@ class BuildTasks : NukeBuild
                 }
                 
                 var moduleName = Path.GetFileName(moduleDir);
-                var manifestPath = Path.Combine(moduleDir, "manifest.json");
+                
+                // Support both new vsixmanifest and legacy manifest.json
+                var vsixManifestPath = Path.Combine(moduleDir, "extension.vsixmanifest");
+                var legacyManifestPath = Path.Combine(moduleDir, "manifest.json");
+                var manifestPath = File.Exists(vsixManifestPath) ? vsixManifestPath : legacyManifestPath;
                 
                 if (!File.Exists(manifestPath))
                 {
-                    LogWarning($"No manifest.json in {moduleName}, skipping");
+                    LogWarning($"No extension.vsixmanifest or manifest.json in {moduleName}, skipping");
                     continue;
                 }
                 
@@ -267,6 +271,16 @@ class BuildTasks : NukeBuild
                         .SetProjectFile(projectPath)
                         .SetConfiguration(Configuration)
                         .EnableNoRestore());
+                }
+                
+                // Copy manifest to output directory
+                var outputManifestPath = moduleOutputDir / Path.GetFileName(manifestPath);
+                if (!File.Exists(outputManifestPath) || 
+                    File.GetLastWriteTimeUtc(manifestPath) > File.GetLastWriteTimeUtc(outputManifestPath))
+                {
+                    Directory.CreateDirectory(moduleOutputDir);
+                    File.Copy(manifestPath, outputManifestPath, overwrite: true);
+                    Log.Information($"Copied {Path.GetFileName(manifestPath)} to {moduleOutputDir}");
                 }
                 
                 LogSuccess($"Built {moduleName} to {moduleOutputDir}");

@@ -1,5 +1,6 @@
 using Modulus.Core.Runtime;
 using Modulus.Core.Architecture;
+using Modulus.Sdk;
 
 namespace Modulus.Core.Tests;
 
@@ -12,10 +13,10 @@ public class RuntimeContextTests
         var context = new RuntimeContext();
 
         // Act
-        context.SetCurrentHost(HostType.Blazor);
+        context.SetCurrentHost(ModulusHostIds.Blazor);
 
         // Assert
-        Assert.Equal(HostType.Blazor, context.HostType);
+        Assert.Equal(ModulusHostIds.Blazor, context.HostType);
     }
 
     [Fact]
@@ -23,10 +24,10 @@ public class RuntimeContextTests
     {
         // Arrange
         var context = new RuntimeContext();
-        var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { HostType.Avalonia });
+        var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { ModulusHostIds.Avalonia });
         var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loadContext = new ModuleLoadContext("test-module", "/path/to/module", sharedCatalog);
-        var manifest = new Modulus.Sdk.ModuleManifest { Id = "test-module", Version = "1.0.0" };
+        var manifest = CreateTestManifest("test-module", "1.0.0");
         var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
 
         // Act
@@ -42,10 +43,10 @@ public class RuntimeContextTests
     {
         // Arrange
         var context = new RuntimeContext();
-        var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { HostType.Avalonia });
+        var descriptor = new ModuleDescriptor("test-module", "1.0.0", "Test", "Description", new[] { ModulusHostIds.Avalonia });
         var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loadContext = new ModuleLoadContext("test-module", "/path/to/module", sharedCatalog);
-        var manifest = new Modulus.Sdk.ModuleManifest { Id = "test-module", Version = "1.0.0" };
+        var manifest = CreateTestManifest("test-module", "1.0.0");
         var runtimeModule = new RuntimeModule(descriptor, loadContext, "/path/to/module", manifest, false);
         context.RegisterModule(runtimeModule);
 
@@ -76,15 +77,15 @@ public class RuntimeContextTests
         // Arrange
         var context = new RuntimeContext();
         
-        var descriptor1 = new ModuleDescriptor("module-1", "1.0.0", "Module 1", "Desc", new[] { HostType.Avalonia });
+        var descriptor1 = new ModuleDescriptor("module-1", "1.0.0", "Module 1", "Desc", new[] { ModulusHostIds.Avalonia });
         var sharedCatalog = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loadContext1 = new ModuleLoadContext("module-1", "/path/1", sharedCatalog);
-        var manifest1 = new Modulus.Sdk.ModuleManifest { Id = "module-1", Version = "1.0.0" };
+        var manifest1 = CreateTestManifest("module-1", "1.0.0");
         var module1 = new RuntimeModule(descriptor1, loadContext1, "/path/1", manifest1, false);
         
-        var descriptor2 = new ModuleDescriptor("module-2", "1.0.0", "Module 2", "Desc", new[] { HostType.Blazor });
+        var descriptor2 = new ModuleDescriptor("module-2", "1.0.0", "Module 2", "Desc", new[] { ModulusHostIds.Blazor });
         var loadContext2 = new ModuleLoadContext("module-2", "/path/2", sharedCatalog);
-        var manifest2 = new Modulus.Sdk.ModuleManifest { Id = "module-2", Version = "1.0.0" };
+        var manifest2 = CreateTestManifest("module-2", "1.0.0");
         var module2 = new RuntimeModule(descriptor2, loadContext2, "/path/2", manifest2, false);
         
         context.RegisterModule(module1);
@@ -98,5 +99,19 @@ public class RuntimeContextTests
         Assert.Contains(modules, m => m.Descriptor.Id == "module-1");
         Assert.Contains(modules, m => m.Descriptor.Id == "module-2");
     }
-}
 
+    private static VsixManifest CreateTestManifest(string id, string version)
+    {
+        return new VsixManifest
+        {
+            Version = "2.0.0",
+            Metadata = new ManifestMetadata
+            {
+                Identity = new ManifestIdentity { Id = id, Version = version, Publisher = "Test" },
+                DisplayName = id
+            },
+            Installation = new() { new InstallationTarget { Id = ModulusHostIds.Avalonia } },
+            Assets = new() { new ManifestAsset { Type = ModulusAssetTypes.Package, Path = "Test.dll" } }
+        };
+    }
+}

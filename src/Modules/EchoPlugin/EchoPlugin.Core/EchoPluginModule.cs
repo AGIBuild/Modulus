@@ -10,7 +10,7 @@ namespace Modulus.Modules.EchoPlugin;
 /// </summary>
 [DependsOn()] // no deps
 [Module("EchoPlugin", "Echo Tool", Description = "A simple echo plugin to demonstrate the SDK.")]
-public class EchoPluginModule : ModulusComponent
+public class EchoPluginModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {

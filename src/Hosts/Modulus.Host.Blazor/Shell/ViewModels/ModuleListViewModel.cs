@@ -52,8 +52,7 @@ public partial class ModuleListViewModel : ObservableObject
         IModuleLoader moduleLoader,
         IModuleRepository moduleRepository,
         IModuleInstallerService moduleInstaller,
-        ILoggerFactory loggerFactory,
-        IEnumerable<IModuleProvider> moduleProviders)
+        ILoggerFactory loggerFactory)
     {
         _runtimeContext = runtimeContext;
         _moduleLoader = moduleLoader;
@@ -235,7 +234,7 @@ public partial class ModuleListViewModel : ObservableObject
         var path = ImportPath;
         if (Directory.Exists(path))
         {
-            path = Path.Combine(path, "manifest.json");
+            path = Path.Combine(path, SystemModuleInstaller.VsixManifestFileName);
         }
 
         try
