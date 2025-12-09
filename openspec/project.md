@@ -44,6 +44,12 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 - Test naming: `MethodName_Scenario_ExpectedResult`
 - Integration tests for host-level functionality
 
+### OpenSpec 文档规范
+- 所有 OpenSpec 文档（proposal.md, tasks.md, design.md, spec.md）使用**中文**编写
+- Requirement/Scenario 标题使用英文
+- Scenario 内容使用中文描述
+- 代码引用、文件路径、技术术语保持英文
+
 ### Git Workflow
 - Feature branches: `feature/<change-id>` or `<story-id>-<name>`
 - Commit messages: English only, concise and descriptive
