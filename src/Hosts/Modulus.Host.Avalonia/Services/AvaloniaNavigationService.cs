@@ -360,7 +360,7 @@ public class AvaloniaNavigationService : INavigationService
             // Remove cached ViewModels from this module's assemblies
             foreach (var kvp in _singletonViewModels)
             {
-                if (moduleAssemblies.Contains(kvp.Value.GetType().Assembly))
+                if (kvp.Value != null && moduleAssemblies.Contains(kvp.Value.GetType().Assembly))
                 {
                     if (!keysToRemove.Contains(kvp.Key))
                     {
