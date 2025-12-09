@@ -7,12 +7,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Infrastructure.Data.Models;
 using Modulus.Infrastructure.Data.Repositories;
 using Modulus.UI.Abstractions;
+using Modulus.UI.Abstractions.Messages;
 
 using DataModuleState = Modulus.Infrastructure.Data.Models.ModuleState;
 using RuntimeModuleState = Modulus.Core.Runtime.ModuleState;
@@ -158,6 +160,9 @@ public partial class ModuleListViewModel : ObservableObject
              {
                  await _moduleLoader.UnloadAsync(moduleVm.Id);
                  await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Disabled);
+                 
+                 // Notify ShellViewModel to remove menus (incremental)
+                 WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
              }
              else
              {
