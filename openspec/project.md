@@ -1,11 +1,9 @@
 # Project Context
 
 ## Purpose
-
 Modulus is a modern, cross-platform, plugin-based application framework designed for building extensible, maintainable, and AI-ready tools. The core value proposition is "write once, run on multiple hosts" - allowing developers to implement UI-agnostic business logic that runs across different UI frameworks without modification.
 
 ## Tech Stack
-
 - **Runtime**: .NET 10.0
 - **UI Frameworks**:
   - Avalonia (Native desktop host)
@@ -15,145 +13,66 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 - **Testing**: xUnit, NSubstitute
 - **Build**: Nuke (C# build automation)
 
-## Domain Context
-
-### Core Concepts
-
-| Term | Description |
-|------|-------------|
-| **Extension** | A deployable unit containing manifest + assemblies (`.modpkg` package) |
-| **Host** | Shell application providing environment - `Modulus.Host.Avalonia` or `Modulus.Host.Blazor` |
-| **Package** | Entry point class inheriting `ModulusPackage`, similar to VS VsPackage |
-| **Manifest** | `extension.vsixmanifest` (XML) describing extension metadata |
-
-### Extension Structure
-
-```
-MyExtension/
-├── extension.vsixmanifest      # XML manifest (vsixmanifest 2.0 format)
-├── MyExtension.Core.dll        # Core logic (host-agnostic)
-├── MyExtension.UI.Avalonia.dll # Avalonia UI (optional)
-└── MyExtension.UI.Blazor.dll   # Blazor UI (optional)
-```
-
-### Manifest Format
-
-Extensions use VS Extension compatible `extension.vsixmanifest` (XML):
-
-```xml
-<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
-  <Metadata>
-    <Identity Id="guid" Version="1.0.0" Publisher="..." />
-    <DisplayName>My Extension</DisplayName>
-  </Metadata>
-  <Installation>
-    <InstallationTarget Id="Modulus.Host.Avalonia" Version="[1.0,)" />
-  </Installation>
-  <Assets>
-    <Asset Type="Modulus.Package" Path="MyExtension.Core.dll" />
-    <Asset Type="Modulus.Menu" Id="..." DisplayName="..." Route="..." />
-  </Assets>
-</PackageManifest>
-```
-
-### Asset Types
-
-| Type | Purpose |
-|------|---------|
-| `Modulus.Package` | Assembly containing `ModulusPackage` entry points |
-| `Modulus.Assembly` | Dependency assembly (no entry point scan) |
-| `Modulus.Menu` | Menu declaration (parsed at install, not runtime) |
-| `Modulus.Icon` | Extension icon |
-
-### Host IDs
-
-| Host | ID |
-|------|-----|
-| Avalonia | `Modulus.Host.Avalonia` |
-| Blazor | `Modulus.Host.Blazor` |
-
-## Architecture
-
-### Vertical Slice
-
-Each extension follows vertical slice architecture:
-- `<Extension>.Core` - Domain/Application layer (UI-agnostic)
-- `<Extension>.UI.Avalonia` - Avalonia presentation layer
-- `<Extension>.UI.Blazor` - Blazor presentation layer
-
-### Module Isolation
-
-- Every extension runs in its own `ModuleLoadContext` (custom `AssemblyLoadContext`)
-- Shared assemblies load from host's default context: `System.*`, `Microsoft.*`, `Avalonia*`, `Modulus.Core`, `Modulus.Sdk`, `Modulus.UI.*`
-
-### Extension Lifecycle
-
-```
-Install → Database → Load → Initialize → Active
-                              ↓
-                         Shutdown → Unload
-```
-
-1. **Install**: Parse manifest, validate, write to database (no assembly loading)
-2. **Load**: Create ALC, load assemblies, discover `ModulusPackage` entry points
-3. **Initialize**: Execute lifecycle methods (`ConfigureServices` → `OnApplicationInitializationAsync`)
-
 ## Project Conventions
 
 ### Code Style
-
 - C# with nullable enabled and implicit usings
 - English only in code files (comments, strings, identifiers)
 - Use `required` keyword for mandatory properties
 - Use `init` accessors for immutable configuration objects
+- JSON property names use camelCase (`[JsonPropertyName("...")]`)
 
-### Entry Point Classes
+### Architecture Patterns
+- **Vertical Slice Architecture**: Each module contains:
+  - `<Module>.Core` - Domain/Application layer (UI-agnostic)
+  - `<Module>.UI.Avalonia` - Avalonia presentation layer
+  - `<Module>.UI.Blazor` - Blazor presentation layer
+- **Module Isolation**: AssemblyLoadContext-based isolation for hot reload/unload
+- **Dependency Rule**: Core assemblies MUST NOT reference UI frameworks; use `Modulus.UI.Abstractions` for UI contracts
+- **Cross-module Communication**: Always via MediatR, never direct dependencies
 
-```csharp
-// Recommended: inherit ModulusPackage
-public class MyExtensionPackage : ModulusPackage
-{
-    public override void ConfigureServices(IModuleLifecycleContext context)
-    {
-        context.Services.AddSingleton<IMyService, MyService>();
-    }
-}
+### Module Load Context
+- Every module runs inside its own `ModuleLoadContext` (custom `AssemblyLoadContext`) so it can be unloaded independently.
+- A shared-assembly allowlist forces critical assemblies to load from the host’s default context. This list currently includes `System.*`, `Microsoft.*`, `Avalonia*`, `Modulus.Core`, `Modulus.Sdk`, `Modulus.UI.Abstractions`, and `Modulus.UI.Avalonia`.
+- UI libraries that expose controls, styles, or resources (e.g., `Modulus.UI.Avalonia`) MUST live on the shared list; otherwise modules load a second copy of the assembly, causing `ControlTemplate` lookups and `AssetLoader` queries to fail because the `TargetType` and resource indices come from different runtime types.
+- Symptoms of a missing shared assembly include `TemplatedParent` being null, `AssetLoader.Exists(avares://...)` returning false, and styles not applying even though resources are embedded.
+- When adding a new shared UI/core library, update `ModuleLoadContext.IsSharedAssembly` and redeploy the host so modules reuse the same assembly instance.
 
-// Legacy: ModulusComponent still works but is [Obsolete]
-public class MyExtensionModule : ModulusComponent { }  // ⚠️ Warning
-```
-
-### Testing
-
-- Unit tests in `tests/<Project>.Tests/`
+### Testing Strategy
+- Unit tests in `tests/<Project>.Tests/` directories
 - Use NSubstitute for mocking
 - Test naming: `MethodName_Scenario_ExpectedResult`
-
-### Git Workflow
-
-- Feature branches: `feature/<change-id>`
-- Commit messages: English only, concise and descriptive
+- Integration tests for host-level functionality
 
 ### OpenSpec 文档规范
-
-- 所有 OpenSpec 文档使用**中文**编写
+- 所有 OpenSpec 文档（proposal.md, tasks.md, design.md, spec.md）使用**中文**编写
 - Requirement/Scenario 标题使用英文
+- Scenario 内容使用中文描述
 - 代码引用、文件路径、技术术语保持英文
 
-## Important Constraints
+### Git Workflow
+- Feature branches: `feature/<change-id>` or `<story-id>-<name>`
+- Commit messages: English only, concise and descriptive
+- PR descriptions: Brief, clear structure, English only
 
-- Core assemblies MUST NOT reference UI frameworks
-- System extensions cannot be unloaded at runtime
-- Extensions require explicit installation (no directory scanning)
-- Host loads only UI assemblies matching its type (`TargetHost` attribute)
-- Menu declarations in manifest, not assembly attributes
+## Domain Context
+- **Module**: A vertical slice feature unit with Core + UI assemblies, identified by GUID
+- **Host**: The shell application providing environment (window, navigation, menu) - currently Avalonia or Blazor
+- **PluginPackage**: Deployable artifact containing manifest.json + assemblies (conceptually `.modpkg`)
+- **Manifest**: JSON descriptor with id, version, supportedHosts, coreAssemblies, uiAssemblies
+
+## Important Constraints
+- Core/Application assemblies MUST be UI-agnostic (no direct Avalonia/Blazor references)
+- System modules cannot be unloaded at runtime
+- Module manifests must be versioned (`manifestVersion: "1.0"`)
+- Host must only load UI assemblies matching its type
+- **Blazor UI**: Prefer MudBlazor components over custom implementations; avoid reinventing the wheel
+- **Avalonia UI**: Follow Avalonia component best practices (proper DataContext binding, TemplatedControl for reusable controls, StyledProperty for bindable properties)
 
 ## External Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| MediatR | 13.1.0 | Inter-module messaging |
-| Microsoft.EntityFrameworkCore.Sqlite | 10.0.0 | Local storage |
-| Microsoft.Extensions.DependencyInjection | - | DI container |
-| Avalonia | 11.x | Desktop UI framework |
-| MudBlazor | - | Blazor UI components |
+- MediatR 13.1.0 - Inter-module messaging
+- Microsoft.EntityFrameworkCore.Sqlite 10.0.0 - Local storage
+- Microsoft.Extensions.DependencyInjection - DI container
+- Microsoft.Extensions.Hosting - Host abstractions
+- Avalonia 11.x - Desktop UI framework
+- MudBlazor - Blazor UI component library
