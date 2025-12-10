@@ -18,7 +18,11 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>modulus</ToolCommandName>
     <PackageId>Agibuild.Modulus.Cli</PackageId>
-    <Version>1.0.0</Version>
+    
+    <!-- Auto-increment version: Major.Minor.Build.Revision based on UTC datetime -->
+    <!-- Format: 1.0.YYDDD.HHmm where DDD=day of year, HHmm=time -->
+    <!-- Example: 1.0.25344.1430 = 2025, day 344, 14:30 UTC -->
+    <Version>1.0.$([System.DateTime]::UtcNow.ToString("yy"))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("HHmm"))</Version>
     <Authors>Modulus Team</Authors>
     <Description>Modulus module management CLI tool</Description>
     <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>

@@ -1,17 +1,18 @@
 # Change: 内置模块打包发布
 
 ## Why
-框架 Owner 需要将某些模块作为 Host 的内置部分发布，使用户运行 Host 时即包含指定扩展。当前构建流程无法将模块打包进 Host 发布包。
+框架需要将某些模块作为 Host 的内置部分发布。当前启动流程每次都执行"目录扫描 → manifest 解析 → 数据库比对"，即使模块没有变化。需要优化为：模块加载的唯一来源是数据库，内置模块通过 EF 迁移预置。
 
 ## What Changes
-- 新增 `bundled-modules.json` 配置文件声明内置模块
-- 扩展 `nuke build` 流程，将指定模块复制到 Host 输出目录的 `Modules/` 子目录
-- 内置模块标记为 `IsSystem: true`，用户无法卸载
+- 合并并清理现有数据迁移脚本，作为干净的起点
+- 新增 CLI 命令 `modulus add-module-migration` 自动生成模块数据迁移
+- 内置模块数据通过 EF 迁移管理（使用 `InsertData`/`UpdateData`/`DeleteData`）
+- 简化启动流程：移除目录扫描，直接从数据库加载模块
 
 ## Impact
 - Affected specs: 新增 `bundled-modules` capability
 - Affected code:
-  - `build/BuildTasks.cs` - 新增 BundleModules 目标
-  - `src/Hosts/Modulus.Host.Avalonia/bundled-modules.json` - 新增配置文件
-  - `src/Hosts/Modulus.Host.Blazor/bundled-modules.json` - 新增配置文件
-
+  - `src/Shared/Modulus.Infrastructure.Data/Migrations/` - 合并现有迁移 + 新增模块数据迁移
+  - `src/Modulus.Cli/` - 新增 `add-module-migration` 命令
+  - `src/Modulus.Core/Runtime/ModulusApplicationFactory.cs` - 简化启动流程
+  - `src/Modulus.Core/Installation/SystemModuleInstaller.cs` - 调整用途（仅用于用户安装）
