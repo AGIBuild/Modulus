@@ -133,9 +133,12 @@ public partial class App : Application
             services.AddScoped<ModuleIntegrityChecker>();
             services.AddScoped<HostModuleSeeder>();
 
+            // Get host version from assembly
+            var hostVersion = typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0);
+
             // Bootstrap Modulus
             var appTask = Task.Run(async () => 
-                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia, dbPath, configuration, loggerFactory)
+                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia, dbPath, configuration, loggerFactory, hostVersion)
             );
             _modulusApp = appTask.GetAwaiter().GetResult();
             

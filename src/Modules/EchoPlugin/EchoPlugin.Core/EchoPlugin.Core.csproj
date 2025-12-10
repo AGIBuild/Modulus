@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-    <OutputPath>..\..\..\..\artifacts\Modules\EchoPlugin\</OutputPath>
+    <OutputPath>..\..\..\..\artifacts\bin\Modules\EchoPlugin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

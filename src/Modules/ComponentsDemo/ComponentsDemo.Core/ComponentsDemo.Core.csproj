@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.ComponentsDemo</RootNamespace>
     <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-    <OutputPath>..\..\..\..\artifacts\Modules\ComponentsDemo\</OutputPath>
+    <OutputPath>..\..\..\..\artifacts\bin\Modules\ComponentsDemo\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

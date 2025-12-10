@@ -20,6 +20,11 @@ public sealed class RuntimeContext
     /// </summary>
     public string? HostType { get; private set; }
 
+    /// <summary>
+    /// Gets the version of the currently running host.
+    /// </summary>
+    public Version? HostVersion { get; private set; }
+
     public IReadOnlyCollection<ModuleDescriptor> Modules => _modules.Values.Select(m => m.Descriptor).ToList();
     
     // Allow access to full runtime info internally or for advanced scenarios
@@ -35,6 +40,34 @@ public sealed class RuntimeContext
             throw new InvalidOperationException($"Current host is already set to {HostType}.");
         }
         HostType = hostType;
+    }
+
+    /// <summary>
+    /// Sets the current host version.
+    /// </summary>
+    /// <param name="version">The host version.</param>
+    public void SetHostVersion(Version version)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        if (HostVersion != null && HostVersion != version)
+        {
+            throw new InvalidOperationException($"Host version is already set to {HostVersion}.");
+        }
+        HostVersion = version;
+    }
+
+    /// <summary>
+    /// Sets the current host version from a version string.
+    /// </summary>
+    /// <param name="versionString">The version string (e.g., "1.0.0").</param>
+    public void SetHostVersion(string versionString)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(versionString);
+        if (!Version.TryParse(versionString, out var version))
+        {
+            throw new ArgumentException($"Invalid version string: {versionString}", nameof(versionString));
+        }
+        SetHostVersion(version);
     }
 
     public void RegisterHost(HostDescriptor host)

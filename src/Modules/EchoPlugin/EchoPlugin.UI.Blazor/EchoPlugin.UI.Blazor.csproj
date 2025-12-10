@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.Modules.EchoPlugin.UI.Blazor</RootNamespace>
     <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-    <OutputPath>..\..\..\..\artifacts\Modules\EchoPlugin\</OutputPath>
+    <OutputPath>..\..\..\..\artifacts\bin\Modules\EchoPlugin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

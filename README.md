@@ -121,6 +121,69 @@ public class MyExtensionPackage : ModulusPackage
 modulus install ./MyExtension
 ```
 
+## 🛠️ CLI Tool
+
+Modulus provides a command-line tool for module management.
+
+### Install CLI
+
+```bash
+# Install from NuGet (available after publishing)
+dotnet tool install -g Agibuild.Modulus.Cli
+
+# Or install from local build
+dotnet tool install -g --add-source ./artifacts/packages Agibuild.Modulus.Cli
+
+# During development, use directly
+./artifacts/cli/modulus.exe
+```
+
+### Install Module
+
+```bash
+# Install from .modpkg file
+modulus install ./MyModule-1.0.0.modpkg
+
+# Install from directory (for development)
+modulus install ./artifacts/bin/Modules/MyModule/
+
+# Force overwrite existing installation
+modulus install ./MyModule-1.0.0.modpkg --force
+```
+
+### Uninstall Module
+
+```bash
+# Uninstall by module name
+modulus uninstall MyModule
+
+# Uninstall by module ID
+modulus uninstall a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+
+# Skip confirmation
+modulus uninstall MyModule --force
+```
+
+### List Installed Modules
+
+```bash
+# Basic list
+modulus list
+
+# Show detailed information
+modulus list --verbose
+```
+
+### Package Module
+
+```bash
+# Package all modules to artifacts/packages/
+nuke pack-module
+
+# Package a single module
+nuke pack-module --name EchoPlugin
+```
+
 ## 📚 Documentation
 
 - [OpenSpec Specifications](./openspec/specs/)

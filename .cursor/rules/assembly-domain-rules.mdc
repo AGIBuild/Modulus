@@ -26,10 +26,10 @@ The Modulus framework uses `AssemblyLoadContext` for module isolation. Every pro
 2. **Add `<ModulusAssemblyDomain>` and output path** to your `.csproj`:
 
 ```xml
-<!-- For shared assemblies -->
+<!-- For shared assemblies (Host, Core, SDK, UI libraries) -->
 <PropertyGroup>
   <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
-  <OutputPath>..\..\artifacts\</OutputPath>
+  <OutputPath>..\..\artifacts\bin\</OutputPath>
   <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 </PropertyGroup>
@@ -37,7 +37,7 @@ The Modulus framework uses `AssemblyLoadContext` for module isolation. Every pro
 <!-- For module assemblies -->
 <PropertyGroup>
   <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-  <OutputPath>..\..\..\..\artifacts\Modules\{ModuleName}\</OutputPath>
+  <OutputPath>..\..\..\..\artifacts\bin\Modules\{ModuleName}\</OutputPath>
   <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 </PropertyGroup>
@@ -45,14 +45,32 @@ The Modulus framework uses `AssemblyLoadContext` for module isolation. Every pro
 
 This automatically generates `[AssemblyDomain]` attribute and `MODULUS_SHARED_DOMAIN` / `MODULUS_MODULE_DOMAIN` compile-time constants.
 
+### Artifacts Directory Structure
+
+```
+artifacts/
+├── bin/                 # Host apps + shared assemblies + modules
+│   ├── Modulus.Host.Avalonia.exe
+│   ├── Modulus.Core.dll
+│   └── Modules/         # Module compilation outputs
+│       ├── EchoPlugin/
+│       ├── ComponentsDemo/
+│       └── SimpleNotes/
+├── cli/                 # CLI tool (modulus.exe)
+├── tests/               # Test assemblies
+├── packages/            # CLI NuGet packages (.nupkg)
+└── ModulesInstaller/    # Module installer packages (.modpkg)
+```
+
 ### Output Path Rules
 
-| Project Location | Import Path | OutputPath |
-|-----------------|-------------|------------|
-| `src/*/*.csproj` | `..\..\build\` | `..\..\artifacts\` |
-| `src/*/*/*.csproj` | `..\..\..\build\` | `..\..\..\artifacts\` |
-| `tests/*/*.csproj` | `..\..\build\` | `..\..\artifacts\` |
-| `src/Modules/*/*/*.csproj` | `..\..\..\..\build\` | `..\..\..\..\artifacts\Modules\{ModuleName}\` |
+| Project Type | Location | OutputPath |
+|-------------|----------|------------|
+| Shared assemblies | `src/*/*.csproj` | `..\..\artifacts\bin\` |
+| Host projects | `src/Hosts/*/*.csproj` | `..\..\..\artifacts\bin\` |
+| CLI tool | `src/Modulus.Cli/*.csproj` | `..\..\artifacts\cli\` |
+| Test projects | `tests/*/*.csproj` | `..\..\artifacts\tests\` |
+| Module assemblies | `src/Modules/*/*/*.csproj` | `..\..\..\..\artifacts\bin\Modules\{ModuleName}\` |
 
 ### Shared Assembly Allowlist
 

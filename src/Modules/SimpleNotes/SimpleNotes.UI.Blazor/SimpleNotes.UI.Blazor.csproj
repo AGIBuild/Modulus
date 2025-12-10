@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
-    <OutputPath>..\..\..\..\artifacts\Modules\SimpleNotes\</OutputPath>
+    <OutputPath>..\..\..\..\artifacts\bin\Modules\SimpleNotes\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

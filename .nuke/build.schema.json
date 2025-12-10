@@ -33,7 +33,10 @@
         "Compile",
         "Default",
         "Pack",
+        "PackCli",
+        "PackModule",
         "Plugin",
+        "PublishCli",
         "Restore",
         "Run",
         "Test"

@@ -10,7 +10,7 @@
     <RootNamespace>Modulus.UI.Avalonia</RootNamespace>
     <Description>Avalonia UI components library for Modulus framework</Description>
     <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
-    <OutputPath>..\..\artifacts\</OutputPath>
+    <OutputPath>..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

@@ -121,6 +121,69 @@ public class MyExtensionPackage : ModulusPackage
 modulus install ./MyExtension
 ```
 
+## 🛠️ CLI 工具
+
+Modulus 提供命令行工具用于模块管理。
+
+### 安装 CLI
+
+```bash
+# 从 NuGet 安装（发布后可用）
+dotnet tool install -g Agibuild.Modulus.Cli
+
+# 或从本地构建安装
+dotnet tool install -g --add-source ./artifacts/packages Agibuild.Modulus.Cli
+
+# 开发时直接使用
+./artifacts/cli/modulus.exe
+```
+
+### 安装模块
+
+```bash
+# 从 .modpkg 文件安装
+modulus install ./MyModule-1.0.0.modpkg
+
+# 从目录安装（开发用）
+modulus install ./artifacts/bin/Modules/MyModule/
+
+# 强制覆盖已有安装
+modulus install ./MyModule-1.0.0.modpkg --force
+```
+
+### 卸载模块
+
+```bash
+# 按模块名称卸载
+modulus uninstall MyModule
+
+# 按模块 ID 卸载
+modulus uninstall a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+
+# 跳过确认
+modulus uninstall MyModule --force
+```
+
+### 列出已安装模块
+
+```bash
+# 基本列表
+modulus list
+
+# 显示详细信息
+modulus list --verbose
+```
+
+### 打包模块
+
+```bash
+# 打包所有模块到 artifacts/packages/
+nuke pack-module
+
+# 打包单个模块
+nuke pack-module --name EchoPlugin
+```
+
 ## 📚 文档
 
 - [OpenSpec 规格说明](./openspec/specs/)

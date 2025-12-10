@@ -30,13 +30,15 @@ public static class ModulusApplicationFactory
     /// <param name="databasePath">Path to SQLite database.</param>
     /// <param name="configuration">Application configuration.</param>
     /// <param name="loggerFactory">Logger factory.</param>
+    /// <param name="hostVersion">Optional host version for compatibility validation.</param>
     public static async Task<ModulusApplication> CreateAsync<TStartupModule>(
         IServiceCollection services,
         IReadOnlyList<ModuleDirectory>? moduleDirectories = null,
         string? hostType = null,
         string? databasePath = null,
         IConfiguration? configuration = null,
-        ILoggerFactory? loggerFactory = null)
+        ILoggerFactory? loggerFactory = null,
+        Version? hostVersion = null)
         where TStartupModule : IModule, new()
     {
         // 1. Setup Runtime Components
@@ -44,6 +46,10 @@ public static class ModulusApplicationFactory
         if (hostType != null)
         {
             runtimeContext.SetCurrentHost(hostType);
+        }
+        if (hostVersion != null)
+        {
+            runtimeContext.SetHostVersion(hostVersion);
         }
 
         var effectiveConfig = configuration ?? new ConfigurationBuilder()
@@ -57,7 +63,7 @@ public static class ModulusApplicationFactory
             ["HostType"] = hostType ?? "UnknownHost"
         });
 
-        var manifestValidator = new DefaultManifestValidator(loggerFactory.CreateLogger<DefaultManifestValidator>());
+        var manifestValidator = new DefaultManifestValidator(loggerFactory.CreateLogger<DefaultManifestValidator>(), runtimeContext);
         
         // Build shared assembly catalog from domain metadata + host configuration
         var configuredSharedAssemblies = effectiveConfig.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();

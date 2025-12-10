@@ -11,7 +11,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <OutputPath>..\..\..\artifacts\</OutputPath>
+    <OutputPath>..\..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>

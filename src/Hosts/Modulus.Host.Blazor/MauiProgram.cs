@@ -120,8 +120,11 @@ public static class MauiProgram
         builder.Services.AddScoped<IMenuRepository, MenuRepository>();
         builder.Services.AddScoped<HostModuleSeeder>();
 
+        // Get host version from assembly
+        var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version ?? new Version(1, 0, 0);
+
         // Create Modulus App (use same DB path to align migrations and runtime)
-        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory);
+        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory, hostVersion);
         var modulusApp = appTask.GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected

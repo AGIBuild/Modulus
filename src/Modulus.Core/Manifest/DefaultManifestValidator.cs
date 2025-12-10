@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Runtime;
 using Modulus.Sdk;
 using NuGet.Versioning;
 
@@ -10,10 +11,17 @@ namespace Modulus.Core.Manifest;
 public sealed class DefaultManifestValidator : IManifestValidator
 {
     private readonly ILogger<DefaultManifestValidator> _logger;
+    private readonly RuntimeContext? _runtimeContext;
 
     public DefaultManifestValidator(ILogger<DefaultManifestValidator> logger)
     {
         _logger = logger;
+    }
+
+    public DefaultManifestValidator(ILogger<DefaultManifestValidator> logger, RuntimeContext runtimeContext)
+    {
+        _logger = logger;
+        _runtimeContext = runtimeContext;
     }
 
     /// <inheritdoc />
@@ -58,12 +66,21 @@ public sealed class DefaultManifestValidator : IManifestValidator
         // Host-specific validation
         if (hostType != null)
         {
-            var hasHostTarget = manifest.Installation.Any(t =>
+            var hostTarget = manifest.Installation.FirstOrDefault(t =>
                 string.Equals(t.Id, hostType, StringComparison.OrdinalIgnoreCase));
 
-            if (!hasHostTarget)
+            if (hostTarget == null)
             {
                 errors.Add($"Host '{hostType}' is not supported by this module. Supported hosts: {FormatInstallationTargets(manifest.Installation)}.");
+            }
+            else
+            {
+                // Validate host version compatibility
+                var hostVersionError = ValidateHostVersionCompatibility(hostTarget, hostType);
+                if (hostVersionError != null)
+                {
+                    errors.Add(hostVersionError);
+                }
             }
         }
 
@@ -154,4 +171,46 @@ public sealed class DefaultManifestValidator : IManifestValidator
 
     private static string FormatInstallationTargets(List<InstallationTarget> targets) =>
         targets.Count == 0 ? "(none)" : string.Join(", ", targets.Select(t => t.Id));
+
+    /// <summary>
+    /// Validates that the host version satisfies the module's InstallationTarget version range.
+    /// </summary>
+    private string? ValidateHostVersionCompatibility(InstallationTarget target, string hostType)
+    {
+        // If no RuntimeContext or no HostVersion, skip version validation
+        if (_runtimeContext?.HostVersion == null)
+        {
+            return null;
+        }
+
+        // Parse the version range from the installation target
+        if (string.IsNullOrWhiteSpace(target.Version))
+        {
+            return null;
+        }
+
+        if (!VersionRange.TryParse(target.Version, out var versionRange))
+        {
+            _logger.LogWarning("InstallationTarget for host '{Host}' has invalid version range '{Version}'", 
+                hostType, target.Version);
+            return $"InstallationTarget for host '{hostType}' has invalid version range '{target.Version}'.";
+        }
+
+        // Convert System.Version to NuGetVersion for comparison
+        var hostNuGetVersion = new NuGetVersion(
+            _runtimeContext.HostVersion.Major,
+            _runtimeContext.HostVersion.Minor,
+            _runtimeContext.HostVersion.Build >= 0 ? _runtimeContext.HostVersion.Build : 0,
+            _runtimeContext.HostVersion.Revision >= 0 ? _runtimeContext.HostVersion.Revision : 0);
+
+        if (!versionRange.Satisfies(hostNuGetVersion))
+        {
+            _logger.LogWarning(
+                "Module requires host '{Host}' version {Range}, but current host version is {CurrentVersion}",
+                hostType, target.Version, hostNuGetVersion);
+            return $"Module requires host '{hostType}' version {target.Version}, but current host version is {hostNuGetVersion}.";
+        }
+
+        return null;
+    }
 }

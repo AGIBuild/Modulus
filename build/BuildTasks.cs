@@ -61,6 +61,11 @@ class BuildTasks : NukeBuild
     [Solution] readonly Solution Solution;
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath BinDirectory => ArtifactsDirectory / "bin";
+    AbsolutePath ModulesBinDirectory => BinDirectory / "Modules";  // Module compilation output
+    AbsolutePath CliDirectory => ArtifactsDirectory / "cli";
+    AbsolutePath TestsDirectory => ArtifactsDirectory / "tests";
+    AbsolutePath ModulesInstallerDirectory => ArtifactsDirectory / "ModulesInstaller";  // .modpkg packages
     AbsolutePath PluginsArtifactsDirectory => ArtifactsDirectory / "plugins";
     AbsolutePath SamplesDirectory => RootDirectory / "src" / "samples";
     AbsolutePath ModulesDirectory => RootDirectory / "src" / "Modules";
@@ -125,10 +130,10 @@ class BuildTasks : NukeBuild
         {
             var hostProjectName = EffectiveTargetHost == "blazor" ? BlazorHostProject : AvaloniaHostProject;
             
-            // All binaries are now in artifacts/ (unified output path)
-            var executable = ArtifactsDirectory / hostProjectName;
+            // All binaries are now in artifacts/bin/
+            var executable = BinDirectory / hostProjectName;
             if (OperatingSystem.IsWindows())
-                executable = ArtifactsDirectory / $"{hostProjectName}.exe";
+                executable = BinDirectory / $"{hostProjectName}.exe";
             
             if (!File.Exists(executable))
             {
@@ -140,11 +145,11 @@ class BuildTasks : NukeBuild
             LogHeader($"Running {hostProjectName}");
             LogHighlight($"Executable: {executable}");
             
-            // Run the application from artifacts directory
+            // Run the application from artifacts/bin directory
             var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = executable,
-                WorkingDirectory = ArtifactsDirectory,
+                WorkingDirectory = BinDirectory,
                 UseShellExecute = false
             });
             
@@ -219,18 +224,18 @@ class BuildTasks : NukeBuild
                     .SetConfiguration(Configuration)
                     .EnableNoRestore());
                 
-                LogSuccess($"Built {hostProjectName} to {ArtifactsDirectory}");
+                LogSuccess($"Built {hostProjectName} to {BinDirectory}");
             }
         });
     
     /// <summary>
-    /// Build modules to artifacts/Modules/{ModuleName}/
+    /// Build modules to artifacts/bin/Modules/{ModuleName}/
     /// OutputPath is configured in each .csproj file
     /// Usage: nuke build-module [--name ModuleName]
     /// </summary>
     Target BuildModule => _ => _
         .DependsOn(Restore)
-        .Description("Build modules to artifacts/Modules/{ModuleName}/")
+        .Description("Build modules to artifacts/bin/Modules/{ModuleName}/")
         .Executes(() =>
         {
             // Get module directories to build
@@ -261,7 +266,7 @@ class BuildTasks : NukeBuild
                 
                 LogHeader($"Building Module: {moduleName}");
                 
-                var moduleOutputDir = ArtifactsDirectory / "Modules" / moduleName;
+                var moduleOutputDir = ModulesBinDirectory / moduleName;
                 
                 // Build all projects - OutputPath is configured in .csproj
                 var moduleProjects = Directory.GetFiles(moduleDir, "*.csproj", SearchOption.AllDirectories);
@@ -305,6 +310,303 @@ class BuildTasks : NukeBuild
             _ => new[] { AvaloniaHostProject }  // default to avalonia
         };
     }
+
+    AbsolutePath PackagesDirectory => ArtifactsDirectory / "packages";
+
+    // Shared assemblies that should NOT be included in module packages
+    private static readonly HashSet<string> SharedAssemblyPrefixes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Modulus.Core",
+        "Modulus.Sdk",
+        "Modulus.UI.Abstractions",
+        "Modulus.UI.Avalonia",
+        "Modulus.UI.Blazor",
+        "Modulus.Infrastructure.Data"
+    };
+
+    private static readonly HashSet<string> FrameworkPrefixes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "System.",
+        "Microsoft.Extensions.",
+        "Microsoft.EntityFrameworkCore.",
+        "Microsoft.AspNetCore.",
+        "Microsoft.CSharp",
+        "mscorlib",
+        "netstandard",
+        "WindowsBase",
+        "PresentationCore",
+        "PresentationFramework"
+    };
+
+    private static bool IsSharedAssembly(string fileName)
+    {
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        
+        // Check exact matches for shared assemblies
+        if (SharedAssemblyPrefixes.Contains(name))
+            return true;
+        
+        // Check framework prefixes
+        foreach (var prefix in FrameworkPrefixes)
+        {
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Reads version from extension.vsixmanifest
+    /// </summary>
+    private static string? ReadManifestVersion(string manifestPath)
+    {
+        if (!File.Exists(manifestPath))
+            return null;
+        
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Load(manifestPath);
+            var ns = System.Xml.Linq.XNamespace.Get("http://schemas.microsoft.com/developer/vsx-schema/2011");
+            var identity = doc.Root?.Element(ns + "Metadata")?.Element(ns + "Identity")
+                        ?? doc.Root?.Element("Metadata")?.Element("Identity");
+            return (string?)identity?.Attribute("Version");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Package modules into .modpkg files
+    /// Usage: nuke pack-module [--name ModuleName]
+    /// </summary>
+    Target PackModule => _ => _
+        .DependsOn(BuildModule)
+        .Description("Package modules into .modpkg files for distribution")
+        .Executes(() =>
+        {
+            // Ensure modules installer directory exists
+            Directory.CreateDirectory(ModulesInstallerDirectory);
+
+            // Get module directories to pack
+            var moduleDirectories = string.IsNullOrEmpty(PluginName)
+                ? Directory.GetDirectories(ModulesDirectory).Select(d => (AbsolutePath)d).ToArray()
+                : new[] { ModulesDirectory / PluginName };
+
+            int successCount = 0;
+            int failureCount = 0;
+            var packagedModules = new List<(string Name, string Path)>();
+
+            foreach (var moduleDir in moduleDirectories)
+            {
+                if (!Directory.Exists(moduleDir))
+                {
+                    LogWarning($"Module directory not found: {moduleDir}");
+                    failureCount++;
+                    continue;
+                }
+
+                var moduleName = Path.GetFileName(moduleDir);
+                var manifestPath = Path.Combine(moduleDir, "extension.vsixmanifest");
+
+                if (!File.Exists(manifestPath))
+                {
+                    LogWarning($"No extension.vsixmanifest in {moduleName}, skipping");
+                    failureCount++;
+                    continue;
+                }
+
+                // Read version from manifest
+                var version = ReadManifestVersion(manifestPath) ?? "1.0.0";
+                var packageFileName = $"{moduleName}-{version}.modpkg";
+                var packagePath = ModulesInstallerDirectory / packageFileName;
+
+                LogHeader($"Packaging Module: {moduleName} v{version}");
+
+                try
+                {
+                    // Create temp directory for package contents
+                    var tempDir = Path.Combine(Path.GetTempPath(), $"modpkg-{moduleName}-{Guid.NewGuid():N}");
+                    Directory.CreateDirectory(tempDir);
+
+                    try
+                    {
+                        // Find and publish all module projects
+                        var moduleProjects = Directory.GetFiles(moduleDir, "*.csproj", SearchOption.AllDirectories);
+                        var publishedDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                        foreach (var projectPath in moduleProjects)
+                        {
+                            var projectName = Path.GetFileNameWithoutExtension(projectPath);
+                            var publishDir = Path.Combine(tempDir, "publish", projectName);
+
+                            // Publish the project
+                            DotNetTasks.DotNetPublish(s => s
+                                .SetProject(projectPath)
+                                .SetConfiguration(Configuration)
+                                .SetOutput(publishDir)
+                                .EnableNoBuild()
+                                .SetProperty("PublishSingleFile", "false")
+                                .SetProperty("SelfContained", "false"));
+
+                            // Copy non-shared DLLs to package root
+                            foreach (var file in Directory.GetFiles(publishDir, "*.*", SearchOption.TopDirectoryOnly))
+                            {
+                                var fileName = Path.GetFileName(file);
+                                var ext = Path.GetExtension(file).ToLowerInvariant();
+
+                                // Skip non-assembly files except for certain types
+                                if (ext != ".dll" && ext != ".pdb")
+                                    continue;
+
+                                // Skip shared assemblies
+                                if (IsSharedAssembly(fileName))
+                                {
+                                    Log.Debug($"Skipping shared assembly: {fileName}");
+                                    continue;
+                                }
+
+                                // Skip if already copied
+                                if (publishedDlls.Contains(fileName))
+                                    continue;
+
+                                var destPath = Path.Combine(tempDir, fileName);
+                                File.Copy(file, destPath, overwrite: true);
+                                publishedDlls.Add(fileName);
+                            }
+                        }
+
+                        // Copy manifest
+                        File.Copy(manifestPath, Path.Combine(tempDir, "extension.vsixmanifest"), overwrite: true);
+
+                        // Copy optional files if they exist
+                        var optionalFiles = new[] { "README.md", "LICENSE.txt", "LICENSE", "CHANGELOG.md" };
+                        foreach (var optFile in optionalFiles)
+                        {
+                            var srcPath = Path.Combine(moduleDir, optFile);
+                            if (File.Exists(srcPath))
+                            {
+                                File.Copy(srcPath, Path.Combine(tempDir, optFile), overwrite: true);
+                            }
+                        }
+
+                        // Remove the publish subdirectory
+                        var publishSubDir = Path.Combine(tempDir, "publish");
+                        if (Directory.Exists(publishSubDir))
+                            Directory.Delete(publishSubDir, true);
+
+                        // Create ZIP package
+                        if (File.Exists(packagePath))
+                            File.Delete(packagePath);
+
+                        System.IO.Compression.ZipFile.CreateFromDirectory(tempDir, packagePath);
+
+                        LogSuccess($"Created package: {packagePath}");
+                        packagedModules.Add((moduleName, packagePath));
+                        successCount++;
+                    }
+                    finally
+                    {
+                        // Clean up temp directory
+                        if (Directory.Exists(tempDir))
+                            Directory.Delete(tempDir, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to package {moduleName}: {ex.Message}");
+                    failureCount++;
+                }
+            }
+
+            // Print summary
+            LogHeader("MODULE PACKAGING SUMMARY");
+            LogNormal($"Total modules processed: {successCount + failureCount}");
+            if (successCount > 0)
+                LogSuccess($"Successfully packaged: {successCount}");
+            if (failureCount > 0)
+                LogError($"Failed to package: {failureCount}");
+
+            if (packagedModules.Count > 0)
+            {
+                LogNormal("");
+                LogSuccess("Packaged modules:");
+                foreach (var (name, path) in packagedModules)
+                {
+                    LogSuccess($"  ✓ {name} → {Path.GetFileName(path)}");
+                }
+            }
+
+            LogNormal("");
+            LogNormal("Packages output directory:");
+            LogHighlight($"  {ModulesInstallerDirectory}");
+        });
+
+    /// <summary>
+    /// Pack CLI as a dotnet tool NuGet package
+    /// Usage: nuke pack-cli
+    /// </summary>
+    Target PackCli => _ => _
+        .DependsOn(Compile)
+        .Description("Pack CLI as a dotnet tool NuGet package")
+        .Executes(() =>
+        {
+            var cliProject = Solution.AllProjects.FirstOrDefault(p => p.Name == "Modulus.Cli");
+            if (cliProject == null)
+            {
+                LogError("Modulus.Cli project not found");
+                return;
+            }
+
+            LogHeader("Packing Modulus CLI");
+
+            DotNetTasks.DotNetPack(s => s
+                .SetProject(cliProject)
+                .SetConfiguration(Configuration)
+                .SetOutputDirectory(PackagesDirectory)
+                .EnableNoBuild());
+
+            LogSuccess($"CLI package created in {PackagesDirectory}");
+        });
+
+    /// <summary>
+    /// Publish CLI to NuGet.org
+    /// Usage: nuke publish-cli
+    /// Requires: NUGET_API_KEY environment variable
+    /// </summary>
+    Target PublishCli => _ => _
+        .DependsOn(PackCli)
+        .Description("Publish CLI to NuGet.org (requires NUGET_API_KEY env var)")
+        .Executes(() =>
+        {
+            var apiKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                LogError("NUGET_API_KEY environment variable is not set");
+                throw new Exception("Missing NUGET_API_KEY environment variable");
+            }
+
+            var packages = Directory.GetFiles(PackagesDirectory, "Agibuild.Modulus.Cli.*.nupkg");
+            if (packages.Length == 0)
+            {
+                LogError("No CLI package found. Run 'nuke pack-cli' first.");
+                return;
+            }
+
+            var latestPackage = packages.OrderByDescending(File.GetLastWriteTime).First();
+            
+            LogHeader("Publishing CLI to NuGet.org");
+            LogHighlight($"Package: {Path.GetFileName(latestPackage)}");
+
+            DotNetTasks.DotNetNuGetPush(s => s
+                .SetTargetPath(latestPackage)
+                .SetSource("https://api.nuget.org/v3/index.json")
+                .SetApiKey(apiKey));
+
+            LogSuccess($"Published {Path.GetFileName(latestPackage)} to NuGet.org");
+        });
 
     Target CleanPluginsArtifacts => _ => _
         .Executes(() =>
