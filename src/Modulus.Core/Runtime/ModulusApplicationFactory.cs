@@ -172,18 +172,18 @@ public static class ModulusApplicationFactory
 
                     if (packagePath != null)
                     {
-                        logger.LogInformation("Loading module {ModuleName} ({ModuleId}) from {Path}...", module.Name, module.Id, packagePath);
+                        logger.LogInformation("Loading module {ModuleName} ({ModuleId}) from {Path}...", module.DisplayName, module.Id, packagePath);
                         // Skip module initialization - it will be done after host services are bound
                         var descriptor = await moduleLoader.LoadAsync(packagePath, module.IsSystem, skipModuleInitialization: true).ConfigureAwait(false);
                         if (descriptor == null)
                         {
-                            logger.LogWarning("Module {ModuleName} ({ModuleId}) failed to load.", module.Name, module.Id);
+                            logger.LogWarning("Module {ModuleName} ({ModuleId}) failed to load.", module.DisplayName, module.Id);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to load module {ModuleName} ({ModuleId}) from {Path}", module.Name, module.Id, module.Path);
+                    logger.LogError(ex, "Failed to load module {ModuleName} ({ModuleId}) from {Path}", module.DisplayName, module.Id, module.Path);
                 }
             }
         }
@@ -204,7 +204,7 @@ public static class ModulusApplicationFactory
         services.AddSingleton<ISharedAssemblyResolutionReporter>(resolutionReporter);
         services.AddSingleton<IManifestValidator>(manifestValidator);
 
-        var app = new ModulusApplication(services, moduleManager, logger);
+        var app = new ModulusApplication(services, moduleManager, runtimeContext, logger);
         app.ConfigureServices();
 
         return app;

@@ -4,10 +4,12 @@
     <Identity Id="a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" 
               Version="1.0.0" 
               Language="en-US" 
-              Publisher="Modulus Team" />
+              Publisher="Modulus Team"
+              IsBundled="true" />
     <DisplayName>Echo Plugin</DisplayName>
     <Description>A simple echo plugin to demonstrate SDK.</Description>
     <Tags>demo, echo, sample</Tags>
+    <Website>https://github.com/angidev/Modulus</Website>
   </Metadata>
   
   <Installation>
@@ -46,4 +48,3 @@
            Order="20" />
   </Assets>
 </PackageManifest>
-

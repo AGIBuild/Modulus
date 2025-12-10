@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using Modulus.Core;
 using Modulus.Core.Data;
@@ -14,10 +13,6 @@ using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
-
-#if ANDROID
-using Android.Runtime;
-#endif
 
 namespace Modulus.Host.Blazor;
 
@@ -60,10 +55,6 @@ public class BlazorHostModule : ModulusPackage
 
 public static class MauiProgram
 {
-    private static ILogger _logger = null!;
-
-    public static void Main(string[] args) {} // Dummy entry point for net10.0 target without MAUI
-
     public static MauiApp CreateMauiApp()
     {
         // Configuration (environment-aware via DOTNET_ENVIRONMENT)
@@ -75,13 +66,8 @@ public static class MauiProgram
             .AddEnvironmentVariables()
             .Build();
 
-        // Initialize logger first
+        // Initialize logger
         var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Blazor);
-        _logger = loggerFactory.CreateLogger<MauiApp>();
-
-        // Setup global exception handlers (logger is now ready)
-        SetupGlobalExceptionHandlers();
-        _logger.LogInformation("Global exception handlers initialized.");
 
         var builder = MauiApp.CreateBuilder();
         builder
@@ -118,80 +104,31 @@ public static class MauiProgram
         // Repositories & installers
         builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
         builder.Services.AddScoped<IMenuRepository, MenuRepository>();
-        builder.Services.AddScoped<HostModuleSeeder>();
+        builder.Services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
+        builder.Services.AddScoped<SystemModuleInstaller>();
+        builder.Services.AddScoped<IHostDataSeeder, BlazorHostDataSeeder>();
 
         // Get host version from assembly
         var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version ?? new Version(1, 0, 0);
 
-        // Create Modulus App (use same DB path to align migrations and runtime)
-        var appTask = ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory, hostVersion);
-        var modulusApp = appTask.GetAwaiter().GetResult();
+        // Create Modulus App (use Task.Run to avoid deadlock in UI sync context)
+        var modulusApp = Task.Run(async () => 
+            await ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory, hostVersion)
+        ).GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected
         builder.Services.AddSingleton<IModulusApplication>(modulusApp);
 
-        // Build the app first, then seed Host module
+        // Build the app
         var app = builder.Build();
         
-        // Seed Host module and menus to database (full database-driven approach)
+        // Seed Host module and bundled modules to database (from bundled-modules.json)
         using (var scope = app.Services.CreateScope())
         {
-            var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
-            hostSeeder.SeedAsync(
-                ModulusHostIds.Blazor,
-                "/modules",  // Blazor uses route-based navigation
-                "/settings"
-            ).GetAwaiter().GetResult();
+            var hostSeeder = scope.ServiceProvider.GetRequiredService<IHostDataSeeder>();
+            hostSeeder.SeedAsync().GetAwaiter().GetResult();
         }
 
         return app;
     }
-
-    private static void SetupGlobalExceptionHandlers()
-    {
-        // Handle all unhandled exceptions in the AppDomain
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-
-        // Handle unobserved task exceptions
-        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
-
-#if ANDROID
-        // Android-specific unhandled exception handler
-        AndroidEnvironment.UnhandledExceptionRaiser += OnAndroidUnhandledException;
-#endif
-    }
-
-    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-        var exception = e.ExceptionObject as Exception;
-
-        if (e.IsTerminating)
-        {
-            _logger.LogCritical(exception, "Fatal unhandled exception - application will terminate: {Message}",
-                exception?.Message ?? "Unknown error");
-        }
-        else
-        {
-            _logger.LogError(exception, "Unhandled exception caught: {Message}",
-                exception?.Message ?? "Unknown error");
-        }
-    }
-
-    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
-    {
-        // Mark as observed to prevent process termination
-        e.SetObserved();
-
-        _logger.LogError(e.Exception, "Unobserved task exception: {Message}", e.Exception.Message);
-    }
-
-#if ANDROID
-    private static void OnAndroidUnhandledException(object? sender, RaiseThrowableEventArgs e)
-    {
-        _logger.LogError(e.Exception, "Android unhandled exception: {Message}", e.Exception.Message);
-        
-        // Set handled to prevent crash where possible
-        e.Handled = true;
-    }
-#endif
 }

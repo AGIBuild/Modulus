@@ -98,10 +98,14 @@ public partial class ShellViewModel : ViewModelBase,
     }
     
     /// <summary>
-    /// Handle incremental menu removal - remove items without losing selection.
+    /// Handle incremental menu removal - update registry and UI in one place.
     /// </summary>
     public void Receive(MenuItemsRemovedMessage message)
     {
+        // Unregister from MenuRegistry (source of truth)
+        _menuRegistry.UnregisterModuleItems(message.ModuleId);
+        
+        // Update UI
         Dispatcher.UIThread.Post(() =>
         {
             var mainToRemove = MainMenuItems.Where(m => m.ModuleId == message.ModuleId).ToList();

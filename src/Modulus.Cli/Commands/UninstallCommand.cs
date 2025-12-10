@@ -63,7 +63,7 @@ public static class UninstallCommand
             var moduleEntity = await dbContext.Modules
                 .FirstOrDefaultAsync(m => 
                     m.Id == module || 
-                    m.Name.ToLower() == module.ToLower());
+                    m.DisplayName.ToLower() == module.ToLower());
 
             if (moduleEntity == null)
             {
@@ -74,18 +74,18 @@ public static class UninstallCommand
             // Prevent uninstalling system modules
             if (moduleEntity.IsSystem)
             {
-                Console.WriteLine($"Error: Cannot uninstall system module '{moduleEntity.Name}'");
+                Console.WriteLine($"Error: Cannot uninstall system module '{moduleEntity.DisplayName}'");
                 return;
             }
 
-            Console.WriteLine($"Module: {moduleEntity.Name}");
+            Console.WriteLine($"Module: {moduleEntity.DisplayName}");
             Console.WriteLine($"  Version: {moduleEntity.Version}");
             Console.WriteLine($"  ID: {moduleEntity.Id}");
 
             // Confirm uninstall
             if (!force)
             {
-                Console.Write($"Are you sure you want to uninstall '{moduleEntity.Name}'? [y/N]: ");
+                Console.Write($"Are you sure you want to uninstall '{moduleEntity.DisplayName}'? [y/N]: ");
                 var response = Console.ReadLine()?.Trim().ToLowerInvariant();
                 if (response != "y" && response != "yes")
                 {
@@ -132,7 +132,7 @@ public static class UninstallCommand
             }
 
             Console.WriteLine();
-            Console.WriteLine($"✓ Module '{moduleEntity.Name}' uninstalled successfully!");
+            Console.WriteLine($"✓ Module '{moduleEntity.DisplayName}' uninstalled successfully!");
             Console.WriteLine();
             Console.WriteLine("Note: Restart the Modulus host application to complete the removal.");
         }

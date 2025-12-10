@@ -4,10 +4,12 @@
     <Identity Id="b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e" 
               Version="1.0.0" 
               Language="en-US" 
-              Publisher="Modulus Team" />
+              Publisher="Modulus Team"
+              IsBundled="true" />
     <DisplayName>Simple Notes</DisplayName>
     <Description>A simple note taking module to demonstrate Modulus vertical slice architecture.</Description>
     <Tags>notes, demo, sample</Tags>
+    <Website>https://github.com/angidev/Modulus</Website>
   </Metadata>
   
   <Installation>
@@ -33,17 +35,16 @@
     <Asset Type="Modulus.Menu" 
            Id="simple-notes"
            DisplayName="Notes" 
-           Icon="Notebook"
-           Route="Modulus.Modules.SimpleNotes.Application.ViewModels.NoteListViewModel"
+           Icon="Document"
+           Route="SimpleNotes.Core.Application.ViewModels.NoteListViewModel"
            TargetHost="Modulus.Host.Avalonia"
            Order="30" />
     <Asset Type="Modulus.Menu" 
            Id="simple-notes"
            DisplayName="Notes" 
-           Icon="Notebook"
+           Icon="Document"
            Route="/notes"
            TargetHost="Modulus.Host.Blazor"
            Order="30" />
   </Assets>
 </PackageManifest>
-

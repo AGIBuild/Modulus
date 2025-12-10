@@ -34,6 +34,7 @@ public class ModulusApplication : IModulusApplication
     private readonly IServiceCollection _services;
     private IServiceProvider? _serviceProvider;
     private readonly ModuleManager _moduleManager;
+    private readonly RuntimeContext _runtimeContext;
     private readonly ILogger<ModulusApplication> _logger;
     private readonly List<ModuleMetadata> _moduleMetadataList = new();
     private bool _initialized;
@@ -41,15 +42,19 @@ public class ModulusApplication : IModulusApplication
     public IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("Application not initialized.");
     public IReadOnlyList<ModuleMetadata> ModuleMetadataList => _moduleMetadataList;
     
-    public IReadOnlyList<Assembly> LoadedModuleAssemblies => _moduleManager.GetSortedModules()
-        .Select(m => m.GetType().Assembly)
+    /// <summary>
+    /// Gets all loaded module assemblies (including all UI assemblies loaded via RuntimeModuleHandle).
+    /// </summary>
+    public IReadOnlyList<Assembly> LoadedModuleAssemblies => _runtimeContext.ModuleHandles
+        .SelectMany(h => h.Assemblies)
         .Distinct()
         .ToList();
 
-    internal ModulusApplication(IServiceCollection services, ModuleManager moduleManager, ILogger<ModulusApplication> logger)
+    internal ModulusApplication(IServiceCollection services, ModuleManager moduleManager, RuntimeContext runtimeContext, ILogger<ModulusApplication> logger)
     {
         _services = services;
         _moduleManager = moduleManager;
+        _runtimeContext = runtimeContext;
         _logger = logger;
     }
 
@@ -198,9 +203,9 @@ public class ModulusApplication : IModulusApplication
             _moduleMetadataList.Add(new ModuleMetadata
             {
                 Id = m.Id,
-                DisplayName = m.Name,
+                DisplayName = m.DisplayName,
                 Version = m.Version,
-                Author = m.Author ?? "",
+                Author = m.Publisher ?? "",
                 // Type is not strictly necessary for display purposes
             });
         }

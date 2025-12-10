@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using Nuke.Common;
@@ -182,10 +184,174 @@ class BuildTasks : NukeBuild
     // ============================================================
     
     /// <summary>
+    /// Generate bundled-modules.json from extension.vsixmanifest files.
+    /// This target scans all modules with IsBundled="true" and generates a JSON manifest
+    /// that will be embedded in host applications for runtime seeding.
+    /// </summary>
+    Target GenerateBundledModules => _ => _
+        .DependsOn(Restore)
+        .Description("Generate bundled-modules.json from extension.vsixmanifest files")
+        .Executes(() =>
+        {
+            LogHeader("Generating Bundled Modules Manifest");
+            
+            var vsixNs = XNamespace.Get("http://schemas.microsoft.com/developer/vsx-schema/2011");
+            var modules = new List<BundledModuleJsonDto>();
+            
+            // Scan all modules
+            var moduleDirectories = Directory.GetDirectories(ModulesDirectory);
+            foreach (var moduleDir in moduleDirectories)
+            {
+                var manifestPath = Path.Combine(moduleDir, "extension.vsixmanifest");
+                if (!File.Exists(manifestPath))
+                {
+                    LogWarning($"No extension.vsixmanifest in {Path.GetFileName(moduleDir)}, skipping");
+                    continue;
+                }
+                
+                try
+                {
+                    var doc = XDocument.Load(manifestPath);
+                    var root = doc.Root;
+                    if (root == null) continue;
+                    
+                    // Parse Identity
+                    var metadata = root.Element(vsixNs + "Metadata") ?? root.Element("Metadata");
+                    var identity = metadata?.Element(vsixNs + "Identity") ?? metadata?.Element("Identity");
+                    
+                    if (identity == null)
+                    {
+                        LogWarning($"No Identity element in {Path.GetFileName(moduleDir)}/extension.vsixmanifest");
+                        continue;
+                    }
+                    
+                    // Check IsBundled attribute
+                    var isBundled = (string?)identity.Attribute("IsBundled");
+                    if (!string.Equals(isBundled, "true", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LogNormal($"Module {Path.GetFileName(moduleDir)} is not bundled, skipping");
+                        continue;
+                    }
+                    
+                    var moduleName = Path.GetFileName(moduleDir);
+                    LogHighlight($"Processing bundled module: {moduleName}");
+                    
+                    // Parse module info
+                    var module = new BundledModuleJsonDto
+                    {
+                        Id = (string?)identity.Attribute("Id") ?? moduleName,
+                        Version = (string?)identity.Attribute("Version") ?? "1.0.0",
+                        Language = (string?)identity.Attribute("Language"),
+                        Publisher = (string?)identity.Attribute("Publisher"),
+                        DisplayName = metadata?.Element(vsixNs + "DisplayName")?.Value 
+                                   ?? metadata?.Element("DisplayName")?.Value 
+                                   ?? moduleName,
+                        Description = metadata?.Element(vsixNs + "Description")?.Value 
+                                   ?? metadata?.Element("Description")?.Value,
+                        Tags = metadata?.Element(vsixNs + "Tags")?.Value 
+                            ?? metadata?.Element("Tags")?.Value,
+                        Website = metadata?.Element(vsixNs + "Website")?.Value 
+                               ?? metadata?.Element("Website")?.Value,
+                        Path = $"Modules/{moduleName}",
+                        IsBundled = true
+                    };
+                    
+                    // Parse Installation targets
+                    var installation = root.Element(vsixNs + "Installation") ?? root.Element("Installation");
+                    if (installation != null)
+                    {
+                        var targets = installation.Elements(vsixNs + "InstallationTarget")
+                            .Concat(installation.Elements("InstallationTarget"));
+                        foreach (var target in targets)
+                        {
+                            var hostId = (string?)target.Attribute("Id");
+                            if (!string.IsNullOrEmpty(hostId))
+                                module.SupportedHosts.Add(hostId);
+                        }
+                    }
+                    
+                    // Parse Assets (menus)
+                    var assets = root.Element(vsixNs + "Assets") ?? root.Element("Assets");
+                    if (assets != null)
+                    {
+                        var menuAssets = assets.Elements(vsixNs + "Asset")
+                            .Concat(assets.Elements("Asset"))
+                            .Where(a => (string?)a.Attribute("Type") == "Modulus.Menu");
+                        
+                        foreach (var menuAsset in menuAssets)
+                        {
+                            var targetHost = (string?)menuAsset.Attribute("TargetHost") ?? "Modulus.Host.Avalonia";
+                            var menu = new MenuJsonDto
+                            {
+                                Id = (string?)menuAsset.Attribute("Id") ?? "",
+                                DisplayName = (string?)menuAsset.Attribute("DisplayName") ?? "",
+                                Icon = (string?)menuAsset.Attribute("Icon") ?? "Folder",
+                                Route = (string?)menuAsset.Attribute("Route") ?? "",
+                                Location = (string?)menuAsset.Attribute("Location") ?? "Main",
+                                Order = int.TryParse((string?)menuAsset.Attribute("Order"), out var order) ? order : 0
+                            };
+                            
+                            if (!module.Menus.ContainsKey(targetHost))
+                                module.Menus[targetHost] = new List<MenuJsonDto>();
+                            
+                            module.Menus[targetHost].Add(menu);
+                        }
+                    }
+                    
+                    modules.Add(module);
+                    LogSuccess($"Added bundled module: {module.DisplayName} ({module.Id})");
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse {Path.GetFileName(moduleDir)}/extension.vsixmanifest: {ex.Message}");
+                }
+            }
+            
+            // Generate JSON manifest
+            var manifest = new BundledModulesManifestDto
+            {
+                GeneratedAt = DateTime.UtcNow,
+                Configuration = Configuration.ToString(),
+                Modules = modules
+            };
+            
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+            
+            var json = JsonSerializer.Serialize(manifest, jsonOptions);
+            
+            // Output to host projects' Resources directories
+            var hostProjects = new[]
+            {
+                RootDirectory / "src" / "Hosts" / "Modulus.Host.Avalonia" / "Resources",
+                RootDirectory / "src" / "Hosts" / "Modulus.Host.Blazor" / "Resources"
+            };
+            
+            foreach (var resourceDir in hostProjects)
+            {
+                Directory.CreateDirectory(resourceDir);
+                var outputPath = resourceDir / "bundled-modules.json";
+                File.WriteAllText(outputPath, json);
+                LogSuccess($"Generated: {outputPath}");
+            }
+            
+            LogHeader("BUNDLED MODULES SUMMARY");
+            LogNormal($"Total bundled modules: {modules.Count}");
+            foreach (var module in modules)
+            {
+                LogSuccess($"  ✓ {module.DisplayName} ({module.Id}) - {module.Menus.Count} host(s)");
+            }
+        });
+
+    /// <summary>
     /// Just compile the solution (default bin/Debug output)
     /// </summary>
     Target Compile => _ => _
-        .DependsOn(Restore)
+        .DependsOn(Restore, GenerateBundledModules)
         .Description("Compile the solution")
         .Executes(() =>
         {
@@ -836,5 +1002,42 @@ class BuildTasks : NukeBuild
 
             return false;
         }
+    }
+
+    // ============================================================
+    // DTO classes for bundled-modules.json generation
+    // ============================================================
+
+    class BundledModulesManifestDto
+    {
+        public DateTime GeneratedAt { get; set; }
+        public string? Configuration { get; set; }
+        public List<BundledModuleJsonDto> Modules { get; set; } = new();
+    }
+
+    class BundledModuleJsonDto
+    {
+        public string Id { get; set; } = "";
+        public string Version { get; set; } = "1.0.0";
+        public string? Language { get; set; }
+        public string? Publisher { get; set; }
+        public string DisplayName { get; set; } = "";
+        public string? Description { get; set; }
+        public string? Tags { get; set; }
+        public string? Website { get; set; }
+        public List<string> SupportedHosts { get; set; } = new();
+        public string Path { get; set; } = "";
+        public bool IsBundled { get; set; } = true;
+        public Dictionary<string, List<MenuJsonDto>> Menus { get; set; } = new();
+    }
+
+    class MenuJsonDto
+    {
+        public string Id { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Icon { get; set; } = "Folder";
+        public string Route { get; set; } = "";
+        public string Location { get; set; } = "Main";
+        public int Order { get; set; }
     }
 }

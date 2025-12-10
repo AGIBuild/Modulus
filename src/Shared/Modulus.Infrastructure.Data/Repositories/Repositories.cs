@@ -47,13 +47,19 @@ public class ModuleRepository : IModuleRepository
         }
         else
         {
-            // Update properties
-            existing.Name = module.Name;
+            // Update properties (aligned with manifest schema)
+            existing.DisplayName = module.DisplayName;
             existing.Version = module.Version;
-            existing.Path = module.Path;
-            existing.IsSystem = module.IsSystem;
-            existing.Author = module.Author;
+            existing.Language = module.Language;
+            existing.Publisher = module.Publisher;
+            existing.Description = module.Description;
+            existing.Tags = module.Tags;
             existing.Website = module.Website;
+            existing.SupportedHosts = module.SupportedHosts;
+            existing.Dependencies = module.Dependencies;
+            existing.Path = module.Path;
+            existing.IsBundled = module.IsBundled;
+            existing.IsSystem = module.IsSystem;
             existing.MenuLocation = module.MenuLocation;
             existing.ManifestHash = module.ManifestHash;
             existing.ValidatedAt = module.ValidatedAt;
@@ -80,6 +86,8 @@ public class ModuleRepository : IModuleRepository
         if (module != null)
         {
             module.State = state;
+            // Sync IsEnabled with State for consistency
+            module.IsEnabled = state != ModuleState.Disabled;
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

@@ -18,6 +18,7 @@ public class AvaloniaNavigationService : INavigationService
     private readonly IUIFactory _uiFactory;
     private readonly IMenuRegistry _menuRegistry;
     private readonly RuntimeContext _runtimeContext;
+    private readonly ILazyModuleLoader _lazyModuleLoader;
     private readonly List<INavigationGuard> _guards = new();
     private readonly ConcurrentDictionary<string, object> _singletonViewModels = new();
     private readonly ConcurrentDictionary<string, object> _singletonViews = new();
@@ -40,12 +41,14 @@ public class AvaloniaNavigationService : INavigationService
         IServiceProvider serviceProvider,
         IUIFactory uiFactory,
         IMenuRegistry menuRegistry,
-        RuntimeContext runtimeContext)
+        RuntimeContext runtimeContext,
+        ILazyModuleLoader lazyModuleLoader)
     {
         _serviceProvider = serviceProvider;
         _uiFactory = uiFactory;
         _menuRegistry = menuRegistry;
         _runtimeContext = runtimeContext;
+        _lazyModuleLoader = lazyModuleLoader;
     }
 
     public async Task<bool> NavigateToAsync(string navigationKey, NavigationOptions? options = null)
@@ -65,9 +68,15 @@ public class AvaloniaNavigationService : INavigationService
             return false;
         }
 
-        // Find the MenuItem to determine instance mode
+        // Find the MenuItem to determine instance mode and module ID
         var menuItem = FindMenuItem(navigationKey);
         var instanceMode = menuItem?.InstanceMode ?? PageInstanceMode.Default;
+
+        // Lazy load module if needed
+        if (menuItem?.ModuleId != null)
+        {
+            await _lazyModuleLoader.EnsureModuleLoadedAsync(menuItem.ModuleId);
+        }
 
         // Resolve ViewModel type
         var vmType = ResolveViewModelType(navigationKey);

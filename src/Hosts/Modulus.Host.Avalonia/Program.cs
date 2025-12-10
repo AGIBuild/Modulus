@@ -3,6 +3,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Modulus.Core.Logging;
+using Modulus.Sdk;
 using System;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ class Program
     {
         // Initialize logger first - Serilog doesn't depend on Avalonia
         var emptyConfig = new ConfigurationBuilder().Build();
-        var loggerFactory = ModulusLogging.CreateLoggerFactory(emptyConfig, "AvaloniaApp");
+        var loggerFactory = ModulusLogging.CreateLoggerFactory(emptyConfig, ModulusHostIds.Avalonia);
         _logger = loggerFactory.CreateLogger<Program>();
 
         // Setup global exception handlers (logger is now ready)

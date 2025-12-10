@@ -56,9 +56,10 @@ public class HostModuleSeeder
         var hostModule = new ModuleEntity
         {
             Id = hostModuleId,
-            Name = $"Modulus Host ({hostType})",
+            DisplayName = $"Modulus Host ({hostType})",
             Version = "1.0.0",
-            Author = "Modulus Framework",
+            Language = "en-US",
+            Publisher = "Modulus Framework",
             Website = "https://github.com/AGIBuild/Modulus",
             Path = "built-in", // Special marker for host module
             IsSystem = true,

@@ -1,49 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
-  <Metadata>
-    <Identity Id="d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a" 
-              Version="1.0.0" 
-              Language="en-US" 
-              Publisher="Modulus Team" />
-    <DisplayName>Components Demo</DisplayName>
-    <Description>Demonstrates navigation and UI components for both Avalonia and Blazor hosts.</Description>
-    <Tags>components, demo, navigation</Tags>
-  </Metadata>
-  
-  <Installation>
-    <InstallationTarget Id="Modulus.Host.Blazor" Version="[1.0,)" />
-    <InstallationTarget Id="Modulus.Host.Avalonia" Version="[1.0,)" />
-  </Installation>
-  
-  <Dependencies>
-    <!-- No dependencies -->
-  </Dependencies>
-  
-  <Assets>
-    <!-- Core Package (host-agnostic) -->
-    <Asset Type="Modulus.Package" Path="ComponentsDemo.Core.dll" />
-    
-    <!-- Host-Specific UI Packages -->
-    <Asset Type="Modulus.Package" Path="ComponentsDemo.UI.Blazor.dll" 
-           TargetHost="Modulus.Host.Blazor" />
-    <Asset Type="Modulus.Package" Path="ComponentsDemo.UI.Avalonia.dll" 
-           TargetHost="Modulus.Host.Avalonia" />
-    
-    <!-- Menu Declarations -->
-    <Asset Type="Modulus.Menu" 
-           Id="components-demo"
-           DisplayName="Components" 
-           Icon="Grid"
-           Route="Modulus.Modules.ComponentsDemo.ViewModels.ComponentsMainViewModel"
-           TargetHost="Modulus.Host.Avalonia"
-           Order="40" />
-    <Asset Type="Modulus.Menu" 
-           Id="components-demo"
-           DisplayName="Components" 
-           Icon="Grid"
-           Route="/components"
-           TargetHost="Modulus.Host.Blazor"
-           Order="40" />
-  </Assets>
-</PackageManifest>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a"
+                  Version="1.0.0"
+                  Language="en-US"
+                  Publisher="Modulus Team"
+                  IsBundled="true" />
+        <DisplayName>Components Demo</DisplayName>
+        <Description xml:space="preserve">Demonstrates navigation and UI components for both Avalonia and Blazor hosts.</Description>
+        <Tags>components, demo, navigation</Tags>
+        <Website>https://github.com/angidev/Modulus</Website>
+    </Metadata>
 
+    <Installation>
+        <InstallationTarget Id="Modulus.Host.Blazor" Version="[1.0,)" />
+        <InstallationTarget Id="Modulus.Host.Avalonia" Version="[1.0,)" />
+    </Installation>
+
+    <Dependencies>
+        <!-- No dependencies -->
+    </Dependencies>
+
+    <Assets>
+        <!-- Core Package (host-agnostic) -->
+        <Asset Type="Modulus.Package" Path="ComponentsDemo.Core.dll" />
+
+        <!-- Host-Specific UI Packages -->
+        <Asset Type="Modulus.Package" Path="ComponentsDemo.UI.Blazor.dll"
+               TargetHost="Modulus.Host.Blazor" />
+        <Asset Type="Modulus.Package" Path="ComponentsDemo.UI.Avalonia.dll"
+               TargetHost="Modulus.Host.Avalonia" />
+
+        <!-- Menu Declarations -->
+        <Asset Type="Modulus.Menu"
+               Id="components-demo"
+               DisplayName="Components"
+               Icon="Grid"
+               Route="Modulus.Modules.ComponentsDemo.ViewModels.ComponentsMainViewModel"
+               TargetHost="Modulus.Host.Avalonia"
+               Order="40" />
+        <Asset Type="Modulus.Menu"
+               Id="components-demo"
+               DisplayName="Components"
+               Icon="Grid"
+               Route="/components"
+               TargetHost="Modulus.Host.Blazor"
+               Order="40" />
+    </Assets>
+</PackageManifest>

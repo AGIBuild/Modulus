@@ -203,6 +203,9 @@ public partial class ModuleListViewModel : ObservableObject
                 await _moduleLoader.UnloadAsync(moduleVm.Id);
             }
             
+            // Notify ShellViewModel to remove menus
+            WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
+            
             await _moduleRepository.DeleteAsync(moduleVm.Id);
             
             // Try to clean files
@@ -262,9 +265,9 @@ public partial class ModuleViewModel : ObservableObject
     }
 
     public string Id => Entity.Id;
-    public string Name => Entity.Name;
+    public string Name => Entity.DisplayName;
     public string Version => Entity.Version;
-    public string Author => Entity.Author ?? "Unknown";
+    public string Author => Entity.Publisher ?? "Unknown";
     public bool IsSystem => Entity.IsSystem;
     public string MenuLocation => Entity.MenuLocation.ToString();
     

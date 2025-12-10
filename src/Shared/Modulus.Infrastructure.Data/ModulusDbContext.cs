@@ -21,7 +21,7 @@ public class ModulusDbContext : DbContext
         modelBuilder.Entity<ModuleEntity>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.DisplayName).IsRequired();
             entity.Property(e => e.Version).IsRequired();
             entity.Property(e => e.Path).IsRequired();
             entity.Property(e => e.ManifestHash);

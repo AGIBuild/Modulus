@@ -92,10 +92,12 @@ public class ModuleInstallerService : IModuleInstallerService
         var moduleEntity = new ModuleEntity
         {
             Id = identity.Id,
-            Name = manifest.Metadata.DisplayName,
+            DisplayName = manifest.Metadata.DisplayName,
             Version = identity.Version,
+            Language = identity.Language,
+            Publisher = identity.Publisher,
             Description = manifest.Metadata.Description,
-            Author = identity.Publisher,
+            Tags = manifest.Metadata.Tags,
             Website = manifest.Metadata.MoreInfo,
             Path = Path.GetRelativePath(Directory.GetCurrentDirectory(), manifestPath),
             ManifestHash = manifestHash,

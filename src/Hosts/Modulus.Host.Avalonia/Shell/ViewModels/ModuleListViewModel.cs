@@ -165,7 +165,8 @@ public partial class ModuleListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ToggleModuleAsync(ModuleViewModel moduleVm)
     {
-        if (moduleVm == null || moduleVm.IsSystem) return;
+        // System modules can be disabled but not uninstalled
+        if (moduleVm == null) return;
 
         if (moduleVm.IsEnabled)
         {
@@ -177,10 +178,7 @@ public partial class ModuleListViewModel : ViewModelBase
             
             await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Disabled);
             
-            // Unregister menus from MenuRegistry
-            _menuRegistry.UnregisterModuleItems(moduleVm.Id);
-            
-            // Notify ShellViewModel to remove menus (incremental)
+            // Notify ShellViewModel to remove menus (handles both registry and UI)
             WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
         }
         else 
@@ -262,6 +260,9 @@ public partial class ModuleListViewModel : ViewModelBase
                 await _moduleLoader.UnloadAsync(moduleVm.Id);
             }
             
+            // Notify ShellViewModel to remove menus (handles both registry and UI)
+            WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
+            
             await _moduleRepository.DeleteAsync(moduleVm.Id);
             // Optionally clean files? For now, we just remove from DB as per task "Remove (Delete DB record + Clean folder)"
             // Clean folder logic:
@@ -336,10 +337,10 @@ public partial class ModuleViewModel : ObservableObject
     }
 
     public string Id => Entity.Id;
-    public string Name => Entity.Name;
+    public string Name => Entity.DisplayName;
     public string Version => Entity.Version;
     public string Description => Entity.Description ?? "No description";
-    public string Author => Entity.Author ?? "AGIBuild";
+    public string Author => Entity.Publisher ?? "AGIBuild";
     public bool IsSystem => Entity.IsSystem;
     public string MenuLocation => Entity.MenuLocation.ToString();
     
@@ -375,9 +376,10 @@ public partial class ModuleViewModel : ObservableObject
     };
 
     /// <summary>
-    /// Whether the toggle button should be shown (non-system modules can be toggled).
+    /// Whether the toggle button should be shown.
+    /// All modules can be toggled (disabled/enabled), including system modules.
     /// </summary>
-    public bool ShowToggle => !IsSystem;
+    public bool ShowToggle => true;
     
     /// <summary>
     /// Whether this module can be removed (only non-system modules).

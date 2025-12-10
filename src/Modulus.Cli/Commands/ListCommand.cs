@@ -45,7 +45,7 @@ public static class ListCommand
             var dbContext = provider.GetRequiredService<ModulusDbContext>();
 
             var modules = await dbContext.Modules
-                .OrderBy(m => m.Name)
+                .OrderBy(m => m.DisplayName)
                 .ToListAsync();
 
             if (modules.Count == 0)
@@ -65,12 +65,12 @@ public static class ListCommand
                     ? $" [{module.State}]" 
                     : "";
 
-                Console.WriteLine($"  {status} {module.Name} v{module.Version}{systemTag}{stateTag}");
+                Console.WriteLine($"  {status} {module.DisplayName} v{module.Version}{systemTag}{stateTag}");
                 Console.WriteLine($"      ID: {module.Id}");
                 
-                if (!string.IsNullOrEmpty(module.Author))
+                if (!string.IsNullOrEmpty(module.Publisher))
                 {
-                    Console.WriteLine($"      Author: {module.Author}");
+                    Console.WriteLine($"      Publisher: {module.Publisher}");
                 }
 
                 if (verbose)
