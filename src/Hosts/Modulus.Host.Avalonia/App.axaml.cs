@@ -31,6 +31,7 @@ public class AvaloniaHostModule : ModulusPackage
         context.Services.AddSingleton<IUIFactory, AvaloniaUIFactory>();
         context.Services.AddSingleton<IViewRegistry, ViewRegistry>();
         context.Services.AddSingleton<IThemeService, AvaloniaThemeService>();
+        context.Services.AddSingleton<INotificationService, AvaloniaNotificationService>();
         
         // Shell Services
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
@@ -128,6 +129,8 @@ public partial class App : Application
             // Repositories & installers (needed at runtime for menu registration)
             services.AddScoped<IModuleRepository, ModuleRepository>();
             services.AddScoped<IMenuRepository, MenuRepository>();
+            services.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
+            services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
             services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
             services.AddScoped<SystemModuleInstaller>();
             services.AddScoped<ModuleIntegrityChecker>();

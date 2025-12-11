@@ -1,6 +1,7 @@
 @page "/modules"
 @using Modulus.Host.Blazor.Shell.ViewModels
 @using Markdig
+@using Microsoft.AspNetCore.Components.Forms
 @inject ModuleListViewModel ViewModel
 
 <MudText Typo="Typo.h4" GutterBottom="true">Modules</MudText>
@@ -10,6 +11,13 @@
 {
     <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="@(() => ViewModel.ErrorMessage = null)">
         @ViewModel.ErrorMessage
+    </MudAlert>
+}
+
+@if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
+{
+    <MudAlert Severity="Severity.Success" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="@(() => ViewModel.SuccessMessage = null)">
+        @ViewModel.SuccessMessage
     </MudAlert>
 }
 
@@ -101,11 +109,33 @@
     <!-- Right: Actions -->
     <MudItem xs="12" md="3">
         <MudStack Spacing="3">
-            <!-- Actions Card -->
+            <!-- Install Package Card -->
             <MudPaper Class="pa-4" Elevation="0" Outlined="true">
-                <MudTextField @bind-Value="ViewModel.ImportPath" Placeholder="Path to manifest.json" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="@ImportModule" Disabled="@ViewModel.IsLoading">
-                    Install Plugin from File
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Install Module</MudText>
+                <MudFileUpload T="IBrowserFile" Accept=".modpkg" OnFilesChanged="OnPackageFileSelected" MaximumFileCount="1">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" 
+                                   StartIcon="@MudBlazor.Icons.Material.Filled.CloudUpload"
+                                   Disabled="@ViewModel.IsLoading">
+                            @if (ViewModel.IsLoading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <text>Installing...</text>
+                            }
+                            else
+                            {
+                                <text>Install from Package...</text>
+                            }
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+                
+                <MudDivider Class="my-3" />
+                
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Developer Import</MudText>
+                <MudTextField @bind-Value="ViewModel.ImportPath" Placeholder="Path to manifest directory" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="@ImportModule" Disabled="@ViewModel.IsLoading">
+                    Import from Path
                 </MudButton>
                 
                 <MudButton Variant="Variant.Text" StartIcon="@MudBlazor.Icons.Material.Filled.Refresh" FullWidth="true" OnClick="@RefreshModules" Class="mt-2">
@@ -131,7 +161,24 @@
     </MudItem>
 </MudGrid>
 
+<!-- Overwrite Confirmation Dialog -->
+<MudDialog @bind-Visible="ViewModel.ShowOverwriteConfirm">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Module Already Exists</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Module '@(ViewModel.PendingModuleName ?? ViewModel.PendingModuleId)' is already installed. Do you want to overwrite it?</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CancelOverwrite">Cancel</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="@ConfirmOverwrite">Overwrite</MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
+    private IBrowserFile? _pendingFile;
+    private MemoryStream? _pendingFileStream;
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshModules();
@@ -161,6 +208,62 @@
         StateHasChanged();
     }
 
+    private async Task OnPackageFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        if (!file.Name.EndsWith(".modpkg", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewModel.ErrorMessage = "Please select a .modpkg file.";
+            StateHasChanged();
+            return;
+        }
+
+        _pendingFile = file;
+        
+        // Copy to memory stream for potential retry on overwrite
+        _pendingFileStream?.Dispose();
+        _pendingFileStream = new MemoryStream();
+        await file.OpenReadStream(maxAllowedSize: 100 * 1024 * 1024).CopyToAsync(_pendingFileStream); // 100MB max
+        _pendingFileStream.Position = 0;
+
+        await ViewModel.InstallFromStreamAsync(_pendingFileStream, file.Name);
+        
+        // If no confirmation needed, clean up
+        if (!ViewModel.ShowOverwriteConfirm)
+        {
+            CleanupPendingFile();
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task ConfirmOverwrite()
+    {
+        if (_pendingFile != null && _pendingFileStream != null)
+        {
+            _pendingFileStream.Position = 0;
+            await ViewModel.ConfirmOverwriteAsync(_pendingFileStream, _pendingFile.Name);
+            CleanupPendingFile();
+        }
+        StateHasChanged();
+    }
+
+    private void CancelOverwrite()
+    {
+        ViewModel.CancelOverwrite();
+        CleanupPendingFile();
+        StateHasChanged();
+    }
+
+    private void CleanupPendingFile()
+    {
+        _pendingFileStream?.Dispose();
+        _pendingFileStream = null;
+        _pendingFile = null;
+    }
+
     private Color GetColor(string statusColor) => statusColor switch
     {
         "success" => Color.Success,
@@ -169,4 +272,9 @@
         "secondary" => Color.Default,
         _ => Color.Info
     };
+
+    public void Dispose()
+    {
+        _pendingFileStream?.Dispose();
+    }
 }

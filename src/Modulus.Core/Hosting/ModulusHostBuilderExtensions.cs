@@ -27,6 +27,7 @@ public static class ModulusHostBuilderExtensions
             services.AddScoped<IMenuRepository, MenuRepository>();
 
             // Installation Services
+            services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
             services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
             services.AddScoped<SystemModuleInstaller>();
             services.AddScoped<ModuleIntegrityChecker>();
@@ -34,6 +35,7 @@ public static class ModulusHostBuilderExtensions
             // Core Runtime
             services.AddSingleton<RuntimeContext>();
             services.AddSingleton<ISharedAssemblyCatalog>(sp => SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies(), null, sp.GetService<ILogger<SharedAssemblyCatalog>>()));
+            services.AddSingleton<IModuleExecutionGuard, ModuleExecutionGuard>();
             services.AddSingleton<IModuleLoader, ModuleLoader>();
             services.AddSingleton<IManifestValidator, DefaultManifestValidator>();
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(RuntimeContext).Assembly));

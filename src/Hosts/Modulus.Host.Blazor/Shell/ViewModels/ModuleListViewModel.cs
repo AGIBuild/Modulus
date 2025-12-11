@@ -18,6 +18,7 @@ using Modulus.UI.Abstractions.Messages;
 
 using DataModuleState = Modulus.Infrastructure.Data.Models.ModuleState;
 using RuntimeModuleState = Modulus.Core.Runtime.ModuleState;
+using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Host.Blazor.Shell.ViewModels;
 
@@ -26,7 +27,11 @@ public partial class ModuleListViewModel : ObservableObject
     private readonly RuntimeContext _runtimeContext;
     private readonly IModuleLoader _moduleLoader;
     private readonly IModuleRepository _moduleRepository;
+    private readonly IMenuRepository _menuRepository;
+    private readonly IMenuRegistry _menuRegistry;
     private readonly IModuleInstallerService _moduleInstaller;
+    private readonly IModuleCleanupService _cleanupService;
+    private readonly ILogger<ModuleListViewModel> _logger;
     private readonly ModuleDetailLoader _detailLoader;
     private CancellationTokenSource? _detailLoadCts;
 
@@ -42,6 +47,21 @@ public partial class ModuleListViewModel : ObservableObject
     private string? _errorMessage;
 
     [ObservableProperty]
+    private string? _successMessage;
+
+    [ObservableProperty]
+    private bool _showOverwriteConfirm;
+
+    [ObservableProperty]
+    private string? _pendingPackagePath;
+
+    [ObservableProperty]
+    private string? _pendingModuleId;
+
+    [ObservableProperty]
+    private string? _pendingModuleName;
+
+    [ObservableProperty]
     private ModuleViewModel? _selectedModule;
 
     [ObservableProperty]
@@ -51,13 +71,20 @@ public partial class ModuleListViewModel : ObservableObject
         RuntimeContext runtimeContext,
         IModuleLoader moduleLoader,
         IModuleRepository moduleRepository,
+        IMenuRepository menuRepository,
+        IMenuRegistry menuRegistry,
         IModuleInstallerService moduleInstaller,
+        IModuleCleanupService cleanupService,
         ILoggerFactory loggerFactory)
     {
         _runtimeContext = runtimeContext;
         _moduleLoader = moduleLoader;
         _moduleRepository = moduleRepository;
+        _menuRepository = menuRepository;
+        _menuRegistry = menuRegistry;
         _moduleInstaller = moduleInstaller;
+        _cleanupService = cleanupService;
+        _logger = loggerFactory.CreateLogger<ModuleListViewModel>();
         _detailLoader = new ModuleDetailLoader(loggerFactory.CreateLogger<ModuleDetailLoader>());
     }
 
@@ -195,6 +222,7 @@ public partial class ModuleListViewModel : ObservableObject
     {
         if (moduleVm == null || moduleVm.IsSystem) return;
         ErrorMessage = null;
+        SuccessMessage = null;
 
         try
         {
@@ -208,17 +236,29 @@ public partial class ModuleListViewModel : ObservableObject
             
             await _moduleRepository.DeleteAsync(moduleVm.Id);
             
-            // Try to clean files
-            try 
+            // Schedule cleanup via IModuleCleanupService (handles retries and persistence)
+            var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
+            var dir = Path.GetDirectoryName(manifestPath);
+            if (dir != null && Directory.Exists(dir))
             {
-                var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
-                var dir = Path.GetDirectoryName(manifestPath);
-                if (dir != null && Directory.Exists(dir))
+                // Pass moduleId so cleanup can be cancelled if module is reinstalled
+                await _cleanupService.ScheduleCleanupAsync(dir, moduleVm.Id);
+                
+                // Check if cleanup succeeded (directory deleted) or was scheduled for later
+                if (Directory.Exists(dir))
                 {
-                    Directory.Delete(dir, true);
+                    _logger.LogInformation("Module {ModuleId} files scheduled for cleanup on next restart.", moduleVm.Id);
+                    SuccessMessage = $"Module '{moduleVm.Name}' removed. Some files are locked and will be cleaned up on next restart.";
+                }
+                else
+                {
+                    SuccessMessage = $"Module '{moduleVm.Name}' removed successfully.";
                 }
             }
-            catch { /* Ignore file deletion errors */ }
+            else
+            {
+                SuccessMessage = $"Module '{moduleVm.Name}' removed successfully.";
+            }
 
             await RefreshModulesAsync();
         }
@@ -233,6 +273,7 @@ public partial class ModuleListViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(ImportPath)) return;
         ErrorMessage = null;
+        SuccessMessage = null;
 
         var path = ImportPath;
         if (Directory.Exists(path))
@@ -245,11 +286,135 @@ public partial class ModuleListViewModel : ObservableObject
             await _moduleInstaller.RegisterDevelopmentModuleAsync(path);
             ImportPath = string.Empty;
             await RefreshModulesAsync();
+            SuccessMessage = "Module imported successfully.";
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Import failed: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// Installs a module from a .modpkg package stream (for file upload).
+    /// </summary>
+    public async Task InstallFromStreamAsync(Stream packageStream, string fileName, bool overwrite = false)
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsLoading = true;
+
+        try
+        {
+            var hostType = _runtimeContext.HostType;
+            var result = await _moduleInstaller.InstallFromPackageStreamAsync(packageStream, fileName, overwrite, hostType: hostType);
+
+            if (result.RequiresConfirmation)
+            {
+                // Store for confirmation dialog
+                PendingPackagePath = null; // We'll need to re-upload for stream
+                PendingModuleId = result.ModuleId;
+                PendingModuleName = result.DisplayName ?? result.ModuleId;
+                ShowOverwriteConfirm = true;
+                IsLoading = false;
+                return;
+            }
+
+            if (!result.Success)
+            {
+                ErrorMessage = result.Error ?? "Installation failed.";
+                IsLoading = false;
+                return;
+            }
+
+            // Auto-load the installed module
+            if (result.InstallPath != null)
+            {
+                await _moduleLoader.LoadAsync(result.InstallPath, isSystem: false);
+                
+                // Register menus and notify shell
+                var addedMenus = await RegisterModuleMenusAsync(result.ModuleId!);
+                if (addedMenus.Count > 0)
+                {
+                    WeakReferenceMessenger.Default.Send(new MenuItemsAddedMessage(addedMenus));
+                }
+            }
+
+            await RefreshModulesAsync();
+            SuccessMessage = $"Module '{result.DisplayName}' v{result.Version} installed successfully.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Installation failed: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Confirms overwrite of an existing module (called from UI after confirmation dialog).
+    /// </summary>
+    public async Task ConfirmOverwriteAsync(Stream packageStream, string fileName)
+    {
+        ShowOverwriteConfirm = false;
+        
+        // Unload existing module if running
+        if (PendingModuleId != null && 
+            _runtimeContext.TryGetModule(PendingModuleId, out var existingModule) && 
+            existingModule?.State == RuntimeModuleState.Active)
+        {
+            await _moduleLoader.UnloadAsync(PendingModuleId);
+            WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(PendingModuleId));
+        }
+
+        PendingModuleId = null;
+        PendingModuleName = null;
+        
+        await InstallFromStreamAsync(packageStream, fileName, overwrite: true);
+    }
+
+    /// <summary>
+    /// Cancels the overwrite confirmation.
+    /// </summary>
+    public void CancelOverwrite()
+    {
+        ShowOverwriteConfirm = false;
+        PendingModuleId = null;
+        PendingModuleName = null;
+        PendingPackagePath = null;
+    }
+
+    private async Task<List<UiMenuItem>> RegisterModuleMenusAsync(string moduleId)
+    {
+        var menus = await _menuRepository.GetByModuleIdAsync(moduleId);
+        var addedItems = new List<UiMenuItem>();
+        
+        foreach (var menu in menus)
+        {
+            var iconKind = IconKind.Grid;
+            if (Enum.TryParse<IconKind>(menu.Icon, true, out var parsedIcon))
+            {
+                iconKind = parsedIcon;
+            }
+            
+            var navigationKey = menu.Route ?? menu.Id;
+            
+            var item = new UiMenuItem(
+                menu.Id,
+                menu.DisplayName,
+                iconKind,
+                navigationKey,
+                menu.Location,
+                menu.Order
+            );
+            item.ModuleId = menu.ModuleId;
+            
+            _menuRegistry.Register(item);
+            addedItems.Add(item);
+        }
+        
+        return addedItems;
     }
 }
 

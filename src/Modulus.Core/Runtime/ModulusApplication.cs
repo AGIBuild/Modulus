@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Modulus.Core.Installation;
 using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
@@ -104,6 +105,13 @@ public class ModulusApplication : IModulusApplication
         {
             ["HostType"] = runtimeContext?.HostType ?? "unknown"
         });
+
+        // Process any pending module directory cleanups from previous session
+        var cleanupService = _serviceProvider.GetService<IModuleCleanupService>();
+        if (cleanupService != null)
+        {
+            await cleanupService.ProcessPendingCleanupsAsync();
+        }
 
         // Initialize pre-loaded modules (those loaded during CreateAsync with skipModuleInitialization=true)
         var moduleLoader = _serviceProvider.GetService<IModuleLoader>();

@@ -100,7 +100,8 @@ public static class ModulusApplicationFactory
             });
         }
         
-        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, loggerFactory.CreateLogger<ModuleLoader>(), loggerFactory, resolutionReporter: resolutionReporter);
+        var executionGuard = new ModuleExecutionGuard(loggerFactory.CreateLogger<ModuleExecutionGuard>(), runtimeContext);
+        var moduleLoader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, executionGuard, loggerFactory.CreateLogger<ModuleLoader>(), loggerFactory, resolutionReporter: resolutionReporter);
         var moduleManager = new ModuleManager(loggerFactory.CreateLogger<ModuleManager>());
 
         // 2. Setup Temporary Services for DB & Seeding (shared logger factory)
@@ -115,6 +116,8 @@ public static class ModulusApplicationFactory
 
         tempServices.AddScoped<IModuleRepository, ModuleRepository>();
         tempServices.AddScoped<IMenuRepository, MenuRepository>();
+        tempServices.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
+        tempServices.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         tempServices.AddScoped<IModuleInstallerService, ModuleInstallerService>();
         tempServices.AddScoped<SystemModuleInstaller>();
         tempServices.AddScoped<ModuleIntegrityChecker>();
@@ -166,9 +169,33 @@ public static class ModulusApplicationFactory
 
                 try
                 {
-                    // Resolve absolute path (module.Path is stored as manifest.json path)
-                    var manifestPath = Path.GetFullPath(module.Path);
-                    var packagePath = Path.GetDirectoryName(manifestPath);
+                    // Resolve path relative to application base directory (not CWD)
+                    var basePath = Path.IsPathRooted(module.Path)
+                        ? module.Path
+                        : Path.Combine(AppContext.BaseDirectory, module.Path);
+                    var absolutePath = Path.GetFullPath(basePath);
+                    
+                    // Determine package path - handle both directory and file paths
+                    string packagePath;
+                    if (Directory.Exists(absolutePath))
+                    {
+                        // Path is a directory
+                        packagePath = absolutePath;
+                    }
+                    else if (File.Exists(absolutePath))
+                    {
+                        // Path is a manifest file
+                        packagePath = Path.GetDirectoryName(absolutePath)!;
+                    }
+                    else
+                    {
+                        // Path doesn't exist
+                        logger.LogWarning(
+                            "Module path not found: {Path} (resolved to {AbsolutePath}). " +
+                            "BaseDirectory: {BaseDir}, CWD: {Cwd}",
+                            module.Path, absolutePath, AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+                        packagePath = absolutePath;
+                    }
 
                     if (packagePath != null)
                     {
@@ -197,6 +224,7 @@ public static class ModulusApplicationFactory
         // 5. Register Services to FINAL ServiceCollection
         ModulusLogging.AddLoggerFactory(services, loggerFactory);
         services.AddSingleton(runtimeContext);
+        services.AddSingleton<IModuleExecutionGuard>(executionGuard);
         services.AddSingleton<IModuleLoader>(moduleLoader);
         services.AddSingleton(moduleManager);
         services.AddSingleton<ISharedAssemblyCatalog>(sharedAssemblies);
@@ -226,7 +254,15 @@ public static class ModulusApplicationFactory
             
             try 
             {
-                var manifestPath = Path.GetFullPath(module.Path);
+                // Resolve path relative to application base directory
+                var basePath = Path.IsPathRooted(module.Path)
+                    ? module.Path
+                    : Path.Combine(AppContext.BaseDirectory, module.Path);
+                var absolutePath = Path.GetFullPath(basePath);
+                var manifestPath = Directory.Exists(absolutePath)
+                    ? Path.Combine(absolutePath, SystemModuleInstaller.VsixManifestFileName)
+                    : absolutePath;
+                    
                 if (File.Exists(manifestPath))
                 {
                     var manifest = await VsixManifestReader.ReadFromFileAsync(manifestPath);

@@ -29,12 +29,14 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
     private readonly ILoggerFactory _loggerFactory;
     private readonly ISharedAssemblyCatalog _sharedAssemblyCatalog;
     private readonly ISharedAssemblyResolutionReporter? _resolutionReporter;
+    private readonly IModuleExecutionGuard _executionGuard;
     private IServiceProvider? _hostServices;
 
     public ModuleLoader(
         RuntimeContext runtimeContext,
         IManifestValidator manifestValidator,
         ISharedAssemblyCatalog sharedAssemblyCatalog,
+        IModuleExecutionGuard executionGuard,
         ILogger<ModuleLoader> logger,
         ILoggerFactory loggerFactory,
         IServiceProvider? hostServices = null,
@@ -43,6 +45,7 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
         _runtimeContext = runtimeContext;
         _manifestValidator = manifestValidator;
         _sharedAssemblyCatalog = sharedAssemblyCatalog;
+        _executionGuard = executionGuard;
         _logger = logger;
         _loggerFactory = loggerFactory;
         _hostServices = hostServices;
@@ -114,20 +117,38 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
                 handle.UpdateCompositeServiceProvider(_hostServices);
                 var initContext = new ModuleInitializationContext(handle.CompositeServiceProvider);
 
-                try
+                var initSuccess = true;
+                foreach (var moduleInstance in handle.ModuleInstances)
                 {
-                    foreach (var moduleInstance in handle.ModuleInstances)
+                    _logger.LogDebug("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
+                    
+                    // Use execution guard for exception isolation
+                    var success = await _executionGuard.ExecuteSafeAsync(
+                        module.Descriptor.Id,
+                        async () =>
+                        {
+                            await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                            return true;
+                        },
+                        fallback: false,
+                        caller: $"Initialize:{moduleInstance.GetType().Name}");
+                    
+                    if (!success)
                     {
-                        _logger.LogDebug("  Calling OnApplicationInitializationAsync on {Type}...", moduleInstance.GetType().Name);
-                        await moduleInstance.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                        initSuccess = false;
+                        break;
                     }
+                }
+                
+                if (initSuccess)
+                {
                     module.TransitionTo(ModuleState.Active, "Host binding initialization completed");
                     _logger.LogInformation("Module {ModuleName} ({ModuleId}) activated.", module.Descriptor.DisplayName, module.Descriptor.Id);
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogError(ex, "Error initializing module {ModuleName}", module.Descriptor.DisplayName);
-                    module.TransitionTo(ModuleState.Error, "Initialization failed", ex);
+                    var healthInfo = _executionGuard.GetHealthInfo(module.Descriptor.Id);
+                    module.TransitionTo(ModuleState.Error, "Initialization failed", healthInfo.LastError);
                 }
             }
         }
@@ -333,18 +354,34 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             if (!skipModuleInitialization)
             {
                 var initContext = new ModuleInitializationContext(compositeProvider);
+                var initSuccess = true;
+                
                 foreach (var module in sortedModules)
                 {
-                    try
+                    // Use execution guard for exception isolation
+                    var success = await _executionGuard.ExecuteSafeAsync(
+                        identity.Id,
+                        async () =>
+                        {
+                            await module.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
+                            return true;
+                        },
+                        fallback: false,
+                        caller: $"Initialize:{module.GetType().Name}");
+                    
+                    if (!success)
                     {
-                        await module.OnApplicationInitializationAsync(initContext, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error initializing module {ModuleType}", module.GetType().Name);
-                        return null;
+                        initSuccess = false;
+                        _logger.LogError("Module {ModuleType} initialization failed, aborting load", module.GetType().Name);
+                        break;
                     }
                 }
+                
+                if (!initSuccess)
+                {
+                    return null;
+                }
+                
                 runtimeModule.TransitionTo(ModuleState.Active, "Module initialization completed");
             }
 
@@ -405,20 +442,17 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
             if (handle != null)
             {
-                // 1. Invoke module shutdown hooks (reverse order)
+                // 1. Invoke module shutdown hooks (reverse order) with exception isolation
                 _logger.LogDebug("Invoking shutdown hooks for {Count} module instances...", handle.ModuleInstances.Count);
                 var shutdownContext = new ModuleInitializationContext(handle.CompositeServiceProvider);
                 var moduleInstances = handle.ModuleInstances.ToList();
                 for (var i = moduleInstances.Count - 1; i >= 0; i--)
                 {
-                    try
-                    {
-                        await moduleInstances[i].OnApplicationShutdownAsync(shutdownContext).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error shutting down module {ModuleType}", moduleInstances[i].GetType().Name);
-                    }
+                    var instance = moduleInstances[i];
+                    await _executionGuard.ExecuteSafeAsync(
+                        moduleId,
+                        () => instance.OnApplicationShutdownAsync(shutdownContext),
+                        caller: $"Shutdown:{instance.GetType().Name}");
                 }
 
                 // 2. Unregister menus
@@ -464,7 +498,39 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             _runtimeContext.RemoveModule(moduleId);
 
             runtimeModule.TransitionTo(ModuleState.Unloaded, "Module unloaded and context disposed");
+            
+            // Unload AssemblyLoadContext and allow GC to reclaim resources
+            var loadContextRef = new WeakReference(runtimeModule.LoadContext);
             runtimeModule.LoadContext.Unload();
+
+            // Force GC to reclaim the unloaded assemblies
+            // This helps release file locks on DLLs faster
+            for (int i = 0; i < 3 && loadContextRef.IsAlive; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                
+                if (loadContextRef.IsAlive)
+                {
+                    await Task.Delay(100 * (i + 1)); // 100ms, 200ms, 300ms
+                }
+            }
+
+            if (loadContextRef.IsAlive)
+            {
+                _logger.LogDebug("AssemblyLoadContext for module {ModuleId} still alive after GC. File locks may persist.", moduleId);
+            }
+            else
+            {
+                _logger.LogDebug("AssemblyLoadContext for module {ModuleId} successfully collected.", moduleId);
+            }
+
+            // Notify execution guard that module is unloaded
+            if (_executionGuard is ModuleExecutionGuard guard)
+            {
+                guard.OnModuleUnloaded(moduleId);
+            }
 
             _logger.LogInformation("Module {ModuleName} ({ModuleId}) unloaded.", runtimeModule.Descriptor.DisplayName, moduleId);
         }

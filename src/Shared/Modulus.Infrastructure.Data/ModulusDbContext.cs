@@ -9,6 +9,7 @@ public class ModulusDbContext : DbContext
     public DbSet<ModuleEntity> Modules { get; set; } = null!;
     public DbSet<MenuEntity> Menus { get; set; } = null!;
     public DbSet<AppSettingEntity> AppSettings { get; set; } = null!;
+    public DbSet<PendingCleanupEntity> PendingCleanups { get; set; } = null!;
 
     public ModulusDbContext(DbContextOptions<ModulusDbContext> options) : base(options)
     {
@@ -45,6 +46,16 @@ public class ModulusDbContext : DbContext
             entity.ToTable("AppSettings");
             entity.HasKey(e => e.Key);
             entity.Property(e => e.Value).IsRequired();
+        });
+
+        modelBuilder.Entity<PendingCleanupEntity>(entity =>
+        {
+            entity.ToTable("PendingCleanups");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DirectoryPath).IsRequired().HasMaxLength(1024);
+            entity.Property(e => e.ModuleId).HasMaxLength(64);
+            entity.HasIndex(e => e.DirectoryPath).IsUnique();
+            entity.HasIndex(e => e.ModuleId);
         });
     }
 }

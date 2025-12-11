@@ -148,3 +148,87 @@ public class MenuRepository : IMenuRepository
     }
 }
 
+public class PendingCleanupRepository : IPendingCleanupRepository
+{
+    private readonly ModulusDbContext _context;
+
+    public PendingCleanupRepository(ModulusDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IReadOnlyList<PendingCleanupEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PendingCleanups
+            .AsNoTracking()
+            .OrderBy(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddAsync(PendingCleanupEntity entity, CancellationToken cancellationToken = default)
+    {
+        // Check if already exists
+        var existing = await _context.PendingCleanups
+            .FirstOrDefaultAsync(p => p.DirectoryPath == entity.DirectoryPath, cancellationToken);
+        
+        if (existing == null)
+        {
+            await _context.PendingCleanups.AddAsync(entity, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task RemoveAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.PendingCleanups.FindAsync(new object[] { id }, cancellationToken);
+        if (entity != null)
+        {
+            _context.PendingCleanups.Remove(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task RemoveByPathAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.PendingCleanups
+            .Where(p => p.DirectoryPath == directoryPath)
+            .ToListAsync(cancellationToken);
+        
+        if (entities.Count > 0)
+        {
+            _context.PendingCleanups.RemoveRange(entities);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task RemoveByModuleIdAsync(string moduleId, CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.PendingCleanups
+            .Where(p => p.ModuleId == moduleId)
+            .ToListAsync(cancellationToken);
+        
+        if (entities.Count > 0)
+        {
+            _context.PendingCleanups.RemoveRange(entities);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task UpdateRetryAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.PendingCleanups.FindAsync(new object[] { id }, cancellationToken);
+        if (entity != null)
+        {
+            entity.RetryCount++;
+            entity.LastAttemptAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task<bool> ExistsAsync(string directoryPath, CancellationToken cancellationToken = default)
+    {
+        return await _context.PendingCleanups
+            .AnyAsync(p => p.DirectoryPath == directoryPath, cancellationToken);
+    }
+}
+

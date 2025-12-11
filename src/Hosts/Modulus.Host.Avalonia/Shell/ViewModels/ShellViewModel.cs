@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using Modulus.Host.Avalonia.Services;
 using Modulus.UI.Abstractions;
 using Modulus.UI.Abstractions.Messages;
@@ -19,6 +20,7 @@ public partial class ShellViewModel : ViewModelBase,
     private readonly IMenuRegistry _menuRegistry;
     private readonly INavigationService _navigationService;
     private readonly AvaloniaNavigationService? _avaloniaNavService;
+    private readonly ILogger<ShellViewModel> _logger;
     private bool _isNavigating;
 
     public ObservableCollection<MenuItem> MainMenuItems { get; } = new();
@@ -49,10 +51,12 @@ public partial class ShellViewModel : ViewModelBase,
 
     public ShellViewModel(
         IMenuRegistry menuRegistry,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        ILogger<ShellViewModel> logger)
     {
         _menuRegistry = menuRegistry;
         _navigationService = navigationService;
+        _logger = logger;
         
         // Get concrete implementation for callbacks
         _avaloniaNavService = (navigationService as AvaloniaNavigationService)!;
@@ -139,17 +143,27 @@ public partial class ShellViewModel : ViewModelBase,
         foreach (var item in _menuRegistry.GetItems(MenuLocation.Main))
         {
             MainMenuItems.Add(item);
+            _logger.LogDebug("Added Main menu: {Id}, DisplayName={Name}, NavigationKey={NavKey}",
+                item.Id, item.DisplayName, item.NavigationKey ?? "null");
         }
 
         BottomMenuItems.Clear();
         foreach (var item in _menuRegistry.GetItems(MenuLocation.Bottom))
         {
             BottomMenuItems.Add(item);
+            _logger.LogDebug("Added Bottom menu: {Id}, DisplayName={Name}, NavigationKey={NavKey}",
+                item.Id, item.DisplayName, item.NavigationKey ?? "null");
         }
+        
+        _logger.LogInformation("Menu refreshed: {MainCount} main items, {BottomCount} bottom items",
+            MainMenuItems.Count, BottomMenuItems.Count);
     }
 
     partial void OnSelectedMainMenuItemChanged(MenuItem? value)
     {
+        _logger.LogInformation("OnSelectedMainMenuItemChanged: value={DisplayName}, NavigationKey={NavKey}, _isNavigating={IsNav}",
+            value?.DisplayName ?? "null", value?.NavigationKey ?? "null", _isNavigating);
+            
         if (value != null && !_isNavigating)
         {
             // Clear bottom selection
@@ -176,21 +190,28 @@ public partial class ShellViewModel : ViewModelBase,
 
     private async Task NavigateToMenuItemAsync(MenuItem item)
     {
+        _logger.LogInformation("NavigateToMenuItemAsync: {DisplayName}, IsEnabled={IsEnabled}, NavigationKey={NavKey}",
+            item.DisplayName, item.IsEnabled, item.NavigationKey ?? "null");
+            
         // Skip if disabled
         if (!item.IsEnabled)
         {
+            _logger.LogInformation("Navigation skipped: item is disabled");
             return;
         }
 
         // Skip groups without navigation key
         if (string.IsNullOrEmpty(item.NavigationKey))
         {
+            _logger.LogInformation("Navigation skipped: no NavigationKey, toggling expansion");
             // Toggle expansion for groups
             item.IsExpanded = !item.IsExpanded;
             return;
         }
 
-        await _navigationService.NavigateToAsync(item.NavigationKey);
+        _logger.LogInformation("Calling NavigationService.NavigateToAsync({NavKey})", item.NavigationKey);
+        var result = await _navigationService.NavigateToAsync(item.NavigationKey);
+        _logger.LogInformation("NavigateToAsync result: {Result}", result);
     }
 
     private void OnNavigationViewChanged(object? view, string title)
@@ -204,15 +225,20 @@ public partial class ShellViewModel : ViewModelBase,
     /// </summary>
     public void NavigateTo<TViewModel>() where TViewModel : class
     {
+        var vmName = typeof(TViewModel).FullName;
+        _logger.LogInformation("NavigateTo<{VMType}>: looking for NavigationKey={NavKey}", typeof(TViewModel).Name, vmName);
+        
         _isNavigating = true;
         try
         {
             _ = _navigationService.NavigateToAsync<TViewModel>();
 
             // Find and select corresponding menu item
-            var vmName = typeof(TViewModel).FullName;
             var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
             var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
+            
+            _logger.LogInformation("NavigateTo: Found mainItem={MainFound}, bottomItem={BottomFound}",
+                mainItem?.DisplayName ?? "null", bottomItem?.DisplayName ?? "null");
 
             if (mainItem != null)
             {

@@ -34,13 +34,24 @@ public class ModuleIntegrityChecker
                 continue;
             }
             
-            // Resolve absolute path
-            // module.Path is relative to App Root (or CWD)
-            var absolutePath = Path.GetFullPath(module.Path);
+            // Resolve absolute path relative to application base directory
+            // module.Path can be either manifest file path or module directory path
+            var basePath = Path.IsPathRooted(module.Path) 
+                ? module.Path 
+                : Path.Combine(AppContext.BaseDirectory, module.Path);
+            var absolutePath = Path.GetFullPath(basePath);
             
-            if (!File.Exists(absolutePath))
+            // Determine manifest path - if path doesn't end with manifest filename, append it
+            var manifestPath = absolutePath.EndsWith(SystemModuleInstaller.VsixManifestFileName, StringComparison.OrdinalIgnoreCase)
+                ? absolutePath
+                : Path.Combine(absolutePath, SystemModuleInstaller.VsixManifestFileName);
+            
+            if (!File.Exists(manifestPath))
             {
-                _logger.LogWarning("Integrity Check Failed: Module {ModuleId} manifest missing at {Path}. Marking as MissingFiles.", module.Id, absolutePath);
+                _logger.LogWarning(
+                    "Integrity Check Failed: Module {ModuleId} ({DisplayName}) - manifest not found. " +
+                    "Expected: {ManifestPath}. Stored path: {StoredPath}. Marking as MissingFiles.",
+                    module.Id, module.DisplayName, manifestPath, module.Path);
                 
                 await _moduleRepository.UpdateStateAsync(module.Id, ModuleState.MissingFiles, cancellationToken);
             }

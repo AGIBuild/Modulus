@@ -169,12 +169,20 @@
                         BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
                         CornerRadius="8" Padding="16">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="Manual Install" FontWeight="SemiBold"
+                        <TextBlock Text="Install Module" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}"/>
-                        <TextBox Watermark="Path to manifest.json" Text="{Binding ImportPath}" FontSize="12"/>
-                        <Button Command="{Binding ImportModuleCommand}" Content="Install Plugin from File.." 
+                        <Button Content="Install from Package..." 
                                 Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                Padding="10"/>
+                                Padding="10" Click="OnInstallPackageClick"/>
+                        
+                        <Separator Height="1" Background="{DynamicResource ContentBorderBrush}" Margin="0,4"/>
+                        
+                        <TextBlock Text="Developer Import" FontSize="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+                        <TextBox Watermark="Path to manifest directory" Text="{Binding ImportPath}" FontSize="12"/>
+                        <Button Command="{Binding ImportModuleCommand}" Content="Import from Path" 
+                                Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Padding="8"/>
                     </StackPanel>
                 </Border>
 

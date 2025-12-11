@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Modulus.Core.Runtime;
 using Modulus.UI.Abstractions;
 
@@ -19,6 +20,8 @@ public class AvaloniaNavigationService : INavigationService
     private readonly IMenuRegistry _menuRegistry;
     private readonly RuntimeContext _runtimeContext;
     private readonly ILazyModuleLoader _lazyModuleLoader;
+    private readonly IModuleExecutionGuard _executionGuard;
+    private readonly ILogger<AvaloniaNavigationService> _logger;
     private readonly List<INavigationGuard> _guards = new();
     private readonly ConcurrentDictionary<string, object> _singletonViewModels = new();
     private readonly ConcurrentDictionary<string, object> _singletonViews = new();
@@ -42,16 +45,35 @@ public class AvaloniaNavigationService : INavigationService
         IUIFactory uiFactory,
         IMenuRegistry menuRegistry,
         RuntimeContext runtimeContext,
-        ILazyModuleLoader lazyModuleLoader)
+        ILazyModuleLoader lazyModuleLoader,
+        IModuleExecutionGuard executionGuard,
+        ILogger<AvaloniaNavigationService> logger)
     {
         _serviceProvider = serviceProvider;
         _uiFactory = uiFactory;
         _menuRegistry = menuRegistry;
         _runtimeContext = runtimeContext;
+        _executionGuard = executionGuard;
+        _logger = logger;
         _lazyModuleLoader = lazyModuleLoader;
     }
 
     public async Task<bool> NavigateToAsync(string navigationKey, NavigationOptions? options = null)
+    {
+        _logger.LogInformation("NavigateToAsync called: {NavigationKey}", navigationKey);
+        
+        try
+        {
+            return await NavigateToAsyncCore(navigationKey, options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "NavigateToAsync threw exception for {NavigationKey}", navigationKey);
+            return false;
+        }
+    }
+
+    private async Task<bool> NavigateToAsyncCore(string navigationKey, NavigationOptions? options)
     {
         options ??= new NavigationOptions();
 
@@ -65,6 +87,7 @@ public class AvaloniaNavigationService : INavigationService
         // Evaluate guards
         if (!await EvaluateGuardsAsync(context))
         {
+            _logger.LogWarning("Navigation blocked by guard: {NavigationKey}", navigationKey);
             return false;
         }
 
@@ -75,13 +98,27 @@ public class AvaloniaNavigationService : INavigationService
         // Lazy load module if needed
         if (menuItem?.ModuleId != null)
         {
-            await _lazyModuleLoader.EnsureModuleLoadedAsync(menuItem.ModuleId);
+            _logger.LogInformation("Lazy loading module {ModuleId}...", menuItem.ModuleId);
+            var loaded = await _lazyModuleLoader.EnsureModuleLoadedAsync(menuItem.ModuleId);
+            _logger.LogInformation("Module {ModuleId} load result: {Loaded}", menuItem.ModuleId, loaded);
         }
 
         // Resolve ViewModel type
         var vmType = ResolveViewModelType(navigationKey);
         if (vmType == null)
         {
+            _logger.LogWarning("Navigation failed: Could not resolve ViewModel type for key '{NavigationKey}'", navigationKey);
+            return false;
+        }
+
+        // Check if module is in faulted state
+        var moduleId = ResolveModuleId(vmType);
+        if (moduleId != null && !_executionGuard.CanExecute(moduleId))
+        {
+            var healthInfo = _executionGuard.GetHealthInfo(moduleId);
+            _logger.LogWarning(
+                "Navigation blocked: Module {ModuleId} is in {State} state. Last error: {Error}",
+                moduleId, healthInfo.State, healthInfo.LastError?.Message ?? "N/A");
             return false;
         }
 
@@ -89,6 +126,9 @@ public class AvaloniaNavigationService : INavigationService
         var viewModel = GetOrCreateViewModel(vmType, navigationKey, instanceMode, options.ForceNewInstance);
         if (viewModel == null)
         {
+            _logger.LogWarning(
+                "Navigation failed: Could not create ViewModel '{ViewModelType}' for key '{NavigationKey}'. Module: {ModuleId}",
+                vmType.Name, navigationKey, moduleId ?? "Host");
             return false;
         }
 
@@ -99,7 +139,27 @@ public class AvaloniaNavigationService : INavigationService
         }
 
         // Create view
-        var view = _uiFactory.CreateView(viewModel);
+        _logger.LogInformation("Creating view for ViewModel {ViewModelType}...", vmType.Name);
+        object? view;
+        try
+        {
+            view = _uiFactory.CreateView(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception creating view for ViewModel '{ViewModelType}'", vmType.Name);
+            return false;
+        }
+        
+        if (view == null)
+        {
+            _logger.LogWarning(
+                "Navigation failed: Could not create view for ViewModel '{ViewModelType}'. Check IViewRegistry mappings.",
+                vmType.Name);
+            return false;
+        }
+        
+        _logger.LogInformation("View created: {ViewType}", view.GetType().Name);
         
         // Update state
         var previousKey = _currentNavigationKey;
@@ -119,6 +179,7 @@ public class AvaloniaNavigationService : INavigationService
             ViewModel = viewModel
         });
 
+        _logger.LogInformation("Navigation successful: {NavigationKey} -> {ViewType}", navigationKey, view.GetType().Name);
         return true;
     }
 
@@ -205,10 +266,13 @@ public class AvaloniaNavigationService : INavigationService
 
     private Type? ResolveViewModelType(string navigationKey)
     {
+        _logger.LogDebug("ResolveViewModelType: {NavigationKey}", navigationKey);
+        
         // Try direct type resolution
         var vmType = Type.GetType(navigationKey);
         if (vmType != null)
         {
+            _logger.LogDebug("Resolved via Type.GetType: {Type}", vmType.FullName);
             return vmType;
         }
 
@@ -223,6 +287,7 @@ public class AvaloniaNavigationService : INavigationService
 
         if (vmType != null)
         {
+            _logger.LogDebug("Resolved via AppDomain assemblies: {Type}", vmType.FullName);
             return vmType;
         }
 
@@ -285,32 +350,61 @@ public class AvaloniaNavigationService : INavigationService
 
     private object? CreateViewModel(Type vmType)
     {
-        try
+        var moduleId = ResolveModuleId(vmType);
+        
+        // Use execution guard for module ViewModels
+        if (moduleId != null)
         {
-            var moduleProvider = ResolveModuleServiceProvider(vmType);
+            _logger.LogDebug("Creating module ViewModel {ViewModelType} for module {ModuleId}", vmType.Name, moduleId);
             
-            if (moduleProvider != null)
+            var result = _executionGuard.ExecuteSafe(
+                moduleId,
+                () => CreateViewModelCore(vmType),
+                fallback: null,
+                caller: $"CreateViewModel:{vmType.Name}");
+            
+            if (result == null)
             {
-                var moduleVm = moduleProvider.GetService(vmType) ?? ActivatorUtilities.CreateInstance(moduleProvider, vmType);
-                if (moduleVm != null)
-                {
-                    return moduleVm;
-                }
+                var healthInfo = _executionGuard.GetHealthInfo(moduleId);
+                _logger.LogWarning(
+                    "ViewModel creation failed for {ViewModelType}. Module {ModuleId} health: {State}, Consecutive faults: {Faults}, Last error: {Error}",
+                    vmType.Name, moduleId, healthInfo.State, healthInfo.ConsecutiveFaultCount, 
+                    healthInfo.LastError?.Message ?? "N/A");
             }
-
-            var vm = _serviceProvider.GetService(vmType);
-            if (vm != null)
-            {
-                return vm;
-            }
-
-            // Fall back to ActivatorUtilities
-            return ActivatorUtilities.CreateInstance(_serviceProvider, vmType);
+            
+            return result;
         }
-        catch (Exception)
+        
+        // Host ViewModels don't need guard
+        _logger.LogDebug("Creating host ViewModel {ViewModelType}", vmType.Name);
+        return CreateViewModelCore(vmType);
+    }
+
+    private object? CreateViewModelCore(Type vmType)
+    {
+        var moduleProvider = ResolveModuleServiceProvider(vmType);
+        
+        if (moduleProvider != null)
         {
-            return null;
+            // Always use ActivatorUtilities with CompositeServiceProvider to ensure
+            // both module and host services can be resolved as dependencies
+            return ActivatorUtilities.CreateInstance(moduleProvider, vmType);
         }
+
+        // Host ViewModels - try registered service first, then create
+        var vm = _serviceProvider.GetService(vmType);
+        if (vm != null)
+        {
+            return vm;
+        }
+
+        return ActivatorUtilities.CreateInstance(_serviceProvider, vmType);
+    }
+
+    private string? ResolveModuleId(Type vmType)
+    {
+        var handle = _runtimeContext.ModuleHandles.FirstOrDefault(h => h.Assemblies.Any(a => a == vmType.Assembly));
+        return handle?.RuntimeModule.Descriptor.Id;
     }
 
     private IServiceProvider? ResolveModuleServiceProvider(Type vmType)

@@ -104,6 +104,8 @@ public static class MauiProgram
         // Repositories & installers
         builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
         builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+        builder.Services.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
+        builder.Services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         builder.Services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
         builder.Services.AddScoped<SystemModuleInstaller>();
         builder.Services.AddScoped<IHostDataSeeder, BlazorHostDataSeeder>();

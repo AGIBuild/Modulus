@@ -30,7 +30,9 @@ public partial class ModuleListViewModel : ViewModelBase
     private readonly IMenuRepository _menuRepository;
     private readonly IMenuRegistry _menuRegistry;
     private readonly IModuleInstallerService _moduleInstaller;
+    private readonly IModuleCleanupService _cleanupService;
     private readonly INotificationService? _notificationService;
+    private readonly ILogger<ModuleListViewModel> _logger;
     private readonly ModuleDetailLoader _detailLoader;
     private CancellationTokenSource? _detailLoadCts;
 
@@ -67,6 +69,7 @@ public partial class ModuleListViewModel : ViewModelBase
         IMenuRepository menuRepository,
         IMenuRegistry menuRegistry,
         IModuleInstallerService moduleInstaller,
+        IModuleCleanupService cleanupService,
         ILoggerFactory loggerFactory,
         INotificationService? notificationService = null)
     {
@@ -76,7 +79,9 @@ public partial class ModuleListViewModel : ViewModelBase
         _menuRepository = menuRepository;
         _menuRegistry = menuRegistry;
         _moduleInstaller = moduleInstaller;
+        _cleanupService = cleanupService;
         _notificationService = notificationService;
+        _logger = loggerFactory.CreateLogger<ModuleListViewModel>();
         _detailLoader = new ModuleDetailLoader(loggerFactory.CreateLogger<ModuleDetailLoader>());
         Title = "Module Management";
         
@@ -168,51 +173,64 @@ public partial class ModuleListViewModel : ViewModelBase
         // System modules can be disabled but not uninstalled
         if (moduleVm == null) return;
 
-        if (moduleVm.IsEnabled)
+        try
         {
-            // Disable: Unload if loaded, then mark as disabled
-            if (moduleVm.IsLoaded)
+            if (moduleVm.IsEnabled)
             {
-                await _moduleLoader.UnloadAsync(moduleVm.Id);
+                // Disable: Unload if loaded, then mark as disabled
+                if (moduleVm.IsLoaded)
+                {
+                    await _moduleLoader.UnloadAsync(moduleVm.Id);
+                }
+                
+                await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Disabled);
+                
+                // Notify ShellViewModel to remove menus (handles both registry and UI)
+                WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
             }
-            
-            await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Disabled);
-            
-            // Notify ShellViewModel to remove menus (handles both registry and UI)
-            WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
-        }
-        else 
-        {
-            // Enable
-            if (moduleVm.Entity.State == DataModuleState.MissingFiles)
+            else 
             {
-                _notificationService?.ShowErrorAsync("Error", "Cannot enable module with missing files.");
-                return;
-            }
+                // Enable
+                if (moduleVm.Entity.State == DataModuleState.MissingFiles)
+                {
+                    await (_notificationService?.ShowErrorAsync("Error", "Cannot enable module with missing files.") ?? Task.CompletedTask);
+                    return;
+                }
 
-            await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Ready);
-            
-            // Resolve absolute path
-            var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
-            var packagePath = Path.GetDirectoryName(manifestPath);
-            
-            if (packagePath != null)
-            {
-                await _moduleLoader.LoadAsync(packagePath, moduleVm.IsSystem);
+                await _moduleRepository.UpdateStateAsync(moduleVm.Id, DataModuleState.Ready);
+                
+                // Resolve absolute path
+                var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
+                var packagePath = Path.GetDirectoryName(manifestPath);
+                
+                if (packagePath != null)
+                {
+                    await _moduleLoader.LoadAsync(packagePath, moduleVm.IsSystem);
+                }
+                
+                // Register menus from database and notify ShellViewModel (incremental)
+                var addedMenus = await RegisterModuleMenusAsync(moduleVm.Id);
+                if (addedMenus.Count > 0)
+                {
+                    WeakReferenceMessenger.Default.Send(new MenuItemsAddedMessage(addedMenus));
+                }
             }
-            
-            // Register menus from database and notify ShellViewModel (incremental)
-            var addedMenus = await RegisterModuleMenusAsync(moduleVm.Id);
-            if (addedMenus.Count > 0)
-            {
-                WeakReferenceMessenger.Default.Send(new MenuItemsAddedMessage(addedMenus));
-            }
+             
+            await RefreshModulesAsync();
+             
+            OnPropertyChanged(nameof(EnabledModules));
+            OnPropertyChanged(nameof(DisabledModules));
         }
-         
-        await RefreshModulesAsync();
-         
-        OnPropertyChanged(nameof(EnabledModules));
-        OnPropertyChanged(nameof(DisabledModules));
+        catch (InvalidOperationException ex) when (ex.Message.Contains("system module"))
+        {
+            // System modules cannot be unloaded while running
+            await (_notificationService?.ShowErrorAsync("Cannot Disable", 
+                $"System module '{moduleVm.Name}' cannot be disabled while the application is running. It is a bundled module required by the host.") ?? Task.CompletedTask);
+        }
+        catch (Exception ex)
+        {
+            await (_notificationService?.ShowErrorAsync("Error", ex.Message) ?? Task.CompletedTask);
+        }
     }
     
     private async Task<List<MenuItem>> RegisterModuleMenusAsync(string moduleId)
@@ -264,22 +282,25 @@ public partial class ModuleListViewModel : ViewModelBase
             WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(moduleVm.Id));
             
             await _moduleRepository.DeleteAsync(moduleVm.Id);
-            // Optionally clean files? For now, we just remove from DB as per task "Remove (Delete DB record + Clean folder)"
-            // Clean folder logic:
-            try 
+            
+            // Schedule cleanup via IModuleCleanupService (handles retries and persistence)
+            var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
+            var dir = Path.GetDirectoryName(manifestPath);
+            if (dir != null && Directory.Exists(dir))
             {
-                var manifestPath = Path.GetFullPath(moduleVm.Entity.Path);
-                var dir = Path.GetDirectoryName(manifestPath);
-                if (dir != null && Directory.Exists(dir))
+                // Pass moduleId so cleanup can be cancelled if module is reinstalled
+                await _cleanupService.ScheduleCleanupAsync(dir, moduleVm.Id);
+                
+                // Check if cleanup succeeded (directory deleted) or was scheduled for later
+                if (Directory.Exists(dir))
                 {
-                    // Basic safety: don't delete root or system folders
-                    // TODO: Improve safety
-                    Directory.Delete(dir, true);
+                    _logger.LogInformation("Module {ModuleId} files scheduled for cleanup on next restart.", moduleVm.Id);
+                    if (_notificationService != null)
+                    {
+                        await _notificationService.ShowInfoAsync("Module Removed", 
+                            $"Module '{moduleVm.Entity.DisplayName}' removed. Some files are locked and will be cleaned up on next restart.");
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _notificationService?.ShowErrorAsync("Warning", $"Module removed from DB but failed to delete files: {ex.Message}");
             }
 
             await RefreshModulesAsync();
@@ -316,11 +337,91 @@ public partial class ModuleListViewModel : ViewModelBase
             await _moduleInstaller.RegisterDevelopmentModuleAsync(path);
             ImportPath = string.Empty;
             await RefreshModulesAsync();
-            _notificationService?.ShowErrorAsync("Success", "Module imported."); // Using ShowError as ShowInfo might not exist
+            _notificationService?.ShowInfoAsync("Success", "Module imported.");
         }
         catch (Exception ex)
         {
             _notificationService?.ShowErrorAsync("Error", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Installs a module from a .modpkg package file.
+    /// Called from View after file picker selection.
+    /// </summary>
+    public async Task InstallPackageAsync(string packagePath)
+    {
+        if (string.IsNullOrWhiteSpace(packagePath)) return;
+
+        try
+        {
+            // First attempt without overwrite
+            var hostType = _runtimeContext.HostType;
+            var result = await _moduleInstaller.InstallFromPackageAsync(packagePath, overwrite: false, hostType: hostType);
+
+            if (result.RequiresConfirmation)
+            {
+                // Module exists, ask for confirmation
+                var confirm = await (_notificationService?.ConfirmAsync(
+                    "Module Already Exists",
+                    $"Module '{result.DisplayName ?? result.ModuleId}' is already installed. Do you want to overwrite it?",
+                    "Overwrite", "Cancel") ?? Task.FromResult(false));
+
+                if (!confirm)
+                {
+                    return;
+                }
+
+                // Remove existing menus from UI first (regardless of module state)
+                WeakReferenceMessenger.Default.Send(new MenuItemsRemovedMessage(result.ModuleId!));
+
+                // Try to unload existing module if running
+                if (_runtimeContext.TryGetModule(result.ModuleId!, out var existingModule) && 
+                    existingModule?.State == RuntimeModuleState.Active)
+                {
+                    try
+                    {
+                        await _moduleLoader.UnloadAsync(result.ModuleId!);
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("system module"))
+                    {
+                        // System modules can't be unloaded, but we can still overwrite files
+                        // The new version will take effect after restart
+                        _logger.LogWarning("System module {ModuleId} cannot be unloaded. New version will take effect after restart.", result.ModuleId);
+                    }
+                }
+
+                // Retry with overwrite
+                result = await _moduleInstaller.InstallFromPackageAsync(packagePath, overwrite: true, hostType: hostType);
+            }
+
+            if (!result.Success)
+            {
+                await (_notificationService?.ShowErrorAsync("Installation Failed", result.Error ?? "Unknown error") ?? Task.CompletedTask);
+                return;
+            }
+
+            // Auto-load the installed module
+            if (result.InstallPath != null)
+            {
+                await _moduleLoader.LoadAsync(result.InstallPath, isSystem: false);
+                
+                // Register menus and notify shell
+                var addedMenus = await RegisterModuleMenusAsync(result.ModuleId!);
+                if (addedMenus.Count > 0)
+                {
+                    WeakReferenceMessenger.Default.Send(new MenuItemsAddedMessage(addedMenus));
+                }
+            }
+
+            await RefreshModulesAsync();
+            
+            await (_notificationService?.ShowInfoAsync("Success", 
+                $"Module '{result.DisplayName}' v{result.Version} installed successfully.") ?? Task.CompletedTask);
+        }
+        catch (Exception ex)
+        {
+            await (_notificationService?.ShowErrorAsync("Installation Failed", ex.Message) ?? Task.CompletedTask);
         }
     }
 }
