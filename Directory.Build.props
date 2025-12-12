@@ -1,7 +1,30 @@
 <Project>
   <!-- 
-    This file is intentionally minimal.
-    All project-specific configurations are defined in each .csproj file.
+    This file provides common properties for all projects in the solution.
     See build/Modulus.Architecture.props for AssemblyDomain attribute generation.
   -->
+  
+  <PropertyGroup>
+    <!-- Auto-increment version: Major.Minor.Build.Revision based on UTC datetime -->
+    <!-- Format: 1.0.YYDDD.HHmm where DDD=day of year, HHmm=time -->
+    <!-- Example: 1.0.25344.1430 = 2025, day 344, 14:30 UTC -->
+    <Version>1.0.$([System.DateTime]::UtcNow.ToString("yy"))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("HHmm"))</Version>
+    
+    <!-- NuGet Metadata -->
+    <Authors>Modulus Team</Authors>
+    <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/user/Modulus</RepositoryUrl>
+    
+    <!-- Build Properties -->
+    <LangVersion>latest</LangVersion>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Include README in all packages -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
 </Project>

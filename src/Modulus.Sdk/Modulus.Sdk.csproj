@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\build\Modulus.Architecture.props" />
 
@@ -10,6 +10,8 @@
     <OutputPath>..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <PackageId>Modulus.Sdk</PackageId>
+    <Description>SDK for building Modulus modules.</Description>
   </PropertyGroup>
 
   <ItemGroup>

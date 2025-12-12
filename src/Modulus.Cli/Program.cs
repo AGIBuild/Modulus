@@ -13,6 +13,7 @@ public class Program
         var rootCommand = new RootCommand("Modulus module management CLI");
 
         // Add commands
+        rootCommand.Add(NewCommand.Create());
         rootCommand.Add(InstallCommand.Create());
         rootCommand.Add(UninstallCommand.Create());
         rootCommand.Add(ListCommand.Create());

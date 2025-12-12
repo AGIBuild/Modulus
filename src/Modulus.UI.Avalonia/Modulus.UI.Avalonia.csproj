@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>Modulus.UI.Avalonia</RootNamespace>
+    <PackageId>Modulus.UI.Avalonia</PackageId>
     <Description>Avalonia UI components library for Modulus framework</Description>
     <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
     <OutputPath>..\..\artifacts\bin\</OutputPath>

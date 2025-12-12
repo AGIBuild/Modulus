@@ -35,9 +35,11 @@
         "GenerateBundledModules",
         "Pack",
         "PackCli",
+        "PackLibs",
         "PackModule",
         "Plugin",
         "PublishCli",
+        "PublishLibs",
         "Restore",
         "Run",
         "Test"
@@ -137,6 +139,10 @@
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
+        },
+        "source": {
+          "type": "string",
+          "description": "NuGet source URL (default: nuget.org)"
         }
       }
     },

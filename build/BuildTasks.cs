@@ -58,6 +58,9 @@ class BuildTasks : NukeBuild
     [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "app")]
     readonly string TargetHost = "avalonia";
 
+    [Parameter("NuGet source URL (default: nuget.org)", Name = "source")]
+    readonly string NuGetSource = "https://api.nuget.org/v3/index.json";
+
     private string EffectiveTargetHost => (TargetHost ?? "avalonia").ToLower();
 
     [Solution] readonly Solution Solution;
@@ -735,6 +738,72 @@ class BuildTasks : NukeBuild
                 .EnableNoBuild());
 
             LogSuccess($"CLI package created in {PackagesDirectory}");
+        });
+
+    Target PackLibs => _ => _
+        .DependsOn(Compile)
+        .Description("Pack core libraries (Sdk, UI.Abstractions, UI.Avalonia, UI.Blazor)")
+        .Executes(() =>
+        {
+            var libs = new[] { "Modulus.Sdk", "Modulus.UI.Abstractions", "Modulus.UI.Avalonia", "Modulus.UI.Blazor" };
+            
+            foreach (var libName in libs)
+            {
+                var project = Solution.AllProjects.FirstOrDefault(p => p.Name == libName);
+                if (project == null)
+                {
+                    LogWarning($"Project {libName} not found");
+                    continue;
+                }
+
+                LogHeader($"Packing {libName}");
+                
+                DotNetTasks.DotNetPack(s => s
+                    .SetProject(project)
+                    .SetConfiguration(Configuration)
+                    .SetOutputDirectory(PackagesDirectory)
+                    .EnableNoBuild());
+            }
+            
+            LogSuccess($"Core libraries packaged in {PackagesDirectory}");
+        });
+
+    Target PublishLibs => _ => _
+        .DependsOn(PackLibs)
+        .Description("Publish core libraries to NuGet (requires NUGET_API_KEY env var)")
+        .Executes(() =>
+        {
+            var apiKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                LogError("NUGET_API_KEY environment variable is not set");
+                throw new Exception("Missing NUGET_API_KEY environment variable");
+            }
+
+            var packages = Directory.GetFiles(PackagesDirectory, "Modulus.*.nupkg")
+                .Where(p => !Path.GetFileName(p).StartsWith("Agibuild.Modulus.Cli")) // Exclude CLI
+                .ToList();
+
+            if (packages.Count == 0)
+            {
+                LogError("No library packages found. Run 'nuke pack-libs' first.");
+                return;
+            }
+
+            LogHeader($"Publishing {packages.Count} packages to {NuGetSource}");
+
+            foreach (var package in packages)
+            {
+                LogHighlight($"Pushing: {Path.GetFileName(package)}");
+                
+                DotNetTasks.DotNetNuGetPush(s => s
+                    .SetTargetPath(package)
+                    .SetSource(NuGetSource)
+                    .SetApiKey(apiKey)
+                    .EnableSkipDuplicate());
+            }
+            
+            LogSuccess("All libraries published successfully");
         });
 
     /// <summary>
