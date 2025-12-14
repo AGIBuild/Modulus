@@ -29,6 +29,12 @@
 
   <ItemGroup>
     <None Include="source.extension.vsixmanifest" />
+    <Content Include="icon.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="LICENSE.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
 
 </Project>

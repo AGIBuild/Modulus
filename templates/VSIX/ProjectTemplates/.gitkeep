@@ -1,0 +1,7 @@
+# This directory contains template ZIP files generated during build.
+# The ZIP files are created by compressing the VisualStudio template directories.
+#
+# To generate:
+#   Compress-Archive -Path "..\VisualStudio\ModulusModule.Avalonia\*" -DestinationPath "ModulusModule.Avalonia.zip" -Force
+#   Compress-Archive -Path "..\VisualStudio\ModulusModule.Blazor\*" -DestinationPath "ModulusModule.Blazor.zip" -Force
+

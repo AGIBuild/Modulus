@@ -4,7 +4,7 @@
     <Identity Id="Agibuild.Modulus.Templates" Version="1.0.0" Language="en-US" Publisher="Agibuild" />
     <DisplayName>Modulus Module Templates</DisplayName>
     <Description xml:space="preserve">Project templates for creating Modulus modules with Avalonia or Blazor UI.</Description>
-    <MoreInfo>https://github.com/user/Modulus</MoreInfo>
+    <MoreInfo>https://github.com/AgiBuild/Modulus</MoreInfo>
     <License>LICENSE.txt</License>
     <Icon>icon.png</Icon>
     <Tags>modulus, module, plugin, avalonia, blazor, template</Tags>
@@ -21,4 +21,3 @@
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates" />
   </Assets>
 </PackageManifest>
-

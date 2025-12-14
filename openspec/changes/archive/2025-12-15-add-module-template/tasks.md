@@ -2,9 +2,9 @@
 
 ## 0. 前置条件
 
-- [ ] 0.1 确认 Modulus.Sdk 已发布到 NuGet
-- [ ] 0.2 确认 Modulus.UI.Abstractions 已发布到 NuGet
-- [ ] 0.3 确认 Modulus.UI.Avalonia 已发布到 NuGet
+- [x] 0.1 确认 Modulus.Sdk 已发布到 NuGet
+- [x] 0.2 确认 Modulus.UI.Abstractions 已发布到 NuGet
+- [x] 0.3 确认 Modulus.UI.Avalonia 已发布到 NuGet
 
 ## 1. Visual Studio 项目模板
 
@@ -20,7 +20,7 @@
   - UI.Blazor 子项目模板
   - extension.vsixmanifest
 - [x] 1.4 创建模板安装脚本（PowerShell）
-- [ ] 1.5 验证 VS 模板在 Visual Studio 中可用（需手动测试）
+- [x] 1.5 验证 VS 模板在 Visual Studio 中可用（需手动测试）
 
 ## 2. CLI 模板引擎
 
@@ -39,9 +39,9 @@
 
 ## 4. 验证和测试
 
-- [ ] 4.1 验证 VS 模板生成的 Avalonia 项目可编译（需 NuGet 包发布后）
-- [ ] 4.2 验证 VS 模板生成的 Blazor 项目可编译（需 NuGet 包发布后）
+- [x] 4.1 验证 VS 模板生成的 Avalonia 项目可编译（需 NuGet 包发布后）
+- [x] 4.2 验证 VS 模板生成的 Blazor 项目可编译（需 NuGet 包发布后）
 - [x] 4.3 验证 CLI 生成的 Avalonia 项目结构正确
 - [x] 4.4 验证 CLI 生成的 Blazor 项目结构正确
-- [ ] 4.5 验证生成的模块可被 Host 加载（需 NuGet 包发布后）
+- [x] 4.5 验证生成的模块可被 Host 加载（需 NuGet 包发布后）
 
