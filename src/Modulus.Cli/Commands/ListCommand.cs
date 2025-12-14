@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,13 +14,10 @@ public static class ListCommand
 {
     public static Command Create()
     {
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Show detailed information (path, install time)"
-        };
+        var verboseOption = new Option<bool>("--verbose", "-v") { Description = "Show detailed information (path, install time)" };
 
         var command = new Command("list", "List installed modules");
-        command.Add(verboseOption);
+        command.Options.Add(verboseOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {

@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.Diagnostics;
 
 namespace Modulus.Cli.Commands;
@@ -12,25 +11,14 @@ public static class BuildCommand
 {
     public static Command Create()
     {
-        var pathOption = new Option<string?>("--path", "-p")
-        {
-            Description = "Path to module project directory (default: current directory)"
-        };
-
-        var configurationOption = new Option<string?>("--configuration", "-c")
-        {
-            Description = "Build configuration (Debug/Release, default: Release)",
-        };
-
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Show detailed build output"
-        };
+        var pathOption = new Option<string?>("--path", "-p") { Description = "Path to module project directory (default: current directory)" };
+        var configurationOption = new Option<string?>("--configuration", "-c") { Description = "Build configuration (Debug/Release, default: Release)" };
+        var verboseOption = new Option<bool>("--verbose", "-v") { Description = "Show detailed build output" };
 
         var command = new Command("build", "Build the module project in the current directory");
-        command.Add(pathOption);
-        command.Add(configurationOption);
-        command.Add(verboseOption);
+        command.Options.Add(pathOption);
+        command.Options.Add(configurationOption);
+        command.Options.Add(verboseOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -201,4 +189,3 @@ public static class BuildCommand
         return null;
     }
 }
-

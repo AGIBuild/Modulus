@@ -13,14 +13,13 @@ public class Program
         var rootCommand = new RootCommand("Modulus module management CLI");
 
         // Add commands
-        rootCommand.Add(NewCommand.Create());
-        rootCommand.Add(BuildCommand.Create());
-        rootCommand.Add(PackCommand.Create());
-        rootCommand.Add(InstallCommand.Create());
-        rootCommand.Add(UninstallCommand.Create());
-        rootCommand.Add(ListCommand.Create());
+        rootCommand.Subcommands.Add(NewCommand.Create());
+        rootCommand.Subcommands.Add(BuildCommand.Create());
+        rootCommand.Subcommands.Add(PackCommand.Create());
+        rootCommand.Subcommands.Add(InstallCommand.Create());
+        rootCommand.Subcommands.Add(UninstallCommand.Create());
+        rootCommand.Subcommands.Add(ListCommand.Create());
 
-        var config = new CommandLineConfiguration(rootCommand);
-        return await config.InvokeAsync(args);
+        return await rootCommand.Parse(args).InvokeAsync();
     }
 }

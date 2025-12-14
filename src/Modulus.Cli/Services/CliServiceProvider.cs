@@ -18,7 +18,13 @@ public static class CliServiceProvider
     /// <summary>
     /// Creates a configured service provider for CLI operations.
     /// </summary>
-    public static ServiceProvider Build(bool verbose = false)
+    /// <param name="verbose">Whether to enable verbose logging.</param>
+    /// <param name="databasePath">Custom database path. If null, uses default location.</param>
+    /// <param name="modulesDirectory">Custom modules directory. If null, uses default location.</param>
+    public static ServiceProvider Build(
+        bool verbose = false,
+        string? databasePath = null,
+        string? modulesDirectory = null)
     {
         var services = new ServiceCollection();
 
@@ -33,8 +39,15 @@ public static class CliServiceProvider
         });
 
         // Database
-        var databasePath = DatabaseServiceExtensions.GetDefaultDatabasePath("Modulus");
-        services.AddModulusDatabase(databasePath);
+        var effectiveDatabasePath = databasePath ?? DatabaseServiceExtensions.GetDefaultDatabasePath("Modulus");
+        services.AddModulusDatabase(effectiveDatabasePath);
+
+        // Store custom modules directory for installer service
+        var effectiveModulesDirectory = modulesDirectory ?? Path.Combine(LocalStorage.GetUserRoot(), "Modules");
+        services.AddSingleton(new CliConfiguration
+        {
+            ModulesDirectory = effectiveModulesDirectory
+        });
 
         // Repositories
         services.AddScoped<IModuleRepository, ModuleRepository>();
@@ -57,5 +70,16 @@ public static class CliServiceProvider
         var dbContext = provider.GetRequiredService<ModulusDbContext>();
         await dbContext.Database.MigrateAsync();
     }
+}
+
+/// <summary>
+/// Configuration for CLI services, supporting test isolation.
+/// </summary>
+public class CliConfiguration
+{
+    /// <summary>
+    /// Directory where modules are installed.
+    /// </summary>
+    public string ModulesDirectory { get; init; } = string.Empty;
 }
 

@@ -176,6 +176,27 @@ class BuildTasks : NukeBuild
                 .SetNoBuild(true));
         });
 
+    /// <summary>
+    /// Run CLI integration tests.
+    /// Usage: nuke test-cli
+    /// </summary>
+    Target TestCli => _ => _
+        .DependsOn(Compile)
+        .Description("Run CLI integration tests")
+        .Executes(() =>
+        {
+            LogHeader("Running CLI Integration Tests");
+            
+            var testProject = RootDirectory / "tests" / "Modulus.Cli.IntegrationTests" / "Modulus.Cli.IntegrationTests.csproj";
+            
+            DotNetTasks.DotNetTest(s => s
+                .SetProjectFile(testProject)
+                .SetConfiguration(Configuration)
+                .SetNoBuild(true));
+            
+            LogSuccess("CLI integration tests passed");
+        });
+
     Target BuildAll => _ => _
         .DependsOn(Compile, Test);
 
@@ -714,12 +735,13 @@ class BuildTasks : NukeBuild
         });
 
     /// <summary>
-    /// Pack CLI as a dotnet tool NuGet package
+    /// Pack CLI as a dotnet tool NuGet package.
+    /// Requires CLI integration tests to pass first.
     /// Usage: nuke pack-cli
     /// </summary>
     Target PackCli => _ => _
-        .DependsOn(Compile)
-        .Description("Pack CLI as a dotnet tool NuGet package")
+        .DependsOn(TestCli)
+        .Description("Pack CLI as a dotnet tool NuGet package (runs tests first)")
         .Executes(() =>
         {
             var cliProject = Solution.AllProjects.FirstOrDefault(p => p.Name == "Modulus.Cli");

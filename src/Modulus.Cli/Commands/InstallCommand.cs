@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.IO.Compression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,7 +6,6 @@ using Modulus.Cli.Services;
 using Modulus.Core.Installation;
 using Modulus.Core.Manifest;
 using Modulus.Core.Paths;
-using Modulus.Sdk;
 
 namespace Modulus.Cli.Commands;
 
@@ -18,25 +16,14 @@ public static class InstallCommand
 {
     public static Command Create()
     {
-        var sourceArg = new Argument<string>("source")
-        {
-            Description = "Path to .modpkg file or module directory"
-        };
-        
-        var forceOption = new Option<bool>("--force", "-f")
-        {
-            Description = "Overwrite existing installation without prompting"
-        };
-        
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Show detailed output"
-        };
+        var sourceArg = new Argument<string>("source") { Description = "Path to .modpkg file or module directory" };
+        var forceOption = new Option<bool>("--force", "-f") { Description = "Overwrite existing installation without prompting" };
+        var verboseOption = new Option<bool>("--verbose", "-v") { Description = "Show detailed output" };
 
         var command = new Command("install", "Install a module from a .modpkg file or directory");
-        command.Add(sourceArg);
-        command.Add(forceOption);
-        command.Add(verboseOption);
+        command.Arguments.Add(sourceArg);
+        command.Options.Add(forceOption);
+        command.Options.Add(verboseOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {

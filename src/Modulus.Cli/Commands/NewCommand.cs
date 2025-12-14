@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using Modulus.Cli.Templates;
 
 namespace Modulus.Cli.Commands;
@@ -11,61 +10,27 @@ public static class NewCommand
 {
     public static Command Create()
     {
-        var nameArg = new Argument<string>("name")
-        {
-            Description = "Module name (PascalCase, e.g., MyModule)"
-        };
+        var nameArg = new Argument<string>("name") { Description = "Module name (PascalCase, e.g., MyModule)" };
 
-        var targetOption = new Option<string?>("--target", "-t")
-        {
-            Description = "Target host: avalonia or blazor"
-        };
-
-        var displayNameOption = new Option<string?>("--display-name", "-d")
-        {
-            Description = "Display name shown in menus"
-        };
-
-        var descriptionOption = new Option<string?>("--description")
-        {
-            Description = "Module description"
-        };
-
-        var publisherOption = new Option<string?>("--publisher", "-p")
-        {
-            Description = "Publisher name"
-        };
-
-        var iconOption = new Option<string?>("--icon", "-i")
-        {
-            Description = "Menu icon (e.g., Apps, Terminal, Settings)"
-        };
-
-        var orderOption = new Option<int?>("--order", "-o")
-        {
-            Description = "Menu order (default: 100)"
-        };
-
-        var outputOption = new Option<string?>("--output")
-        {
-            Description = "Output directory (default: current directory)"
-        };
-
-        var forceOption = new Option<bool>("--force", "-f")
-        {
-            Description = "Overwrite existing directory without prompting"
-        };
+        var targetOption = new Option<string?>("--target", "-t") { Description = "Target host: avalonia or blazor" };
+        var displayNameOption = new Option<string?>("--display-name", "-d") { Description = "Display name shown in menus" };
+        var descriptionOption = new Option<string?>("--description") { Description = "Module description" };
+        var publisherOption = new Option<string?>("--publisher", "-p") { Description = "Publisher name" };
+        var iconOption = new Option<string?>("--icon", "-i") { Description = "Menu icon (e.g., Apps, Terminal, Settings)" };
+        var orderOption = new Option<int?>("--order", "-o") { Description = "Menu order (default: 100)" };
+        var outputOption = new Option<string?>("--output") { Description = "Output directory (default: current directory)" };
+        var forceOption = new Option<bool>("--force", "-f") { Description = "Overwrite existing directory without prompting" };
 
         var command = new Command("new", "Create a new Modulus module project");
-        command.Add(nameArg);
-        command.Add(targetOption);
-        command.Add(displayNameOption);
-        command.Add(descriptionOption);
-        command.Add(publisherOption);
-        command.Add(iconOption);
-        command.Add(orderOption);
-        command.Add(outputOption);
-        command.Add(forceOption);
+        command.Arguments.Add(nameArg);
+        command.Options.Add(targetOption);
+        command.Options.Add(displayNameOption);
+        command.Options.Add(descriptionOption);
+        command.Options.Add(publisherOption);
+        command.Options.Add(iconOption);
+        command.Options.Add(orderOption);
+        command.Options.Add(outputOption);
+        command.Options.Add(forceOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -226,4 +191,3 @@ public static class NewCommand
         return string.IsNullOrEmpty(input) ? defaultValue : input;
     }
 }
-

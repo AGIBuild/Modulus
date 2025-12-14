@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Xml.Linq;
@@ -38,37 +37,18 @@ public static class PackCommand
 
     public static Command Create()
     {
-        var pathOption = new Option<string?>("--path", "-p")
-        {
-            Description = "Path to module project directory (default: current directory)"
-        };
-
-        var outputOption = new Option<string?>("--output", "-o")
-        {
-            Description = "Output directory for .modpkg file (default: ./output)"
-        };
-
-        var configurationOption = new Option<string?>("--configuration", "-c")
-        {
-            Description = "Build configuration (Debug/Release, default: Release)"
-        };
-
-        var noBuildOption = new Option<bool>("--no-build")
-        {
-            Description = "Skip building the project (use existing build output)"
-        };
-
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Show detailed output"
-        };
+        var pathOption = new Option<string?>("--path", "-p") { Description = "Path to module project directory (default: current directory)" };
+        var outputOption = new Option<string?>("--output", "-o") { Description = "Output directory for .modpkg file (default: ./output)" };
+        var configurationOption = new Option<string?>("--configuration", "-c") { Description = "Build configuration (Debug/Release, default: Release)" };
+        var noBuildOption = new Option<bool>("--no-build") { Description = "Skip building the project (use existing build output)" };
+        var verboseOption = new Option<bool>("--verbose", "-v") { Description = "Show detailed output" };
 
         var command = new Command("pack", "Build and package the module into a .modpkg file");
-        command.Add(pathOption);
-        command.Add(outputOption);
-        command.Add(configurationOption);
-        command.Add(noBuildOption);
-        command.Add(verboseOption);
+        command.Options.Add(pathOption);
+        command.Options.Add(outputOption);
+        command.Options.Add(configurationOption);
+        command.Options.Add(noBuildOption);
+        command.Options.Add(verboseOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -458,4 +438,3 @@ public static class PackCommand
         return sanitized.Trim();
     }
 }
-

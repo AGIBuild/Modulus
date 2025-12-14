@@ -48,7 +48,8 @@
         "RemoveLocalSource",
         "Restore",
         "Run",
-        "Test"
+        "Test",
+        "TestCli"
       ]
     },
     "Verbosity": {
