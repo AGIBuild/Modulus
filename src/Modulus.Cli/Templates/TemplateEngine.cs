@@ -37,6 +37,12 @@ public class TemplateEngine
         
         // Create extension.vsixmanifest
         await GenerateManifestAsync(moduleDir);
+        
+        // Create solution file
+        await GenerateSolutionAsync(moduleDir);
+        
+        // Create .gitignore
+        await GenerateGitIgnoreAsync(moduleDir);
     }
 
     private async Task GenerateCoreProjectAsync(string moduleDir)
@@ -100,6 +106,73 @@ public class TemplateEngine
         
         await WriteTemplateAsync(templateName, 
             Path.Combine(moduleDir, "extension.vsixmanifest"));
+    }
+
+    private async Task GenerateSolutionAsync(string moduleDir)
+    {
+        var uiProjectName = _context.TargetHost == TargetHostType.Avalonia
+            ? $"{_context.ModuleName}.UI.Avalonia"
+            : $"{_context.ModuleName}.UI.Blazor";
+        
+        var coreGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
+        var uiGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
+        var slnGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
+        
+        var sln = $@"Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{_context.ModuleName}.Core"", ""{_context.ModuleName}.Core\{_context.ModuleName}.Core.csproj"", ""{coreGuid}""
+EndProject
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{uiProjectName}"", ""{uiProjectName}\{uiProjectName}.csproj"", ""{uiGuid}""
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{coreGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{coreGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{coreGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{coreGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+		{uiGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{uiGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{uiGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{uiGuid}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {slnGuid}
+	EndGlobalSection
+EndGlobal
+";
+        await File.WriteAllTextAsync(Path.Combine(moduleDir, $"{_context.ModuleName}.sln"), sln, Encoding.UTF8);
+    }
+
+    private async Task GenerateGitIgnoreAsync(string moduleDir)
+    {
+        var gitignore = @"## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+
+## IDE
+.vs/
+.idea/
+*.swp
+*~
+
+## Build
+artifacts/
+publish/
+";
+        await File.WriteAllTextAsync(Path.Combine(moduleDir, ".gitignore"), gitignore, Encoding.UTF8);
     }
 
     private async Task WriteTemplateAsync(string templateName, string outputPath)

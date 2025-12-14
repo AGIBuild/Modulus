@@ -1,0 +1,23 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Modulus.UI.Abstractions;
+
+namespace Modulus.Modules.ModulusModule.ViewModels;
+
+public partial class MainViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private string _message = "Hello from ModulusModule!";
+
+    public MainViewModel()
+    {
+        Title = "{{DisplayNameComputed}}";
+    }
+
+    [RelayCommand]
+    private void SayHello()
+    {
+        Message = $"Hello at {DateTime.Now:HH:mm:ss}";
+    }
+}
+

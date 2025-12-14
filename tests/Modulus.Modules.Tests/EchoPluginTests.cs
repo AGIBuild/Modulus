@@ -32,7 +32,8 @@ public class EchoPluginTests
         var manifestValidator = new DefaultManifestValidator(NullLogger<DefaultManifestValidator>.Instance);
         var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loggerFactory = NullLoggerFactory.Instance;
-        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, NullLogger<ModuleLoader>.Instance, loggerFactory);
+        var executionGuard = new ModuleExecutionGuard(NullLogger<ModuleExecutionGuard>.Instance, runtimeContext);
+        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, executionGuard, NullLogger<ModuleLoader>.Instance, loggerFactory);
 
         // Act
         var descriptor = await loader.LoadAsync(echoPluginPath);
@@ -68,7 +69,8 @@ public class EchoPluginTests
         var manifestValidator = new DefaultManifestValidator(NullLogger<DefaultManifestValidator>.Instance);
         var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
         var loggerFactory = NullLoggerFactory.Instance;
-        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, NullLogger<ModuleLoader>.Instance, loggerFactory);
+        var executionGuard = new ModuleExecutionGuard(NullLogger<ModuleExecutionGuard>.Instance, runtimeContext);
+        var loader = new ModuleLoader(runtimeContext, manifestValidator, sharedAssemblies, executionGuard, NullLogger<ModuleLoader>.Instance, loggerFactory);
 
         // Act
         var descriptor = await loader.LoadAsync(devOutputPath);

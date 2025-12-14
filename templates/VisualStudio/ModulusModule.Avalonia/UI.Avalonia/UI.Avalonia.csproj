@@ -12,11 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Modulus.Sdk" Version="1.0.0" />
-    <PackageReference Include="Modulus.UI.Abstractions" Version="1.0.0" />
-    <PackageReference Include="Modulus.UI.Avalonia" Version="1.0.0" />
+    <PackageReference Include="Agibuild.Modulus.Sdk" Version="1.0.*" />
+    <PackageReference Include="Agibuild.Modulus.UI.Abstractions" Version="1.0.*" />
+    <PackageReference Include="Agibuild.Modulus.UI.Avalonia" Version="1.0.*" />
     <PackageReference Include="Avalonia" Version="11.3.9" />
   </ItemGroup>
 
 </Project>
-

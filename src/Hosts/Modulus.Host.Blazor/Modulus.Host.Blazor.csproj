@@ -2,22 +2,16 @@
 
     <Import Project="..\..\..\build\Modulus.Architecture.props" />
 
-    <PropertyGroup>
-        <!-- Windows Desktop -->
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0</TargetFrameworks>
-        <!-- Mobile platforms (uncomment as needed) -->
-        <!-- <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks> -->
-
-        <!-- Note for MacCatalyst:
-            The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
-            When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
-            The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
-            either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
-        <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
-
+    <!-- 
+        This project only builds on Windows.
+        On macOS/Linux, it becomes a minimal stub to avoid Xcode version issues.
+    -->
+    
+    <!-- Windows: Full MAUI Blazor build -->
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
         <OutputType>Exe</OutputType>
         <RootNamespace>Modulus.Host.Blazor</RootNamespace>
-        <!-- Let MAUI handle the entry point -->
         <EnableDefaultApplicationDefinition>true</EnableDefaultApplicationDefinition>
         <UseMaui>true</UseMaui>
         <SingleProject>true</SingleProject>
@@ -28,80 +22,76 @@
         <OutputPath>..\..\..\artifacts\bin\</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-
-        <!-- Display name -->
         <ApplicationTitle>Modulus.Host.Blazor</ApplicationTitle>
-
-        <!-- App Identifier -->
         <ApplicationId>com.companyname.modulus.host.blazor</ApplicationId>
-
-        <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
-
-        <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
         <WindowsPackageType>None</WindowsPackageType>
-
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     </PropertyGroup>
 
-    <ItemGroup>
-        <!-- App Icon -->
+    <!-- Non-Windows: Minimal stub (no actual build) -->
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('windows'))">
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Modulus.Host.Blazor</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Disable AssemblyDomain attribute generation (requires Modulus.Core reference) -->
+        <ModulusAssemblyDomain>Unknown</ModulusAssemblyDomain>
+        <OutputPath>..\..\..\artifacts\bin\</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <!-- Exclude all source files on non-Windows -->
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <EnableDefaultItems>false</EnableDefaultItems>
+    </PropertyGroup>
+
+    <!-- Windows-only: MAUI resources -->
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
         <MauiIcon Include="Resources\AppIcon\appicon.png" />
-
-        <!-- Splash Screen -->
         <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
-
-        <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
         <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
-
-        <!-- Custom Fonts -->
         <MauiFont Include="Resources\Fonts\*" />
-
-        <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
-    <ItemGroup>
+    <!-- Windows-only: Package references -->
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
         <PackageReference Include="Markdig" Version="0.44.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.11" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.11" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
         <PackageReference Include="MudBlazor" Version="8.15.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
-      <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
-      <ProjectReference Include="..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
-      <!-- Module references for static page routing -->
-      <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.Core\SimpleNotes.Core.csproj" />
+    <!-- Windows-only: Project references -->
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+        <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
+        <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+        <ProjectReference Include="..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
+        <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.Core\SimpleNotes.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <!-- Windows-only: Content files -->
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+        <Content Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Update="appsettings.Development.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Update="appsettings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <Content Update="appsettings.Development.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
-    <!-- Bundled modules manifest (generated by Nuke build) -->
-    <ItemGroup>
-      <EmbeddedResource Include="Resources\bundled-modules.json" Condition="Exists('Resources\bundled-modules.json')" />
+    <!-- Windows-only: Bundled modules manifest -->
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
+        <EmbeddedResource Include="Resources\bundled-modules.json" Condition="Exists('Resources\bundled-modules.json')" />
     </ItemGroup>
 
 </Project>

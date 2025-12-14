@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Modulus.UI.Blazor</RootNamespace>
-    <PackageId>Modulus.UI.Blazor</PackageId>
+    <PackageId>Agibuild.Modulus.UI.Blazor</PackageId>
     <Description>Blazor UI components library for Modulus framework</Description>
     <ModulusAssemblyDomain>Shared</ModulusAssemblyDomain>
     <OutputPath>..\..\artifacts\bin\</OutputPath>

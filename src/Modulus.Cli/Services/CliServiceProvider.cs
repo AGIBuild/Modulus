@@ -39,9 +39,11 @@ public static class CliServiceProvider
         // Repositories
         services.AddScoped<IModuleRepository, ModuleRepository>();
         services.AddScoped<IMenuRepository, MenuRepository>();
+        services.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
 
         // Services
         services.AddScoped<IManifestValidator, DefaultManifestValidator>();
+        services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
 
         return services.BuildServiceProvider();

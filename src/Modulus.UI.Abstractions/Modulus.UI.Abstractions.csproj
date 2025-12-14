@@ -9,7 +9,7 @@
     <OutputPath>..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <PackageId>Modulus.UI.Abstractions</PackageId>
+    <PackageId>Agibuild.Modulus.UI.Abstractions</PackageId>
     <Description>UI abstractions and contracts for Modulus framework.</Description>
   </PropertyGroup>
 

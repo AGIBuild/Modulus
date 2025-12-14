@@ -5,26 +5,35 @@
   -->
   
   <PropertyGroup>
-    <!-- Auto-increment version: Major.Minor.Build.Revision based on UTC datetime -->
-    <!-- Format: 1.0.YYDDD.HHmm where DDD=day of year, HHmm=time -->
-    <!-- Example: 1.0.25344.1430 = 2025, day 344, 14:30 UTC -->
-    <Version>1.0.$([System.DateTime]::UtcNow.ToString("yy"))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("HHmm"))</Version>
+    <!-- 
+      Version Configuration:
+      - Set via command line: dotnet build -p:Version=1.2.3
+      - Set via environment: VERSION=1.2.3 nuke pack-libs
+      - Default: Auto-increment based on UTC datetime (1.0.YYDDD.HHmm)
+    -->
+    <Version Condition="'$(Version)' == ''">1.0.$([System.DateTime]::UtcNow.ToString("yy"))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("HHmm"))</Version>
     
     <!-- NuGet Metadata -->
     <Authors>Modulus Team</Authors>
+    <Company>Agibuild</Company>
+    <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) Agibuild. All rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>modulus;plugin;module;extensibility;avalonia;blazor;desktop;web</PackageTags>
     <RepositoryUrl>https://github.com/user/Modulus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     
     <!-- Build Properties -->
     <LangVersion>latest</LangVersion>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
-  <!-- Include README in all packages -->
+  <!-- Include README and icon in all packages -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)docs\Images\modules-logo-100.png" Pack="true" PackagePath="icon.png" Visible="false" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@
     <OutputPath>..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <PackageId>Modulus.Sdk</PackageId>
+    <PackageId>Agibuild.Modulus.Sdk</PackageId>
     <Description>SDK for building Modulus modules.</Description>
   </PropertyGroup>
 

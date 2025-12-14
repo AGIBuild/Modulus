@@ -24,6 +24,7 @@
     "ExecutableTarget": {
       "type": "string",
       "enum": [
+        "AddLocalSource",
         "Build",
         "BuildAll",
         "BuildApp",
@@ -36,10 +37,15 @@
         "Pack",
         "PackCli",
         "PackLibs",
+        "PackLocal",
         "PackModule",
+        "PackTemplates",
+        "PackVsix",
         "Plugin",
         "PublishCli",
         "PublishLibs",
+        "PublishTemplates",
+        "RemoveLocalSource",
         "Restore",
         "Run",
         "Test"
@@ -143,6 +149,10 @@
         "source": {
           "type": "string",
           "description": "NuGet source URL (default: nuget.org)"
+        },
+        "version": {
+          "type": "string",
+          "description": "Package version (default: auto-generated)"
         }
       }
     },

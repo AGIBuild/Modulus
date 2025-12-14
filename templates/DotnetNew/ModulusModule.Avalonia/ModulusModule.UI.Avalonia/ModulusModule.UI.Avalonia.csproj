@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.ModulusModule.UI.Avalonia</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ModulusModule.Core\ModulusModule.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Agibuild.Modulus.Sdk" Version="1.0.*" />
+    <PackageReference Include="Agibuild.Modulus.UI.Abstractions" Version="1.0.*" />
+    <PackageReference Include="Agibuild.Modulus.UI.Avalonia" Version="1.0.*" />
+    <PackageReference Include="Avalonia" Version="11.3.9" />
+  </ItemGroup>
+
+</Project>

@@ -8,11 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Modulus.Sdk" Version="1.0.0" />
-    <PackageReference Include="Modulus.UI.Abstractions" Version="1.0.0" />
+    <PackageReference Include="Agibuild.Modulus.Sdk" Version="1.0.*" />
+    <PackageReference Include="Agibuild.Modulus.UI.Abstractions" Version="1.0.*" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
-

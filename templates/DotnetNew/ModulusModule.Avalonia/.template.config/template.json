@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Agibuild",
+  "classifications": ["Modulus", "Module", "Plugin", "Avalonia", "Desktop"],
+  "identity": "Agibuild.Modulus.Module.Avalonia",
+  "name": "Modulus Module (Avalonia)",
+  "shortName": "modulus-avalonia",
+  "description": "A project template for creating Modulus modules with Avalonia UI",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sourceName": "ModulusModule",
+  "preferNameDirectory": true,
+  "symbols": {
+    "displayName": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "",
+      "replaces": "{{DisplayName}}",
+      "description": "The display name shown in menus"
+    },
+    "description": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "A Modulus module.",
+      "replaces": "{{Description}}",
+      "description": "Module description"
+    },
+    "publisher": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Modulus Team",
+      "replaces": "{{Publisher}}",
+      "description": "Publisher name"
+    },
+    "moduleId": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "{{ModuleId}}",
+      "parameters": {
+        "format": "D"
+      }
+    },
+    "displayNameComputed": {
+      "type": "generated",
+      "generator": "coalesce",
+      "parameters": {
+        "sourceVariableName": "displayName",
+        "fallbackVariableName": "name"
+      },
+      "replaces": "{{DisplayNameComputed}}"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [".template.config/**"]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "actionId": "3A7C4B45-1F5D-4A30-959A-51B88E82B5D2",
+      "condition": "true",
+      "continueOnError": true,
+      "description": "Restore NuGet packages",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ]
+    }
+  ]
+}
+

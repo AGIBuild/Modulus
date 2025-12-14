@@ -14,6 +14,8 @@ public class Program
 
         // Add commands
         rootCommand.Add(NewCommand.Create());
+        rootCommand.Add(BuildCommand.Create());
+        rootCommand.Add(PackCommand.Create());
         rootCommand.Add(InstallCommand.Create());
         rootCommand.Add(UninstallCommand.Create());
         rootCommand.Add(ListCommand.Create());

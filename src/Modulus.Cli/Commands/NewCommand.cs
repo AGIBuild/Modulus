@@ -130,7 +130,7 @@ public static class NewCommand
         displayName ??= isInteractive ? PromptWithDefault("Display name", name) : name;
         description ??= isInteractive ? PromptWithDefault("Description", "A Modulus module.") : "A Modulus module.";
         publisher ??= isInteractive ? PromptWithDefault("Publisher", "Modulus Team") : "Modulus Team";
-        icon ??= isInteractive ? PromptWithDefault("Icon", "Apps") : "Apps";
+        icon ??= isInteractive ? PromptWithDefault("Icon", "Folder") : "Folder";
         order ??= isInteractive ? int.Parse(PromptWithDefault("Menu order", "100")) : 100;
         output ??= Directory.GetCurrentDirectory();
 
@@ -172,15 +172,17 @@ public static class NewCommand
         var engine = new TemplateEngine(context);
         await engine.GenerateAsync(output);
 
+        Console.WriteLine($"✓ Created {name}.sln");
         Console.WriteLine($"✓ Created {name}.Core/");
         Console.WriteLine($"✓ Created {name}.UI.{targetHost}/");
         Console.WriteLine($"✓ Created extension.vsixmanifest");
+        Console.WriteLine($"✓ Created .gitignore");
         Console.WriteLine();
         Console.WriteLine($"Module created successfully at: {moduleDir}");
         Console.WriteLine();
         Console.WriteLine("Next steps:");
-        Console.WriteLine($"  1. cd {name}");
-        Console.WriteLine($"  2. dotnet build");
+        Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
+        Console.WriteLine($"  2. Or: cd {name} && dotnet build");
         Console.WriteLine($"  3. Copy output to Modulus Modules directory");
     }
 

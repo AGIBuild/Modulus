@@ -22,6 +22,7 @@ public class ModuleLoaderTests : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ModuleLoader _loader;
     private readonly ISharedAssemblyCatalog _sharedCatalog;
+    private readonly IModuleExecutionGuard _executionGuard;
 
     public ModuleLoaderTests()
     {
@@ -35,8 +36,9 @@ public class ModuleLoaderTests : IDisposable
         _validator = Substitute.For<IManifestValidator>();
         _logger = Substitute.For<ILogger<ModuleLoader>>();
         _loggerFactory = NullLoggerFactory.Instance;
+        _executionGuard = new ModuleExecutionGuard(NullLogger<ModuleExecutionGuard>.Instance, _runtimeContext);
         
-        _loader = new ModuleLoader(_runtimeContext, _validator, _sharedCatalog, _logger, _loggerFactory);
+        _loader = new ModuleLoader(_runtimeContext, _validator, _sharedCatalog, _executionGuard, _logger, _loggerFactory);
     }
 
     public void Dispose()
