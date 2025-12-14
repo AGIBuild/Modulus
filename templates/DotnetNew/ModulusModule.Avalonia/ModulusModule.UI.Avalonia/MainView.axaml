@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Modulus.Modules.ModulusModule.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Modulus.Modules.ModulusModule.UI.Avalonia.MainView"
+             x:DataType="vm:MainViewModel">
+  <Border CornerRadius="8" Background="{DynamicResource SystemChromeLowColor}" BoxShadow="0 4 10 0 #20000000" Margin="20" Padding="20">
+    <StackPanel Spacing="15">
+      <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Light" Foreground="{DynamicResource SystemBaseHighColor}"/>
+      
+      <TextBlock Text="{Binding Message}" FontSize="16" Opacity="0.8"/>
+      
+      <Button Content="Say Hello" Command="{Binding SayHelloCommand}" HorizontalAlignment="Left" Classes="accent"/>
+    </StackPanel>
+  </Border>
+</UserControl>

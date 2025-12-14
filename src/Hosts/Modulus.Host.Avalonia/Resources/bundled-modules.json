@@ -1,7 +1,45 @@
 {
-  "generatedAt": "2025-12-10T12:18:05.968792Z",
+  "generatedAt": "2025-12-14T14:53:34.655439Z",
   "configuration": "Debug",
   "modules": [
+    {
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "version": "1.0.0",
+      "language": "en-US",
+      "publisher": "Modulus Team",
+      "displayName": "Simple Notes",
+      "description": "A simple note taking module to demonstrate Modulus vertical slice architecture.",
+      "tags": "notes, demo, sample",
+      "website": "https://github.com/angidev/Modulus",
+      "supportedHosts": [
+        "Modulus.Host.Blazor",
+        "Modulus.Host.Avalonia"
+      ],
+      "path": "Modules/SimpleNotes",
+      "isBundled": true,
+      "menus": {
+        "Modulus.Host.Avalonia": [
+          {
+            "id": "simple-notes",
+            "displayName": "Notes",
+            "icon": "Document",
+            "route": "SimpleNotes.Core.Application.ViewModels.NoteListViewModel",
+            "location": "Main",
+            "order": 30
+          }
+        ],
+        "Modulus.Host.Blazor": [
+          {
+            "id": "simple-notes",
+            "displayName": "Notes",
+            "icon": "Document",
+            "route": "/notes",
+            "location": "Main",
+            "order": 30
+          }
+        ]
+      }
+    },
     {
       "id": "d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a",
       "version": "1.0.0",
@@ -74,44 +112,6 @@
             "route": "/echo",
             "location": "Main",
             "order": 20
-          }
-        ]
-      }
-    },
-    {
-      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
-      "version": "1.0.0",
-      "language": "en-US",
-      "publisher": "Modulus Team",
-      "displayName": "Simple Notes",
-      "description": "A simple note taking module to demonstrate Modulus vertical slice architecture.",
-      "tags": "notes, demo, sample",
-      "website": "https://github.com/angidev/Modulus",
-      "supportedHosts": [
-        "Modulus.Host.Blazor",
-        "Modulus.Host.Avalonia"
-      ],
-      "path": "Modules/SimpleNotes",
-      "isBundled": true,
-      "menus": {
-        "Modulus.Host.Avalonia": [
-          {
-            "id": "simple-notes",
-            "displayName": "Notes",
-            "icon": "Document",
-            "route": "SimpleNotes.Core.Application.ViewModels.NoteListViewModel",
-            "location": "Main",
-            "order": 30
-          }
-        ],
-        "Modulus.Host.Blazor": [
-          {
-            "id": "simple-notes",
-            "displayName": "Notes",
-            "icon": "Document",
-            "route": "/notes",
-            "location": "Main",
-            "order": 30
           }
         ]
       }

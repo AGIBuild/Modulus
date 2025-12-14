@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,25 +15,14 @@ public static class UninstallCommand
 {
     public static Command Create()
     {
-        var moduleArg = new Argument<string>("module")
-        {
-            Description = "Module name or ID (GUID) to uninstall"
-        };
-        
-        var forceOption = new Option<bool>("--force", "-f")
-        {
-            Description = "Skip confirmation prompt"
-        };
-        
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Show detailed output"
-        };
+        var moduleArg = new Argument<string>("module") { Description = "Module name or ID (GUID) to uninstall" };
+        var forceOption = new Option<bool>("--force", "-f") { Description = "Skip confirmation prompt" };
+        var verboseOption = new Option<bool>("--verbose", "-v") { Description = "Show detailed output" };
 
         var command = new Command("uninstall", "Uninstall a module");
-        command.Add(moduleArg);
-        command.Add(forceOption);
-        command.Add(verboseOption);
+        command.Arguments.Add(moduleArg);
+        command.Options.Add(forceOption);
+        command.Options.Add(verboseOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {

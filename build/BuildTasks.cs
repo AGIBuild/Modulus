@@ -53,14 +53,17 @@ class BuildTasks : NukeBuild
     readonly string Operation = "all";
 
     [Parameter("Name of the plugin to pack (required when op=single)", Name = "name")]
-    readonly string PluginName;
+    readonly string? PluginName;
     
     [Parameter("Target host to build for: 'avalonia' (default), 'blazor', or 'all'", Name = "app")]
     readonly string TargetHost = "avalonia";
 
+    [Parameter("NuGet source URL (default: nuget.org)", Name = "source")]
+    readonly string NuGetSource = "https://api.nuget.org/v3/index.json";
+
     private string EffectiveTargetHost => (TargetHost ?? "avalonia").ToLower();
 
-    [Solution] readonly Solution Solution;
+    [Solution] readonly Solution Solution = null!;
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
     AbsolutePath BinDirectory => ArtifactsDirectory / "bin";
@@ -171,6 +174,27 @@ class BuildTasks : NukeBuild
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetNoBuild(true));
+        });
+
+    /// <summary>
+    /// Run CLI integration tests.
+    /// Usage: nuke test-cli
+    /// </summary>
+    Target TestCli => _ => _
+        .DependsOn(Compile)
+        .Description("Run CLI integration tests")
+        .Executes(() =>
+        {
+            LogHeader("Running CLI Integration Tests");
+            
+            var testProject = RootDirectory / "tests" / "Modulus.Cli.IntegrationTests" / "Modulus.Cli.IntegrationTests.csproj";
+            
+            DotNetTasks.DotNetTest(s => s
+                .SetProjectFile(testProject)
+                .SetConfiguration(Configuration)
+                .SetNoBuild(true));
+            
+            LogSuccess("CLI integration tests passed");
         });
 
     Target BuildAll => _ => _
@@ -711,12 +735,13 @@ class BuildTasks : NukeBuild
         });
 
     /// <summary>
-    /// Pack CLI as a dotnet tool NuGet package
+    /// Pack CLI as a dotnet tool NuGet package.
+    /// Requires CLI integration tests to pass first.
     /// Usage: nuke pack-cli
     /// </summary>
     Target PackCli => _ => _
-        .DependsOn(Compile)
-        .Description("Pack CLI as a dotnet tool NuGet package")
+        .DependsOn(TestCli)
+        .Description("Pack CLI as a dotnet tool NuGet package (runs tests first)")
         .Executes(() =>
         {
             var cliProject = Solution.AllProjects.FirstOrDefault(p => p.Name == "Modulus.Cli");
@@ -735,6 +760,72 @@ class BuildTasks : NukeBuild
                 .EnableNoBuild());
 
             LogSuccess($"CLI package created in {PackagesDirectory}");
+        });
+
+    Target PackLibs => _ => _
+        .DependsOn(Compile)
+        .Description("Pack core libraries (Sdk, UI.Abstractions, UI.Avalonia, UI.Blazor)")
+        .Executes(() =>
+        {
+            var libs = new[] { "Modulus.Sdk", "Modulus.UI.Abstractions", "Modulus.UI.Avalonia", "Modulus.UI.Blazor" };
+            
+            foreach (var libName in libs)
+            {
+                var project = Solution.AllProjects.FirstOrDefault(p => p.Name == libName);
+                if (project == null)
+                {
+                    LogWarning($"Project {libName} not found");
+                    continue;
+                }
+
+                LogHeader($"Packing {libName}");
+                
+                DotNetTasks.DotNetPack(s => s
+                    .SetProject(project)
+                    .SetConfiguration(Configuration)
+                    .SetOutputDirectory(PackagesDirectory)
+                    .EnableNoBuild());
+            }
+            
+            LogSuccess($"Core libraries packaged in {PackagesDirectory}");
+        });
+
+    Target PublishLibs => _ => _
+        .DependsOn(PackLibs)
+        .Description("Publish core libraries to NuGet (requires NUGET_API_KEY env var)")
+        .Executes(() =>
+        {
+            var apiKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                LogError("NUGET_API_KEY environment variable is not set");
+                throw new Exception("Missing NUGET_API_KEY environment variable");
+            }
+
+            var packages = Directory.GetFiles(PackagesDirectory, "Agibuild.Modulus.*.nupkg")
+                .Where(p => !Path.GetFileName(p).Contains(".Cli.")) // Exclude CLI
+                .ToList();
+
+            if (packages.Count == 0)
+            {
+                LogError("No library packages found. Run 'nuke pack-libs' first.");
+                return;
+            }
+
+            LogHeader($"Publishing {packages.Count} packages to {NuGetSource}");
+
+            foreach (var package in packages)
+            {
+                LogHighlight($"Pushing: {Path.GetFileName(package)}");
+                
+                DotNetTasks.DotNetNuGetPush(s => s
+                    .SetTargetPath(package)
+                    .SetSource(NuGetSource)
+                    .SetApiKey(apiKey)
+                    .EnableSkipDuplicate());
+            }
+            
+            LogSuccess("All libraries published successfully");
         });
 
     /// <summary>
@@ -772,6 +863,160 @@ class BuildTasks : NukeBuild
                 .SetApiKey(apiKey));
 
             LogSuccess($"Published {Path.GetFileName(latestPackage)} to NuGet.org");
+        });
+
+    // ============================================================
+    // Local NuGet Source Management
+    // ============================================================
+    
+    const string LocalSourceName = "LocalModulus";
+    AbsolutePath LocalPackagesDirectory => PackagesDirectory;
+
+    /// <summary>
+    /// Add local NuGet source for development testing
+    /// Usage: nuke add-local-source
+    /// </summary>
+    Target AddLocalSource => _ => _
+        .Description("Add local NuGet source for development testing")
+        .Executes(() =>
+        {
+            LogHeader("Adding Local NuGet Source");
+            
+            // Ensure packages directory exists
+            Directory.CreateDirectory(LocalPackagesDirectory);
+            
+            // Check if source already exists
+            try
+            {
+                var result = DotNetTasks.DotNet($"nuget list source", logOutput: false);
+                if (result.Any(x => x.Text.Contains(LocalSourceName)))
+                {
+                    LogWarning($"Source '{LocalSourceName}' already exists");
+                    LogHighlight($"Path: {LocalPackagesDirectory}");
+                    return;
+                }
+            }
+            catch
+            {
+                // Ignore errors when listing sources
+            }
+            
+            // Add the source
+            DotNetTasks.DotNet($"nuget add source \"{LocalPackagesDirectory}\" --name {LocalSourceName}");
+            
+            LogSuccess($"Added local NuGet source: {LocalSourceName}");
+            LogHighlight($"Path: {LocalPackagesDirectory}");
+            LogNormal("");
+            LogNormal("You can now reference local packages in your projects.");
+            LogNormal("Run 'nuke pack-local' to build and publish packages to this source.");
+        });
+
+    /// <summary>
+    /// Remove local NuGet source
+    /// Usage: nuke remove-local-source
+    /// </summary>
+    Target RemoveLocalSource => _ => _
+        .Description("Remove local NuGet source")
+        .Executes(() =>
+        {
+            LogHeader("Removing Local NuGet Source");
+            
+            try
+            {
+                DotNetTasks.DotNet($"nuget remove source {LocalSourceName}");
+                LogSuccess($"Removed local NuGet source: {LocalSourceName}");
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Source '{LocalSourceName}' may not exist: {ex.Message}");
+            }
+        });
+
+    /// <summary>
+    /// Pack libraries and make them available in local source (one-step command)
+    /// Usage: nuke pack-local [--version 1.2.3]
+    /// </summary>
+    [Parameter("Package version (default: auto-generated)", Name = "version")]
+    readonly string? PackageVersion;
+
+    Target PackLocal => _ => _
+        .DependsOn(Compile)
+        .Description("Pack core libraries to local NuGet source for development")
+        .Executes(() =>
+        {
+            LogHeader("Packing Libraries to Local Source");
+            
+            // Ensure packages directory exists
+            Directory.CreateDirectory(LocalPackagesDirectory);
+            
+            // Clean old packages
+            var oldPackages = Directory.GetFiles(LocalPackagesDirectory, "Agibuild.Modulus.*.nupkg");
+            foreach (var pkg in oldPackages)
+            {
+                File.Delete(pkg);
+                Log.Debug($"Removed old package: {Path.GetFileName(pkg)}");
+            }
+            
+            var libs = new[] { "Modulus.UI.Abstractions", "Modulus.Sdk", "Modulus.UI.Avalonia", "Modulus.UI.Blazor" };
+            
+            foreach (var libName in libs)
+            {
+                var project = Solution.AllProjects.FirstOrDefault(p => p.Name == libName);
+                if (project == null)
+                {
+                    LogWarning($"Project {libName} not found");
+                    continue;
+                }
+
+                LogHighlight($"Packing {libName}...");
+                
+                DotNetTasks.DotNetPack(s => s
+                    .SetProject(project)
+                    .SetConfiguration(Configuration)
+                    .SetOutputDirectory(LocalPackagesDirectory)
+                    .EnableNoBuild());
+                
+                // Find the created package to show version
+                var createdPackage = Directory.GetFiles(LocalPackagesDirectory, $"{libName}.*.nupkg")
+                    .OrderByDescending(File.GetLastWriteTime)
+                    .FirstOrDefault();
+                    
+                if (createdPackage != null)
+                {
+                    var version = Path.GetFileNameWithoutExtension(createdPackage)
+                        .Replace($"{libName}.", "");
+                    LogSuccess($"  ✓ {libName} v{version}");
+                }
+            }
+            
+            LogHeader("LOCAL PACKAGES READY");
+            LogNormal($"Packages directory: {LocalPackagesDirectory}");
+            LogNormal("");
+            
+            // Check if local source is configured
+            try
+            {
+                var result = DotNetTasks.DotNet($"nuget list source", logOutput: false);
+                if (!result.Any(x => x.Text.Contains(LocalSourceName)))
+                {
+                    LogWarning($"Local source '{LocalSourceName}' not configured.");
+                    LogNormal("Run 'nuke add-local-source' to add it.");
+                }
+                else
+                {
+                    LogSuccess($"Local source '{LocalSourceName}' is configured.");
+                }
+            }
+            catch
+            {
+                // Ignore
+            }
+            
+            LogNormal("");
+            LogNormal("To use these packages in module templates:");
+            LogNormal("  1. Run 'nuke add-local-source' (if not done)");
+            LogNormal("  2. Run 'modulus new MyModule --target avalonia'");
+            LogNormal("  3. dotnet restore will find packages from local source");
         });
 
     Target CleanPluginsArtifacts => _ => _
@@ -1040,4 +1285,117 @@ class BuildTasks : NukeBuild
         public string Location { get; set; } = "Main";
         public int Order { get; set; }
     }
+
+    // ============================================================
+    // Template Packaging Targets
+    // ============================================================
+
+    AbsolutePath TemplatesDirectory => RootDirectory / "templates";
+    AbsolutePath DotnetNewTemplatesDirectory => TemplatesDirectory / "DotnetNew";
+
+    /// <summary>
+    /// Pack dotnet new templates as NuGet package
+    /// Usage: nuke pack-templates
+    /// </summary>
+    Target PackTemplates => _ => _
+        .Description("Pack dotnet new templates as NuGet package")
+        .Executes(() =>
+        {
+            LogHeader("Packing dotnet new Templates");
+            
+            Directory.CreateDirectory(PackagesDirectory);
+            
+            DotNetTasks.DotNetPack(s => s
+                .SetProject(DotnetNewTemplatesDirectory / "Agibuild.Modulus.Templates.csproj")
+                .SetConfiguration(Configuration)
+                .SetOutputDirectory(PackagesDirectory));
+            
+            LogSuccess($"Template package created in {PackagesDirectory}");
+            LogNormal("");
+            LogNormal("To install locally:");
+            LogNormal($"  dotnet new install Agibuild.Modulus.Templates --add-source {PackagesDirectory}");
+            LogNormal("");
+            LogNormal("To publish to NuGet:");
+            LogNormal("  dotnet nuget push <package>.nupkg -k <api-key> -s https://api.nuget.org/v3/index.json");
+        });
+
+    /// <summary>
+    /// Publish dotnet new templates to NuGet
+    /// Usage: nuke publish-templates
+    /// </summary>
+    Target PublishTemplates => _ => _
+        .DependsOn(PackTemplates)
+        .Description("Publish dotnet new templates to NuGet (requires NUGET_API_KEY env var)")
+        .Executes(() =>
+        {
+            var apiKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                LogError("NUGET_API_KEY environment variable is not set");
+                throw new Exception("Missing NUGET_API_KEY environment variable");
+            }
+
+            var packages = Directory.GetFiles(PackagesDirectory, "Agibuild.Modulus.Templates.*.nupkg");
+            if (packages.Length == 0)
+            {
+                LogError("No template package found. Run 'nuke pack-templates' first.");
+                return;
+            }
+
+            var latestPackage = packages.OrderByDescending(File.GetLastWriteTime).First();
+            
+            LogHeader("Publishing Templates to NuGet.org");
+            LogHighlight($"Package: {Path.GetFileName(latestPackage)}");
+
+            DotNetTasks.DotNetNuGetPush(s => s
+                .SetTargetPath(latestPackage)
+                .SetSource(NuGetSource)
+                .SetApiKey(apiKey)
+                .EnableSkipDuplicate());
+
+            LogSuccess($"Published {Path.GetFileName(latestPackage)} to NuGet.org");
+        });
+
+    /// <summary>
+    /// Pack VSIX extension (Windows only)
+    /// Usage: nuke pack-vsix
+    /// </summary>
+    Target PackVsix => _ => _
+        .OnlyWhenStatic(() => OperatingSystem.IsWindows())
+        .Description("Pack VSIX extension for Visual Studio (Windows only)")
+        .Executes(() =>
+        {
+            LogHeader("Packing VSIX Extension");
+            
+            var vsixProjectDir = TemplatesDirectory / "VSIX";
+            var vsTemplatesDir = TemplatesDirectory / "VisualStudio";
+            var projectTemplatesDir = vsixProjectDir / "ProjectTemplates";
+            
+            Directory.CreateDirectory(projectTemplatesDir);
+            
+            // Create template ZIP files
+            var avaloniaZip = projectTemplatesDir / "ModulusModule.Avalonia.zip";
+            var blazorZip = projectTemplatesDir / "ModulusModule.Blazor.zip";
+            
+            if (File.Exists(avaloniaZip)) File.Delete(avaloniaZip);
+            if (File.Exists(blazorZip)) File.Delete(blazorZip);
+            
+            System.IO.Compression.ZipFile.CreateFromDirectory(
+                vsTemplatesDir / "ModulusModule.Avalonia", 
+                avaloniaZip);
+            LogSuccess("Created ModulusModule.Avalonia.zip");
+            
+            System.IO.Compression.ZipFile.CreateFromDirectory(
+                vsTemplatesDir / "ModulusModule.Blazor", 
+                blazorZip);
+            LogSuccess("Created ModulusModule.Blazor.zip");
+            
+            // Build VSIX project
+            DotNetTasks.DotNetBuild(s => s
+                .SetProjectFile(vsixProjectDir / "Modulus.Templates.Vsix.csproj")
+                .SetConfiguration(Configuration));
+            
+            LogSuccess("VSIX built successfully");
+            LogNormal($"Output: {vsixProjectDir / "bin" / Configuration}");
+        });
 }

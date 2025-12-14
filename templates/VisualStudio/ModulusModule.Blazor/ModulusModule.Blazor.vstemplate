@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="ProjectGroup" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Modulus Module (Blazor)</Name>
+    <Description>A Modulus module with Core and Blazor UI projects</Description>
+    <Icon>__TemplateIcon.ico</Icon>
+    <ProjectType>CSharp</ProjectType>
+    <LanguageTag>csharp</LanguageTag>
+    <PlatformTag>windows</PlatformTag>
+    <ProjectTypeTag>web</ProjectTypeTag>
+    <RequiredFrameworkVersion>4.5</RequiredFrameworkVersion>
+    <SortOrder>1000</SortOrder>
+    <TemplateID>ModulusModule.Blazor</TemplateID>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>MyModule</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <CreateInPlace>true</CreateInPlace>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectCollection>
+      <ProjectTemplateLink ProjectName="$safeprojectname$.Core">
+        Core\Core.vstemplate
+      </ProjectTemplateLink>
+      <ProjectTemplateLink ProjectName="$safeprojectname$.UI.Blazor">
+        UI.Blazor\UI.Blazor.vstemplate
+      </ProjectTemplateLink>
+    </ProjectCollection>
+  </TemplateContent>
+</VSTemplate>
+

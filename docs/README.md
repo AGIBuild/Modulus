@@ -1,32 +1,44 @@
-# Modulus Project Documentation
+# Modulus Documentation
 
-Welcome to the Modulus project documentation. This documentation is structured into different sections based on language and topic.
+Welcome to the Modulus project documentation.
 
-## Documentation Structure
+## 📚 Guides
 
-- **English Documentation**: [en-US](./en-US/README.md)
-  - User Guide
-  - Developer Guide
-  - User Stories
+### Getting Started
+- [Getting Started (English)](./getting-started.md) - Quick start guide for developers
+- [快速入门 (中文)](./getting-started.zh-CN.md) - 开发者快速入门指南
 
-- **Chinese Documentation**: [zh-CN](./zh-CN/README.md)
-  - 用户指南
-  - 开发者指南
-  - 用户故事
+### Module Development
+- [Module Development Guide](./module-development.md) - In-depth module development guide
+- [CLI Reference](./cli-reference.md) - Complete CLI command reference
 
-## Images and Resources
+## 🔧 Reference
+
+### OpenSpec Specifications
+- [Module Packaging](../openspec/specs/module-packaging/spec.md) - Module packaging format
+- [Manifest Format](../openspec/specs/vsixmanifest-format/spec.md) - extension.vsixmanifest format
+
+### Architecture
+- [Project Context](../openspec/project.md) - Project overview and architecture
+- [Assembly Domain](../.cursor/rules/project-rules.mdc) - Assembly isolation architecture
+
+## 🖼️ Images and Resources
 
 Common images and resources used across documentation are stored in the [Images](./Images) directory.
+
+## 📖 Quick Links
+
+| Topic | English | 中文 |
+|-------|---------|------|
+| Getting Started | [getting-started.md](./getting-started.md) | [getting-started.zh-CN.md](./getting-started.zh-CN.md) |
+| CLI Reference | [cli-reference.md](./cli-reference.md) | - |
+| Module Development | [module-development.md](./module-development.md) | - |
 
 ## Contributing to Documentation
 
 When contributing to the documentation:
 
-1. Add new content to the appropriate language section
+1. Add new content with appropriate language suffix (`.md` for English, `.zh-CN.md` for Chinese)
 2. Maintain consistent formatting and style
-3. Add images to the common images directory
-4. Update the relevant README files when adding new documents
-
-## Documentation Updates
-
-As of May 2025, we have reorganized the documentation into a language-based structure. All documentation is now organized by language (en-US or zh-CN) and then by type (user guides, developer guides, and stories). The old structure has been retired.
+3. Add images to the Images directory
+4. Update this README when adding new documents

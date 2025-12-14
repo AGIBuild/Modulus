@@ -49,46 +49,146 @@ MyExtension/
 
 ## 🚀 快速开始
 
-### 运行 Avalonia 主机
+### 安装 CLI 和模板
+
 ```bash
-dotnet run --project src/Hosts/Modulus.Host.Avalonia
+# 安装 Modulus CLI
+dotnet tool install -g Agibuild.Modulus.Cli
+
+# 安装项目模板
+dotnet new install Agibuild.Modulus.Templates
 ```
 
-### 运行 Blazor 主机
+### 创建您的第一个模块
+
 ```bash
+# 创建新模块
+modulus new MyModule -t avalonia
+
+# 或使用 dotnet new
+dotnet new modulus-avalonia -n MyModule
+
+# 进入模块目录
+cd MyModule
+
+# 编译模块
+modulus build
+
+# 打包分发
+modulus pack
+
+# 安装测试
+modulus install ./output/MyModule-1.0.0.modpkg
+```
+
+### 运行主机
+
+```bash
+# 运行 Avalonia 主机
+dotnet run --project src/Hosts/Modulus.Host.Avalonia
+
+# 运行 Blazor 主机（仅 Windows）
 dotnet run --project src/Hosts/Modulus.Host.Blazor
 ```
 
-### 运行测试
+## 🛠️ CLI 工具
+
+Modulus 提供全面的命令行工具用于模块开发和管理。
+
+### 命令
+
+| 命令 | 描述 |
+|------|------|
+| `modulus new <name>` | 创建新模块项目 |
+| `modulus build` | 在当前目录编译模块 |
+| `modulus pack` | 编译并打包为 .modpkg |
+| `modulus install <source>` | 安装模块 |
+| `modulus uninstall <name>` | 卸载模块 |
+| `modulus list` | 列出已安装模块 |
+
+### 创建模块
+
 ```bash
-dotnet test
+modulus new MyModule [options]
+
+选项:
+  -t, --target <avalonia|blazor>  目标主机平台
+  -d, --display-name <name>       菜单中显示的名称
+  -p, --publisher <name>          发布者名称
+  -i, --icon <icon>               菜单图标
+  --force                         覆盖已有文件
+```
+
+### 编译和打包
+
+```bash
+# 编译模块
+modulus build
+
+# 打包分发
+modulus pack
+
+# 打包选项
+modulus pack -o ./dist --verbose
+```
+
+### 安装和管理
+
+```bash
+# 从 .modpkg 文件安装
+modulus install ./MyModule-1.0.0.modpkg
+
+# 从目录安装（开发用）
+modulus install ./artifacts/bin/Modules/MyModule/
+
+# 强制覆盖已有安装
+modulus install ./MyModule-1.0.0.modpkg --force
+
+# 卸载
+modulus uninstall MyModule
+
+# 列出已安装模块
+modulus list --verbose
 ```
 
 ## 🔌 创建扩展
 
 ### 1. 创建项目
 
+```bash
+modulus new MyExtension -t avalonia
+```
+
+这将创建：
 ```
 MyExtension/
+├── MyExtension.sln
+├── extension.vsixmanifest
 ├── MyExtension.Core/
-├── MyExtension.UI.Avalonia/
-└── MyExtension.UI.Blazor/
+│   ├── MyExtensionModule.cs
+│   └── ViewModels/MainViewModel.cs
+└── MyExtension.UI.Avalonia/
+    ├── MyExtensionAvaloniaModule.cs
+    └── MainView.axaml
 ```
 
 ### 2. 定义入口点
 
 ```csharp
-// MyExtension.Core/MyExtensionPackage.cs
-public class MyExtensionPackage : ModulusPackage
+// MyExtension.Core/MyExtensionModule.cs
+public class MyExtensionModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
     {
         context.Services.AddSingleton<IMyService, MyService>();
+        context.Services.AddTransient<MainViewModel>();
     }
 }
 ```
 
 ### 3. 创建清单
+
+清单由模板自动生成。关键部分：
 
 ```xml
 <!-- extension.vsixmanifest -->
@@ -109,92 +209,65 @@ public class MyExtensionPackage : ModulusPackage
     <Asset Type="Modulus.Package" Path="MyExtension.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
     <Asset Type="Modulus.Menu" Id="my-menu" DisplayName="My Tool" 
-           Icon="Home" Route="MyExtension.ViewModels.MainViewModel" 
-           TargetHost="Modulus.Host.Avalonia" />
+           Icon="Home" Route="MyExtension.ViewModels.MainViewModel" />
   </Assets>
 </PackageManifest>
 ```
 
-### 4. 安装扩展
+### 4. 编译、打包和安装
 
 ```bash
-modulus install ./MyExtension
-```
-
-## 🛠️ CLI 工具
-
-Modulus 提供命令行工具用于模块管理。
-
-### 安装 CLI
-
-```bash
-# 从 NuGet 安装（发布后可用）
-dotnet tool install -g Agibuild.Modulus.Cli
-
-# 或从本地构建安装
-dotnet tool install -g --add-source ./artifacts/packages Agibuild.Modulus.Cli
-
-# 开发时直接使用
-./artifacts/cli/modulus.exe
-```
-
-### 安装模块
-
-```bash
-# 从 .modpkg 文件安装
-modulus install ./MyModule-1.0.0.modpkg
-
-# 从目录安装（开发用）
-modulus install ./artifacts/bin/Modules/MyModule/
-
-# 强制覆盖已有安装
-modulus install ./MyModule-1.0.0.modpkg --force
-```
-
-### 卸载模块
-
-```bash
-# 按模块名称卸载
-modulus uninstall MyModule
-
-# 按模块 ID 卸载
-modulus uninstall a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
-
-# 跳过确认
-modulus uninstall MyModule --force
-```
-
-### 列出已安装模块
-
-```bash
-# 基本列表
-modulus list
-
-# 显示详细信息
-modulus list --verbose
-```
-
-### 打包模块
-
-```bash
-# 打包所有模块到 artifacts/packages/
-nuke pack-module
-
-# 打包单个模块
-nuke pack-module --name EchoPlugin
+cd MyExtension
+modulus build
+modulus pack
+modulus install ./output/MyExtension-1.0.0.modpkg
 ```
 
 ## 📚 文档
 
+- [快速入门指南](./docs/getting-started.zh-CN.md)
+- [CLI 参考](./docs/cli-reference.md)
+- [模块开发指南](./docs/module-development.md)
 - [OpenSpec 规格说明](./openspec/specs/)
-- [项目上下文](./openspec/project.md)
 - [贡献指南](./CONTRIBUTING.zh-CN.md)
+
+## 🏭 构建系统
+
+项目使用 Nuke 进行构建自动化：
+
+```bash
+# 构建全部
+nuke compile
+
+# 运行测试
+nuke test
+
+# 打包模块
+nuke pack-module
+
+# 打包 CLI 模板
+nuke pack-templates
+
+# 发布 NuGet 包
+nuke publish-libs
+```
 
 ## 项目状态
 
 - **阶段**: 活跃开发中
 - **测试覆盖**: 30+ 测试通过
 - **平台**: Windows, macOS, Linux
+
+## NuGet 包
+
+| 包 | 描述 |
+|---|------|
+| `Agibuild.Modulus.Sdk` | 模块开发 SDK |
+| `Agibuild.Modulus.UI.Abstractions` | UI 契约和抽象 |
+| `Agibuild.Modulus.UI.Avalonia` | Avalonia UI 组件 |
+| `Agibuild.Modulus.UI.Blazor` | Blazor UI 组件 |
+| `Agibuild.Modulus.Cli` | CLI 工具 |
+| `Agibuild.Modulus.Templates` | 项目模板 |
 
 ## 贡献
 

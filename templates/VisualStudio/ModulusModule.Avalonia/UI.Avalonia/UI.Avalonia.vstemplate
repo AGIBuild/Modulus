@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Modulus Module UI Avalonia</Name>
+    <Description>Avalonia UI project for Modulus module</Description>
+    <ProjectType>CSharp</ProjectType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>UI.Avalonia</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="UI.Avalonia.csproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="$ext_safeprojectname$AvaloniaModule.cs">AvaloniaModule.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainView.axaml">MainView.axaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainView.axaml.cs">MainView.axaml.cs</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>
+

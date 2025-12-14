@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\build\Modulus.Architecture.props" />
 
@@ -9,6 +9,8 @@
     <OutputPath>..\..\artifacts\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <PackageId>Agibuild.Modulus.UI.Abstractions</PackageId>
+    <Description>UI abstractions and contracts for Modulus framework.</Description>
   </PropertyGroup>
 
   <ItemGroup>

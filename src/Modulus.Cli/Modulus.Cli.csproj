@@ -19,22 +19,14 @@
     <ToolCommandName>modulus</ToolCommandName>
     <PackageId>Agibuild.Modulus.Cli</PackageId>
     
-    <!-- Auto-increment version: Major.Minor.Build.Revision based on UTC datetime -->
-    <!-- Format: 1.0.YYDDD.HHmm where DDD=day of year, HHmm=time -->
-    <!-- Example: 1.0.25344.1430 = 2025, day 344, 14:30 UTC -->
-    <Version>1.0.$([System.DateTime]::UtcNow.ToString("yy"))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("HHmm"))</Version>
-    <Authors>Modulus Team</Authors>
     <Description>Modulus module management CLI tool</Description>
-    <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta5.25306.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,8 +34,14 @@
     <ProjectReference Include="..\Shared\Modulus.Infrastructure.Data\Modulus.Infrastructure.Data.csproj" />
   </ItemGroup>
 
+  <!-- Include template files as embedded resources -->
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <EmbeddedResource Include="Templates\**\*.template" />
+  </ItemGroup>
+
+  <!-- Also copy template files to output for development -->
+  <ItemGroup>
+    <None Include="Templates\**\*.template" CopyToOutputDirectory="PreserveNewest" LinkBase="Templates" />
   </ItemGroup>
 
 </Project>
