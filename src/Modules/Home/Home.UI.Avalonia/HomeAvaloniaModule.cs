@@ -10,7 +10,7 @@ namespace Modulus.Modules.Home.UI.Avalonia;
 /// Home Module Avalonia UI - declares Avalonia-specific navigation.
 /// </summary>
 [DependsOn(typeof(HomeModule))]
-[AvaloniaMenu("Home", typeof(HomeViewModel), Icon = IconKind.Home, Order = 1)]
+[AvaloniaMenu("home", "Home", typeof(HomeViewModel), Icon = IconKind.Home, Order = 1)]
 public class HomeAvaloniaModule : AvaloniaModuleBase
 {
     public override async Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

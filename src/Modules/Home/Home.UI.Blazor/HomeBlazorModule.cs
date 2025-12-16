@@ -9,7 +9,7 @@ namespace Modulus.Modules.Home.UI.Blazor;
 /// Home Module Blazor UI - declares Blazor-specific navigation.
 /// </summary>
 [DependsOn(typeof(HomeModule))]
-// Menu is declared in extension.vsixmanifest, no [BlazorMenu] needed here
+[BlazorMenu("home", "Home", "/home", Icon = IconKind.Home, Order = 1)]
 public class HomeBlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

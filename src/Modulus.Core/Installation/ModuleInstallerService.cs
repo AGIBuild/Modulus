@@ -115,6 +115,8 @@ public class ModuleInstallerService : IModuleInstallerService
             }
         }
 
+        var moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
+
         // Compute manifest hash for change detection
         var manifestHash = await VsixManifestReader.ComputeHashAsync(manifestPath, cancellationToken);
 
@@ -132,6 +134,10 @@ public class ModuleInstallerService : IModuleInstallerService
             ? null
             : JsonSerializer.Serialize(validationResult.Errors);
 
+        var existing = await _moduleRepository.GetAsync(identity.Id, cancellationToken);
+        var isEnabled = existing?.IsEnabled ?? validationResult.IsValid;
+        if (!validationResult.IsValid) isEnabled = false;
+
         var moduleEntity = new ModuleEntity
         {
             Id = identity.Id,
@@ -146,7 +152,7 @@ public class ModuleInstallerService : IModuleInstallerService
             ManifestHash = manifestHash,
             ValidatedAt = DateTime.UtcNow,
             IsSystem = isSystem,
-            IsEnabled = preserveIsEnabled,
+            IsEnabled = isEnabled,
             MenuLocation = moduleLocation,
             State = moduleState,
             ValidationErrors = validationErrors
