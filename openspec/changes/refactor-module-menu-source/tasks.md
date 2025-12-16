@@ -1,5 +1,5 @@
 ## 1. Implementation
-- [x] 1.1 移除 `extension.vsixmanifest` 中的 `Modulus.Menu` 声明（内置模块与模板一致）
+- [x] 1.1 移除 `extension.vsixmanifest` 中的菜单声明（manifest 不再包含菜单；菜单仅通过入口类型菜单属性声明）
 - [x] 1.2 移除 `bundled-modules.json` 相关逻辑（Host seeder、资源文件、读取与写库路径）
 - [x] 1.3 增加菜单属性解析器（metadata-only）：从模块 host-specific 入口类型解析 `[BlazorMenu]` / `[AvaloniaMenu]`
 - [x] 1.4 更新安装流程：install/update 时解析菜单属性并投影到 DB；保留 `IsEnabled`（避免升级重置禁用状态）

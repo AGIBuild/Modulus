@@ -63,12 +63,12 @@
         <PackageReference Include="Markdig" Version="0.44.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.11" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.11" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.1" />
         <PackageReference Include="MudBlazor" Version="8.15.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
     </ItemGroup>
 
     <!-- Windows-only: Project references -->
@@ -92,11 +92,6 @@
         <Content Update="appsettings.Development.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-    </ItemGroup>
-
-    <!-- Windows-only: Bundled modules manifest -->
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
-        <EmbeddedResource Include="Resources\bundled-modules.json" Condition="Exists('Resources\bundled-modules.json')" />
     </ItemGroup>
 
 </Project>

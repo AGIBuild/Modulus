@@ -10,7 +10,7 @@ namespace Modulus.Modules.EchoPlugin.UI.Avalonia;
 /// Echo Plugin Avalonia UI - declares Avalonia-specific navigation.
 /// </summary>
 [DependsOn(typeof(Modulus.Modules.EchoPlugin.EchoPluginModule))]
-[AvaloniaMenu("Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
+[AvaloniaMenu("echo", "Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
 public class EchoPluginAvaloniaModule : AvaloniaModuleBase
 {
     public override async Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

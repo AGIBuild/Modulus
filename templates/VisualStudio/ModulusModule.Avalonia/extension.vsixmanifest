@@ -21,14 +21,5 @@
     <Asset Type="Modulus.Package" Path="$ext_safeprojectname$.Core.dll" />
     <Asset Type="Modulus.Package" Path="$ext_safeprojectname$.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
-    
-    <Asset Type="Modulus.Menu" 
-           Id="$ext_safeprojectname$-main"
-           DisplayName="$ext_safeprojectname$" 
-           Icon="Apps"
-           Route="Modulus.Modules.$ext_safeprojectname$.ViewModels.MainViewModel"
-           TargetHost="Modulus.Host.Avalonia"
-           Order="100" />
   </Assets>
 </PackageManifest>
-

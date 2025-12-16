@@ -28,7 +28,7 @@
 - [x] 2.1.2 解析 `Metadata/Identity` 元素
 - [x] 2.1.3 解析 `Installation/InstallationTarget` 列表
 - [x] 2.1.4 解析 `Dependencies/Dependency` 列表
-- [x] 2.1.5 解析 `Assets/Asset` 列表 (含 `Modulus.Menu` 类型)
+- [x] 2.1.5 解析 `Assets/Asset` 列表（仅解析通用字段：Type/Path/TargetHost）
 
 ### 2.2 ManifestValidator 重写
 - [x] 2.2.1 验证 XML schema 基本结构 (PackageManifest, Version, xmlns)
@@ -44,12 +44,12 @@
 
 ### 3.1 ModuleInstallerService 重构
 - [x] 3.1.1 移除临时 ALC 创建和程序集加载逻辑
-- [x] 3.1.2 从 manifest Assets 解析菜单信息 (`Modulus.Menu`)
+- [x] 3.1.2 从 host-specific 入口类型菜单属性解析菜单（metadata-only），并投影到 DB
 - [x] 3.1.3 将 manifest hash 和验证时间写入数据库
 - [x] 3.1.4 更新 manifest 文件名引用 (`manifest.json` → `extension.vsixmanifest`)
 
 ### 3.2 菜单元数据提取
-- [x] 3.2.1 实现从 `Modulus.Menu` Asset 提取菜单元数据
+- [x] 3.2.1 实现从入口类型菜单属性提取菜单元数据（metadata-only）
 - [x] 3.2.2 移除 `ModuleMetadataScanner` 的程序集扫描逻辑
 - [x] 3.2.3 ~~保留程序集扫描作为后备~~ (移除向后兼容，已删除)
 
@@ -92,7 +92,7 @@
 
 ### 5.2 Asset Type 常量
 - [x] 5.2.1 定义 `ModulusAssetTypes` 常量类
-- [x] 5.2.2 `Modulus.Package`, `Modulus.Assembly`, `Modulus.Menu`, `Modulus.Icon` 等
+- [x] 5.2.2 `Modulus.Package`, `Modulus.Assembly`, `Modulus.Icon` 等
 
 ---
 

@@ -123,24 +123,11 @@ public static class VsixManifestReader
             foreach (var assetEl in assetsEl.Elements(ns + "Asset").Concat(assetsEl.Elements("Asset")))
             {
                 var assetType = (string?)assetEl.Attribute("Type") ?? "";
-                var order = 50;
-                var orderStr = (string?)assetEl.Attribute("Order");
-                if (!string.IsNullOrEmpty(orderStr) && int.TryParse(orderStr, out var parsedOrder))
-                {
-                    order = parsedOrder;
-                }
-
                 assets.Add(new ManifestAsset
                 {
                     Type = assetType,
                     Path = (string?)assetEl.Attribute("Path"),
-                    TargetHost = (string?)assetEl.Attribute("TargetHost"),
-                    Id = (string?)assetEl.Attribute("Id"),
-                    DisplayName = (string?)assetEl.Attribute("DisplayName"),
-                    Icon = (string?)assetEl.Attribute("Icon"),
-                    Route = (string?)assetEl.Attribute("Route"),
-                    Location = (string?)assetEl.Attribute("Location") ?? "Main",
-                    Order = order
+                    TargetHost = (string?)assetEl.Attribute("TargetHost")
                 });
             }
         }

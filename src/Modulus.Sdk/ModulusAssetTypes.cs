@@ -17,11 +17,6 @@ public static class ModulusAssetTypes
     public const string Assembly = "Modulus.Assembly";
 
     /// <summary>
-    /// Menu declaration. Parsed at install time, no assembly loading required.
-    /// </summary>
-    public const string Menu = "Modulus.Menu";
-
-    /// <summary>
     /// Extension icon resource.
     /// </summary>
     public const string Icon = "Modulus.Icon";

@@ -11,7 +11,7 @@ namespace SimpleNotes.UI.Avalonia;
 /// Simple Notes Avalonia UI - declares Avalonia-specific navigation.
 /// </summary>
 [DependsOn(typeof(SimpleNotesModule))]
-[AvaloniaMenu("Notes", typeof(NoteListViewModel), Icon = IconKind.Document, Order = 30)]
+[AvaloniaMenu("notes", "Notes", typeof(NoteListViewModel), Icon = IconKind.Document, Order = 30)]
 public class SimpleNotesAvaloniaModule : AvaloniaModuleBase
 {
     public override async Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

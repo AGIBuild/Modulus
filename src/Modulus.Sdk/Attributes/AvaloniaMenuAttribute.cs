@@ -10,6 +10,11 @@ namespace Modulus.Sdk;
 public class AvaloniaMenuAttribute : Attribute
 {
     /// <summary>
+    /// Unique key for this menu item (used for grouping duplicates).
+    /// </summary>
+    public string Key { get; }
+
+    /// <summary>
     /// Display name shown in navigation.
     /// </summary>
     public string DisplayName { get; }
@@ -27,15 +32,16 @@ public class AvaloniaMenuAttribute : Attribute
     /// <summary>
     /// Menu location: Main or Bottom.
     /// </summary>
-    public string Location { get; set; } = "Main";
+    public MenuLocation Location { get; set; } = MenuLocation.Main;
 
     /// <summary>
     /// Sort order (lower = higher priority).
     /// </summary>
     public int Order { get; set; } = 50;
 
-    public AvaloniaMenuAttribute(string displayName, Type viewModelType)
+    public AvaloniaMenuAttribute(string key, string displayName, Type viewModelType)
     {
+        Key = key;
         DisplayName = displayName;
         ViewModelType = viewModelType;
     }

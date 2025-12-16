@@ -99,15 +99,12 @@ src/Modules/Home/
 
 ### 5. 菜单注册
 
-`extension.vsixmanifest` 中注册 Home 菜单项：
-```xml
-<Asset Type="Modulus.Menu" 
-       Id="home"
-       DisplayName="Home" 
-       Icon="Home"
-       Route="Home.Core.ViewModels.HomeViewModel"
-       TargetHost="Modulus.Host.Avalonia"
-       Order="1" />  <!-- Order=1 确保在菜单最上方 -->
+菜单不在 manifest 中声明，必须通过 host-specific 模块入口类型的菜单属性声明（安装/更新时 metadata-only 解析并投影到 DB）。
+
+示例（Avalonia）：
+```csharp
+[AvaloniaMenu("home", "Home", typeof(HomeViewModel), Icon = IconKind.Home, Order = 1)]
+public sealed class HomeAvaloniaModule : AvaloniaModuleBase { }
 ```
 
 ## Risks / Trade-offs

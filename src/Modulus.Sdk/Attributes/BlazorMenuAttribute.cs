@@ -10,6 +10,11 @@ namespace Modulus.Sdk;
 public class BlazorMenuAttribute : Attribute
 {
     /// <summary>
+    /// Unique key for this menu item (used for grouping duplicates).
+    /// </summary>
+    public string Key { get; }
+
+    /// <summary>
     /// Display name shown in navigation.
     /// </summary>
     public string DisplayName { get; }
@@ -34,8 +39,9 @@ public class BlazorMenuAttribute : Attribute
     /// </summary>
     public int Order { get; set; } = 50;
 
-    public BlazorMenuAttribute(string displayName, string route)
+    public BlazorMenuAttribute(string key, string displayName, string route)
     {
+        Key = key;
         DisplayName = displayName;
         Route = route;
     }

@@ -117,35 +117,27 @@
 - **AND** 释放模块 ServiceProvider
 - **AND** 卸载 AssemblyLoadContext
 
-### Requirement: Menu declaration in manifest Assets
-模块菜单 MUST 通过 vsixmanifest `Assets` 元素中的 `Modulus.Menu` 类型声明，安装时从 XML 解析而非程序集扫描。
+### Requirement: Menu declaration in module entry attributes
+模块菜单 MUST 通过 host-specific 模块入口类型上的菜单属性声明，安装/更新时从程序集元数据解析，而不是从 manifest 读取。
 
-#### Scenario: Menu extracted from manifest during installation
-- **WHEN** 安装模块时解析 `extension.vsixmanifest`
-- **THEN** 从 `Assets` 中提取所有 `Type="Modulus.Menu"` 的元素
-- **AND** 将菜单信息写入数据库 `MenuEntity`
-- **AND** 不加载程序集到临时 ALC
+#### Scenario: Menu extracted from module entry attributes during installation
+- **WHEN** 安装或更新模块
+- **THEN** 基于当前 Host 选择对应 UI 程序集（`Assets` 中匹配 `TargetHost` 的 `Modulus.Package`）
+- **AND** 在不执行模块代码的前提下解析入口类型菜单属性（metadata-only）
+- **AND** 将菜单写入数据库 `Menus`
 
-#### Scenario: Menu Asset with TargetHost filter
-- **WHEN** `Modulus.Menu` Asset 声明了 `TargetHost` 属性
-- **THEN** 仅在匹配的 Host 上显示该菜单
-- **AND** 其他 Host 忽略该菜单声明
+#### Scenario: Multiple menus are allowed for diagnostics
+- **WHEN** 同一入口类型声明了多条菜单属性
+- **THEN** 全部投影到 DB 并在 UI 中显示（不做折叠）
 
-#### Scenario: Menu Asset attributes
-- **WHEN** 声明 `Modulus.Menu` Asset
-- **THEN** MUST 包含 `Id`, `DisplayName`, `Route` 属性
-- **AND** MAY 包含 `Icon`, `Order`, `Location`, `TargetHost` 属性
+### Requirement: Installation without executing module code
+模块安装/更新 MUST 不执行第三方模块代码；菜单与元数据解析 MUST 使用 metadata-only 方式完成。
 
-### Requirement: Installation without assembly loading
-模块安装 MUST 仅解析 manifest，不加载程序集，以简化安装流程和减少资源开销。
-
-#### Scenario: Install parses manifest only
-- **WHEN** 安装模块
-- **THEN** 读取并验证 `extension.vsixmanifest`
-- **AND** 从 manifest 提取模块元数据和菜单信息
-- **AND** 写入数据库
-- **AND** 不创建 AssemblyLoadContext
-- **AND** 不加载任何程序集
+#### Scenario: Metadata-only attribute parsing
+- **WHEN** 安装器需要读取菜单属性
+- **THEN** 使用 metadata-only 解析（如 `MetadataLoadContext` / `System.Reflection.Metadata`）
+- **AND** 不创建可执行的模块实例
+- **AND** 不触发模块程序集的静态初始化
 
 #### Scenario: Manifest hash stored for change detection
 - **WHEN** 安装或更新模块

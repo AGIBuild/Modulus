@@ -8,7 +8,7 @@ namespace Modulus.Modules.{{ModuleName}}.UI.Blazor;
 /// <summary>
 /// {{ModuleName}} Blazor UI Module.
 /// </summary>
-[BlazorMenu("{{DisplayName}}", "/{{ModuleNameLower}}", Icon = IconKind.{{Icon}}, Order = {{Order}})]
+[BlazorMenu("{{ModuleNameLower}}", "{{DisplayName}}", "/{{ModuleNameLower}}", Icon = IconKind.{{Icon}}, Order = {{Order}})]
 public class {{ModuleName}}BlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

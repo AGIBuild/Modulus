@@ -21,14 +21,5 @@
     <Asset Type="Modulus.Package" Path="ModulusModule.Core.dll" />
     <Asset Type="Modulus.Package" Path="ModulusModule.UI.Blazor.dll" 
            TargetHost="Modulus.Host.Blazor" />
-    
-    <Asset Type="Modulus.Menu" 
-           Id="modulusmodule-main"
-           DisplayName="{{DisplayNameComputed}}" 
-           Icon="Folder"
-           Route="/modulusmodule"
-           TargetHost="Modulus.Host.Blazor"
-           Order="100" />
   </Assets>
 </PackageManifest>
-

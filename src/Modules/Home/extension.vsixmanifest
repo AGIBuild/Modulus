@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
   <Metadata>
-    <Identity Id="b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e" 
+    <Identity Id="f1e2d3c4-b5a6-4c7d-8e9f-0a1b2c3d4e5f" 
               Version="1.0.0" 
               Language="en-US" 
               Publisher="Modulus Team"
               IsBundled="true" />
-    <DisplayName>Simple Notes</DisplayName>
-    <Description>A simple note taking module to demonstrate Modulus vertical slice architecture.</Description>
-    <Tags>notes, demo, sample</Tags>
+    <DisplayName>Home</DisplayName>
+    <Description>Home page module for Modulus framework.</Description>
+    <Tags>home, built-in</Tags>
     <Website>https://github.com/angidev/Modulus</Website>
   </Metadata>
   
@@ -23,12 +23,13 @@
   
   <Assets>
     <!-- Core Package (host-agnostic) -->
-    <Asset Type="Modulus.Package" Path="SimpleNotes.Core.dll" />
+    <Asset Type="Modulus.Package" Path="Home.Core.dll" />
     
     <!-- Host-Specific UI Packages -->
-    <Asset Type="Modulus.Package" Path="SimpleNotes.UI.Blazor.dll" 
+    <Asset Type="Modulus.Package" Path="Home.UI.Blazor.dll" 
            TargetHost="Modulus.Host.Blazor" />
-    <Asset Type="Modulus.Package" Path="SimpleNotes.UI.Avalonia.dll" 
+    <Asset Type="Modulus.Package" Path="Home.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
   </Assets>
 </PackageManifest>
+

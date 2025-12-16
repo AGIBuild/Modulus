@@ -30,21 +30,5 @@
            TargetHost="Modulus.Host.Blazor" />
     <Asset Type="Modulus.Package" Path="EchoPlugin.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
-    
-    <!-- Menu Declarations -->
-    <Asset Type="Modulus.Menu" 
-           Id="echo-tool"
-           DisplayName="Echo Tool" 
-           Icon="Terminal"
-           Route="Modulus.Modules.EchoPlugin.ViewModels.EchoViewModel"
-           TargetHost="Modulus.Host.Avalonia"
-           Order="20" />
-    <Asset Type="Modulus.Menu" 
-           Id="echo-tool"
-           DisplayName="Echo Tool" 
-           Icon="Terminal"
-           Route="/echo"
-           TargetHost="Modulus.Host.Blazor"
-           Order="20" />
   </Assets>
 </PackageManifest>

@@ -54,6 +54,52 @@ public class ModuleInstallerServiceMenuProjectionTests
 
             await menuRepo.Received(1).ReplaceModuleMenusAsync(
                 moduleId,
+                Arg.Is<IEnumerable<MenuEntity>>(menus =>
+                    menus.Any(me => me.Id == $"{moduleId}.{ModulusHostIds.Blazor}.test-blazor.0" && me.Route == "/test-blazor") &&
+                    menus.Any(me => me.Id == $"{moduleId}.{ModulusHostIds.Blazor}.dup.0" && me.Route == "/dup-1") &&
+                    menus.Any(me => me.Id == $"{moduleId}.{ModulusHostIds.Blazor}.dup.1" && me.Route == "/dup-2")),
+                Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            try { Directory.Delete(tempRoot, true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact]
+    public async Task InstallFromPathAsync_BlazorHost_SelectsHostSpecificPackage_NotCorePackage()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ModulusTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
+        try
+        {
+            var moduleId = Guid.NewGuid().ToString();
+            var moduleDir = Path.Combine(tempRoot, "TestModule");
+            Directory.CreateDirectory(moduleDir);
+
+            // Copy this test assembly as the host-specific UI package to parse menu attributes.
+            var asmPath = Assembly.GetExecutingAssembly().Location;
+            var uiDllName = "Test.UI.Blazor.dll";
+            File.Copy(asmPath, Path.Combine(moduleDir, uiDllName));
+
+            // Write manifest with BOTH a core package (no TargetHost) and a host-specific UI package.
+            WriteManifest(moduleDir, moduleId, uiDllName, ModulusHostIds.Blazor, includeCorePackage: true);
+
+            var moduleRepo = Substitute.For<IModuleRepository>();
+            var menuRepo = Substitute.For<IMenuRepository>();
+            var validator = Substitute.For<IManifestValidator>();
+            var cleanup = Substitute.For<IModuleCleanupService>();
+            var logger = Substitute.For<ILogger<ModuleInstallerService>>();
+
+            validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(ManifestValidationResult.Success()));
+
+            var sut = new ModuleInstallerService(moduleRepo, menuRepo, validator, cleanup, logger);
+
+            await sut.InstallFromPathAsync(moduleDir, isSystem: true, hostType: ModulusHostIds.Blazor);
+
+            await menuRepo.Received(1).ReplaceModuleMenusAsync(
+                moduleId,
                 Arg.Is<IEnumerable<MenuEntity>>(menus => menus.Any(me => me.Route == "/test-blazor")),
                 Arg.Any<CancellationToken>());
         }
@@ -63,9 +109,22 @@ public class ModuleInstallerServiceMenuProjectionTests
         }
     }
 
-    private static void WriteManifest(string moduleDir, string moduleId, string uiDllName, string hostId)
+    private static void WriteManifest(string moduleDir, string moduleId, string uiDllName, string hostId, bool includeCorePackage = false)
     {
         XNamespace ns = "http://schemas.microsoft.com/developer/vsx-schema/2011";
+
+        var assets = new List<XElement>();
+        if (includeCorePackage)
+        {
+            assets.Add(new XElement(ns + "Asset",
+                new XAttribute("Type", ModulusAssetTypes.Package),
+                new XAttribute("Path", "Test.Core.dll")));
+        }
+
+        assets.Add(new XElement(ns + "Asset",
+            new XAttribute("Type", ModulusAssetTypes.Package),
+            new XAttribute("Path", uiDllName),
+            new XAttribute("TargetHost", hostId)));
 
         var doc = new XDocument(
             new XElement(ns + "PackageManifest",
@@ -80,11 +139,7 @@ public class ModuleInstallerServiceMenuProjectionTests
                     new XElement(ns + "Description", "Test")),
                 new XElement(ns + "Installation",
                     new XElement(ns + "InstallationTarget", new XAttribute("Id", hostId), new XAttribute("Version", "[1.0,)"))),
-                new XElement(ns + "Assets",
-                    new XElement(ns + "Asset",
-                        new XAttribute("Type", ModulusAssetTypes.Package),
-                        new XAttribute("Path", uiDllName),
-                        new XAttribute("TargetHost", hostId)))));
+                new XElement(ns + "Assets", assets)));
 
         doc.Save(Path.Combine(moduleDir, SystemModuleInstaller.VsixManifestFileName));
     }

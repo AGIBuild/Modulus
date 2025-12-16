@@ -10,7 +10,7 @@ namespace Modulus.Modules.ComponentsDemo.UI.Blazor;
 /// Components Demo Blazor UI - declares Blazor-specific navigation.
 /// </summary>
 [DependsOn(typeof(ComponentsDemoModule))]
-[BlazorMenu("Components", "/components", Icon = IconKind.Add, Order = 15)]
+[BlazorMenu("components", "Components", "/components", Icon = IconKind.Add, Order = 15)]
 public class ComponentsDemoBlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
