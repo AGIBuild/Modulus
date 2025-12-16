@@ -131,37 +131,15 @@ public class SystemModuleInstaller
 
 ### 关键设计变更
 
-#### 1. 菜单声明移到 manifest (去除程序集扫描)
+#### 1. 菜单声明通过入口类型属性（不从 manifest 读取）
 
-**当前方式** (需要加载程序集扫描特性):
+菜单必须通过 host-specific 模块入口类型的菜单属性声明；安装/更新时使用 metadata-only 解析并投影到数据库。
+
+示例（Avalonia）：
 ```csharp
-[AvaloniaMenu("Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
-public class EchoPluginAvaloniaModule : ModulusComponent { }
+[AvaloniaMenu("echo", "Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
+public sealed class EchoPluginAvaloniaModule : AvaloniaModuleBase { }
 ```
-
-**新方式** (在 manifest 中声明):
-```xml
-<Assets>
-  <!-- Package 入口点 -->
-  <Asset Type="Modulus.Package" Path="EchoPlugin.UI.Avalonia.dll" 
-         TargetHost="Modulus.Host.Avalonia" />
-  
-  <!-- 菜单声明 (新增 Asset Type) -->
-  <Asset Type="Modulus.Menu" 
-         Id="echo-tool"
-         DisplayName="Echo Tool" 
-         Icon="Terminal"
-         Route="EchoPlugin.ViewModels.EchoViewModel"
-         TargetHost="Modulus.Host.Avalonia"
-         Location="Main"
-         Order="20" />
-</Assets>
-```
-
-**好处**:
-- 安装时不需要加载程序集，直接从 XML 解析菜单
-- 减少临时 ALC 创建/销毁开销
-- 菜单配置更灵活，可独立于代码修改
 
 #### 2. 验证结果持久化
 
@@ -351,22 +329,13 @@ public class EchoPluginModule : ModulusComponent  // ⚠️ Warning: Use Modulus
 |------------|------|---------|
 | `Modulus.Package` | 包含入口点的程序集 | 运行时加载，扫描 `ModulusPackage` |
 | `Modulus.Assembly` | 普通依赖程序集 | 运行时加载，不扫描 |
-| `Modulus.Menu` | 菜单声明 | **安装时**解析，写入数据库 |
 | `Modulus.Icon` | 扩展图标 | 显示在模块列表 |
 | `Modulus.License` | 许可证文件 | 显示在模块详情 |
 | `Modulus.Readme` | README 文件 | 显示在模块详情 |
 
-**Modulus.Menu Asset 属性**:
-
-| 属性 | 必填 | 说明 |
-|------|------|------|
-| `Id` | ✓ | 菜单唯一标识 |
-| `DisplayName` | ✓ | 显示名称 |
-| `Route` | ✓ | 路由/ViewModel 类型名 |
-| `Icon` | | 图标 (IconKind 枚举值) |
-| `Order` | | 排序权重 (默认 0) |
-| `Location` | | Main / Bottom (默认 Main) |
-| `TargetHost` | | 目标 Host，空表示所有 Host |
+**Menu declaration**:
+- Menus are declared via `[BlazorMenu]` / `[AvaloniaMenu]` on the host-specific module entry type.
+- Installation/update projects menus to DB using metadata-only parsing.
 
 ---
 
@@ -743,21 +712,7 @@ VS Extension 安装后会生成 `catalog.json` 和 `manifest.json` 用于索引�
     <Asset Type="Modulus.Package" Path="EchoPlugin.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
     
-    <!-- Menu Declarations (从程序集特性迁移而来) -->
-    <Asset Type="Modulus.Menu" 
-           Id="echo-tool"
-           DisplayName="Echo Tool" 
-           Icon="Terminal"
-           Route="Modulus.Modules.EchoPlugin.ViewModels.EchoViewModel"
-           TargetHost="Modulus.Host.Avalonia"
-           Order="20" />
-    <Asset Type="Modulus.Menu" 
-           Id="echo-tool"
-           DisplayName="Echo Tool" 
-           Icon="Terminal"
-           Route="/echo"
-           TargetHost="Modulus.Host.Blazor"
-           Order="20" />
+    <!-- Menus are declared via [AvaloniaMenu]/[BlazorMenu] on host-specific entry types. -->
   </Assets>
 </PackageManifest>
 ```
@@ -771,15 +726,15 @@ VS Extension 安装后会生成 `catalog.json` 和 `manifest.json` 用于索引�
 public class EchoPluginAvaloniaModule : AvaloniaModuleBase { }
 ```
 
-迁移后 (manifest 声明):
-```xml
-<Asset Type="Modulus.Menu" 
-       Id="echo-tool"
-       DisplayName="Echo Tool" 
-       Icon="Terminal"
-       Route="Modulus.Modules.EchoPlugin.ViewModels.EchoViewModel"
-       TargetHost="Modulus.Host.Avalonia"
-       Order="20" />
+迁移后 (入口类型菜单属性):
+```csharp
+// EchoPlugin.UI.Avalonia/EchoPluginAvaloniaModule.cs
+[AvaloniaMenu("echo", "Echo Tool", typeof(EchoViewModel), Icon = IconKind.Terminal, Order = 20)]
+public sealed class EchoPluginAvaloniaModule : AvaloniaModuleBase { }
+
+// EchoPlugin.UI.Blazor/EchoPluginBlazorModule.cs
+[BlazorMenu("echo", "Echo Tool", "/echo", Icon = IconKind.Terminal, Order = 20)]
+public sealed class EchoPluginBlazorModule : ModulusPackage { }
 ```
 
 ---

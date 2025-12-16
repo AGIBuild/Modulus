@@ -30,21 +30,5 @@
                TargetHost="Modulus.Host.Blazor" />
         <Asset Type="Modulus.Package" Path="ComponentsDemo.UI.Avalonia.dll"
                TargetHost="Modulus.Host.Avalonia" />
-
-        <!-- Menu Declarations -->
-        <Asset Type="Modulus.Menu"
-               Id="components-demo"
-               DisplayName="Components"
-               Icon="Grid"
-               Route="Modulus.Modules.ComponentsDemo.ViewModels.ComponentsMainViewModel"
-               TargetHost="Modulus.Host.Avalonia"
-               Order="40" />
-        <Asset Type="Modulus.Menu"
-               Id="components-demo"
-               DisplayName="Components"
-               Icon="Grid"
-               Route="/components"
-               TargetHost="Modulus.Host.Blazor"
-               Order="40" />
     </Assets>
 </PackageManifest>

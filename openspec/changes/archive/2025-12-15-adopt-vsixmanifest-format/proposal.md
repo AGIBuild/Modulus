@@ -21,10 +21,8 @@
 - 标记 `ModulusComponent` 为 `[Obsolete]`
 - 运行时同时扫描两种基类 (向后兼容)
 
-### Part 3: 菜单声明移到 manifest
-- **BREAKING**: 菜单从程序集特性移到 manifest `Assets` 元素
-- 新增 `Modulus.Menu` Asset Type
-- 安装时不再加载程序集，直接解析 XML
+### Part 3: 菜单声明通过入口类型属性
+- 菜单通过 host-specific 模块入口类型上的菜单属性声明（安装/更新时 metadata-only 解析并投影到 DB）
 
 ### Part 4: 流程简化
 - **移除目录扫描**: 删除 `DirectoryModuleProvider` 和 `IModuleProvider`
@@ -38,7 +36,6 @@
 |------|------|
 | `Modulus.Package` | 包含入口点的程序集 |
 | `Modulus.Assembly` | 普通依赖程序集 |
-| `Modulus.Menu` | 菜单声明 (新增) |
 | `Modulus.Icon` | 图标资源 |
 
 ### 移除的字段

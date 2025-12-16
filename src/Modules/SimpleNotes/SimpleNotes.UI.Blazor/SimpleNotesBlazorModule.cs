@@ -10,7 +10,7 @@ namespace SimpleNotes.UI.Blazor;
 /// Simple Notes Blazor UI - declares Blazor-specific navigation.
 /// </summary>
 [DependsOn(typeof(SimpleNotesModule))]
-[BlazorMenu("Notes", "/notes", Icon = IconKind.Document, Order = 30)]
+[BlazorMenu("notes", "Notes", "/notes", Icon = IconKind.Document, Order = 30)]
 public class SimpleNotesBlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

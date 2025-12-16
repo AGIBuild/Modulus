@@ -66,24 +66,62 @@ public class ModuleInstallerService : IModuleInstallerService
             }
         }
 
-        // Extract menus from manifest Assets (no assembly loading!)
-        var menuAssets = manifest.Assets
-            .Where(a => string.Equals(a.Type, ModulusAssetTypes.Menu, StringComparison.OrdinalIgnoreCase))
-            .Where(a => string.IsNullOrEmpty(a.TargetHost) ||
-                        (hostType != null && ModulusHostIds.Matches(a.TargetHost, hostType)))
-            .ToList();
+        // Extract menus from module assembly attributes (metadata-only parsing)
+        var menus = new List<MenuInfo>();
+        var moduleLocation = MenuLocation.Main;
 
-        var requestedBottom = menuAssets.Any(a =>
-            string.Equals(a.Location, "Bottom", StringComparison.OrdinalIgnoreCase));
-        var moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
-
-        if (!isSystem && requestedBottom)
+        if (hostType != null && validationResult.IsValid)
         {
-            _logger.LogWarning("Module {ModuleId} requested Bottom menu location but is not system-managed. Forcing to Main.", identity.Id);
+            // Find host-specific UI package assembly (TargetHost MUST match current host).
+            // NOTE: Do NOT fall back to host-agnostic Core packages; menus must be declared on host-specific entry types.
+            var packageAsset = manifest.Assets
+                .Where(a => string.Equals(a.Type, ModulusAssetTypes.Package, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault(a =>
+                    !string.IsNullOrEmpty(a.Path) &&
+                    !string.IsNullOrEmpty(a.TargetHost) &&
+                    ModulusHostIds.Matches(a.TargetHost, hostType));
+
+            if (packageAsset != null && !string.IsNullOrEmpty(packageAsset.Path))
+            {
+                var assemblyPath = Path.Combine(packagePath, packageAsset.Path);
+                if (File.Exists(assemblyPath))
+                {
+                    try
+                    {
+                        menus = ModuleMenuAttributeReader.ReadMenus(assemblyPath, hostType).ToList();
+                        
+                        // Determine module location from menu attributes
+                        var requestedBottom = menus.Any(m => m.Location == MenuLocation.Bottom);
+                        moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
+
+                        if (!isSystem && requestedBottom)
+                        {
+                            _logger.LogWarning("Module {ModuleId} requested Bottom menu location but is not system-managed. Forcing to Main.", identity.Id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to read menu attributes from {AssemblyPath} for module {ModuleId}. Menus will be empty.", assemblyPath, identity.Id);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Package assembly not found at {AssemblyPath} for module {ModuleId}. Menus will be empty.", assemblyPath, identity.Id);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("No host-specific package assembly found for {HostType} in module {ModuleId}. Menus will be empty.", hostType, identity.Id);
+            }
         }
 
         // Compute manifest hash for change detection
         var manifestHash = await VsixManifestReader.ComputeHashAsync(manifestPath, cancellationToken);
+
+        // Preserve existing IsEnabled state when updating
+        var existingModule = await _moduleRepository.GetAsync(identity.Id, cancellationToken);
+        // Preserve disabled state across updates, but do not keep a module enabled if validation fails.
+        var preserveIsEnabled = existingModule?.IsEnabled == false ? false : validationResult.IsValid;
 
         // Prepare entities
         var moduleState = validationResult.IsValid
@@ -108,23 +146,42 @@ public class ModuleInstallerService : IModuleInstallerService
             ManifestHash = manifestHash,
             ValidatedAt = DateTime.UtcNow,
             IsSystem = isSystem,
-            IsEnabled = validationResult.IsValid,
+            IsEnabled = preserveIsEnabled,
             MenuLocation = moduleLocation,
             State = moduleState,
             ValidationErrors = validationErrors
         };
 
-        var menuEntities = menuAssets.Select(asset => new MenuEntity
+        // Menu ids MUST be: {ModuleId}.{HostType}.{Key}.{Index} (>= 4 parts) to align with runtime expectations.
+        // Duplicates (same Key) are preserved with an incrementing Index for diagnostics.
+        var menuEntities = new List<MenuEntity>();
+        if (!string.IsNullOrWhiteSpace(hostType))
         {
-            Id = $"{identity.Id}.{asset.Id}",
-            ModuleId = identity.Id,
-            DisplayName = asset.DisplayName ?? asset.Id ?? "Menu",
-            Icon = asset.Icon ?? "Grid",
-            Route = asset.Route ?? "",
-            Location = moduleLocation,
-            Order = asset.Order,
-            ParentId = null
-        }).ToList();
+            foreach (var group in menus.GroupBy(m => m.Key))
+            {
+                var idx = 0;
+                foreach (var menu in group)
+                {
+                    var location = menu.Location;
+                    if (!isSystem && location == MenuLocation.Bottom)
+                        location = MenuLocation.Main;
+
+                    menuEntities.Add(new MenuEntity
+                    {
+                        Id = $"{identity.Id}.{hostType}.{menu.Key}.{idx}",
+                        ModuleId = identity.Id,
+                        DisplayName = menu.DisplayName,
+                        Icon = menu.Icon,
+                        Route = menu.Route,
+                        Location = location,
+                        Order = menu.Order,
+                        ParentId = null
+                    });
+
+                    idx++;
+                }
+            }
+        }
 
         // Persist
         _logger.LogInformation("Installing module {ModuleId} v{Version} to database...", identity.Id, identity.Version);

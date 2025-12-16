@@ -10,7 +10,7 @@ namespace Modulus.Modules.{{ModuleName}}.UI.Avalonia;
 /// {{ModuleName}} Avalonia UI Module.
 /// </summary>
 [DependsOn(typeof({{ModuleName}}Module))]
-[AvaloniaMenu("{{DisplayName}}", typeof(MainViewModel), Icon = IconKind.{{Icon}}, Order = {{Order}})]
+[AvaloniaMenu("{{ModuleNameLower}}", "{{DisplayName}}", typeof(MainViewModel), Icon = IconKind.{{Icon}}, Order = {{Order}})]
 public class {{ModuleName}}AvaloniaModule : AvaloniaModuleBase
 {
     public override async Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)

@@ -139,12 +139,12 @@ public sealed class ManifestDependency
 }
 
 /// <summary>
-/// Extension asset (assembly, resource, menu declaration).
+/// Extension asset (assembly, resource, legacy menu fields).
 /// </summary>
 public sealed class ManifestAsset
 {
     /// <summary>
-    /// Asset type (e.g., "Modulus.Package", "Modulus.Assembly", "Modulus.Menu").
+    /// Asset type (e.g., "Modulus.Package", "Modulus.Assembly", "Modulus.Icon").
     /// </summary>
     public required string Type { get; init; }
 
@@ -158,37 +158,5 @@ public sealed class ManifestAsset
     /// Target host for this asset. Empty means all hosts.
     /// </summary>
     public string? TargetHost { get; init; }
-
-    // --- Menu-specific properties (Type = "Modulus.Menu") ---
-
-    /// <summary>
-    /// Menu unique identifier.
-    /// </summary>
-    public string? Id { get; init; }
-
-    /// <summary>
-    /// Menu display name.
-    /// </summary>
-    public string? DisplayName { get; init; }
-
-    /// <summary>
-    /// Menu icon (IconKind enum value name).
-    /// </summary>
-    public string? Icon { get; init; }
-
-    /// <summary>
-    /// Route or ViewModel type name.
-    /// </summary>
-    public string? Route { get; init; }
-
-    /// <summary>
-    /// Menu location ("Main" or "Bottom").
-    /// </summary>
-    public string Location { get; init; } = "Main";
-
-    /// <summary>
-    /// Sort order (lower = higher priority).
-    /// </summary>
-    public int Order { get; init; } = 50;
 }
 

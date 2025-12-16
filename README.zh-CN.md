@@ -218,8 +218,9 @@ public class MyExtensionModule : ModulusPackage
     <Asset Type="Modulus.Package" Path="MyExtension.Core.dll" />
     <Asset Type="Modulus.Package" Path="MyExtension.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
-    <Asset Type="Modulus.Menu" Id="my-menu" DisplayName="My Tool" 
-           Icon="Home" Route="MyExtension.ViewModels.MainViewModel" />
+    <!-- 菜单不在清单中声明。
+         请在 host-specific 模块入口类型上使用 [AvaloniaMenu]/[BlazorMenu] 声明菜单，
+         并在安装/更新时以 metadata-only 方式解析后投影到数据库。 -->
   </Assets>
 </PackageManifest>
 ```

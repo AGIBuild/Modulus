@@ -114,32 +114,30 @@ public sealed class DefaultManifestValidator : IManifestValidator
             errors.Add($"Manifest must include at least one Asset of type '{ModulusAssetTypes.Package}'.");
         }
 
-        // Validate Asset paths exist
+        // Validate Asset types and paths exist
+        var supportedAssetTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ModulusAssetTypes.Package,
+            ModulusAssetTypes.Assembly,
+            ModulusAssetTypes.Icon,
+            ModulusAssetTypes.License,
+            ModulusAssetTypes.Readme
+        };
+
         foreach (var asset in manifest.Assets)
         {
+            if (!supportedAssetTypes.Contains(asset.Type))
+            {
+                errors.Add($"Unsupported asset type '{asset.Type}'. Only {string.Join(", ", supportedAssetTypes.OrderBy(t => t))} are allowed.");
+                continue;
+            }
+
             if (!string.IsNullOrEmpty(asset.Path))
             {
                 var assetPath = Path.Combine(packagePath, asset.Path);
                 if (!File.Exists(assetPath))
                 {
                     errors.Add($"Asset '{asset.Type}' references missing file '{asset.Path}'.");
-                }
-            }
-
-            // Validate Menu assets have required fields
-            if (string.Equals(asset.Type, ModulusAssetTypes.Menu, StringComparison.OrdinalIgnoreCase))
-            {
-                if (string.IsNullOrWhiteSpace(asset.Id))
-                {
-                    errors.Add("Menu asset is missing required 'Id' attribute.");
-                }
-                if (string.IsNullOrWhiteSpace(asset.DisplayName))
-                {
-                    errors.Add($"Menu asset '{asset.Id}' is missing required 'DisplayName' attribute.");
-                }
-                if (string.IsNullOrWhiteSpace(asset.Route))
-                {
-                    errors.Add($"Menu asset '{asset.Id}' is missing required 'Route' attribute.");
                 }
             }
         }

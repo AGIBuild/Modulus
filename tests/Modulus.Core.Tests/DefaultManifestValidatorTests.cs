@@ -90,6 +90,26 @@ public class DefaultManifestValidatorTests
         Assert.Empty(result.Errors);
     }
 
+    [Fact]
+    public async Task ValidateAsync_UnsupportedAssetType_IsRejected()
+    {
+        var tempDir = CreateTempDir();
+        var manifestPath = Path.Combine(tempDir, "extension.vsixmanifest");
+        var manifest = CreateTestManifest();
+
+        // Create the dll file so path validation passes
+        File.WriteAllBytes(Path.Combine(tempDir, "Test.Core.dll"), Array.Empty<byte>());
+
+        // Unsupported asset types are rejected (only latest design is allowed).
+        manifest.Assets.Add(new ManifestAsset { Type = "Unsupported.Asset", TargetHost = ModulusHostIds.Avalonia });
+
+        var validator = new DefaultManifestValidator(_logger);
+        var result = await validator.ValidateAsync(tempDir, manifestPath, manifest, ModulusHostIds.Avalonia);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("Unsupported asset type", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static VsixManifest CreateTestManifest(
         string id = "test-module",
         string version = "1.0.0",

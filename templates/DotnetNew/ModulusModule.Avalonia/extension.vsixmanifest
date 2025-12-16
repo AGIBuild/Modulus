@@ -21,14 +21,5 @@
     <Asset Type="Modulus.Package" Path="ModulusModule.Core.dll" />
     <Asset Type="Modulus.Package" Path="ModulusModule.UI.Avalonia.dll" 
            TargetHost="Modulus.Host.Avalonia" />
-    
-    <Asset Type="Modulus.Menu" 
-           Id="modulusmodule-main"
-           DisplayName="{{DisplayNameComputed}}" 
-           Icon="Folder"
-           Route="Modulus.Modules.ModulusModule.ViewModels.MainViewModel"
-           TargetHost="Modulus.Host.Avalonia"
-           Order="100" />
   </Assets>
 </PackageManifest>
-

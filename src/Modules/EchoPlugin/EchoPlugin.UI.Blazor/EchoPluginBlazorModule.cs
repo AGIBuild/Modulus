@@ -8,7 +8,7 @@ namespace Modulus.Modules.EchoPlugin.UI.Blazor;
 /// <summary>
 /// Echo Plugin Blazor UI - declares Blazor-specific navigation.
 /// </summary>
-[BlazorMenu("Echo Tool", "/echo", Icon = IconKind.Terminal, Order = 20)]
+[BlazorMenu("echo", "Echo Tool", "/echo", Icon = IconKind.Terminal, Order = 20)]
 public class EchoPluginBlazorModule : ModulusPackage
 {
     public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
