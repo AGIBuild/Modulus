@@ -11,7 +11,7 @@ The runtime SHALL load modules (ModulusModule) as deployable units and resolve c
 #### Scenario: Module load succeeds
 - **WHEN** a module is enabled and its manifest exists
 - **THEN** the runtime loads its assemblies in an isolated ALC (by default)
-- **AND** discovers all `ModulusComponent` types
+- **AND** discovers all `ModulusPackage` entry types
 - **AND** builds a dependency graph from `[DependsOn]` (including cross-module dependencies)
 - **AND** initializes components in topological order (`ConfigureServices` then `OnApplicationInitialization`).
 
@@ -25,14 +25,14 @@ Menu entries SHALL be projected to the database at install/update time and read 
 
 #### Scenario: Install or update module
 - **WHEN** a module is installed or updated
-- **THEN** the installer scans components for `[Menu]` (host-aware)
-- **AND** writes menu rows with ids like `{ModuleId}.{MenuId}` into `Sys_Menus`
+- **THEN** the installer reads host-specific menu attributes from the module entry type (Blazor: `[BlazorMenu]`, Avalonia: `[AvaloniaMenu]`)
+- **AND** writes menu rows with ids like `{ModuleId}.{HostType}.{Key}.{Index}` into `Menus`
 - **AND** replaces any existing menus for that module (bulk upsert).
 
 #### Scenario: Render menus
 - **WHEN** the shell renders navigation
-- **THEN** it queries `Sys_Menus` joined with enabled modules
-- **AND** does not require reflection at render time.
+- **THEN** it queries `Menus` joined with enabled modules
+- **AND** does not require reflection or DLL metadata parsing at render time.
 
 ### Requirement: Detail Content Fallback
 Module detail pages SHALL prefer README content and fall back to manifest description.
@@ -315,35 +315,27 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **AND** 释放模块 ServiceProvider
 - **AND** 卸载 AssemblyLoadContext
 
-### Requirement: Menu declaration in manifest Assets
-模块菜单 MUST 通过 vsixmanifest `Assets` 元素中的 `Modulus.Menu` 类型声明，安装时从 XML 解析而非程序集扫描。
+### Requirement: Menu declaration in module entry attributes
+模块菜单 MUST 通过 host-specific 模块入口类型上的菜单属性声明，安装/更新时从程序集元数据解析，而不是从 vsixmanifest Assets 读取。
 
-#### Scenario: Menu extracted from manifest during installation
-- **WHEN** 安装模块时解析 `extension.vsixmanifest`
-- **THEN** 从 `Assets` 中提取所有 `Type="Modulus.Menu"` 的元素
-- **AND** 将菜单信息写入数据库 `MenuEntity`
-- **AND** 不加载程序集到临时 ALC
+#### Scenario: Menu extracted from module entry attributes during installation
+- **WHEN** 安装或更新模块
+- **THEN** 基于当前 Host 选择对应 UI 程序集（vsixmanifest `Assets` 中匹配 `TargetHost` 的 `Modulus.Package`）
+- **AND** 在不执行模块代码的前提下解析入口类型菜单属性
+- **AND** 将菜单写入数据库 `Menus`
 
-#### Scenario: Menu Asset with TargetHost filter
-- **WHEN** `Modulus.Menu` Asset 声明了 `TargetHost` 属性
-- **THEN** 仅在匹配的 Host 上显示该菜单
-- **AND** 其他 Host 忽略该菜单声明
+#### Scenario: Multiple menus are allowed for diagnostics
+- **WHEN** 同一入口类型声明了多条菜单属性
+- **THEN** 全部投影到 DB 并在 UI 中显示（不做折叠）
 
-#### Scenario: Menu Asset attributes
-- **WHEN** 声明 `Modulus.Menu` Asset
-- **THEN** MUST 包含 `Id`, `DisplayName`, `Route` 属性
-- **AND** MAY 包含 `Icon`, `Order`, `Location`, `TargetHost` 属性
+### Requirement: Installation without executing module code
+模块安装/更新 MUST 不执行第三方模块代码；菜单与元数据解析 MUST 使用 metadata-only 方式完成。
 
-### Requirement: Installation without assembly loading
-模块安装 MUST 仅解析 manifest，不加载程序集，以简化安装流程和减少资源开销。
-
-#### Scenario: Install parses manifest only
-- **WHEN** 安装模块
-- **THEN** 读取并验证 `extension.vsixmanifest`
-- **AND** 从 manifest 提取模块元数据和菜单信息
-- **AND** 写入数据库
-- **AND** 不创建 AssemblyLoadContext
-- **AND** 不加载任何程序集
+#### Scenario: Metadata-only attribute parsing
+- **WHEN** 安装器需要读取菜单属性
+- **THEN** 使用 metadata-only 解析（如 `System.Reflection.Metadata`）
+- **AND** 不创建可执行的模块实例
+- **AND** 不触发模块程序集的静态初始化
 
 #### Scenario: Manifest hash stored for change detection
 - **WHEN** 安装或更新模块
@@ -370,22 +362,20 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **THEN** 重新验证 manifest 并更新数据库
 - **AND** 如果验证失败，更新 State 为 Incompatible
 
-### Requirement: Explicit module installation without directory scanning
-模块 MUST 通过显式安装加入系统，运行时不扫描目录自动发现模块。
+### Requirement: Module discovery by directory scanning
+运行时 SHALL 通过扫描系统模块目录与用户模块目录发现模块包（以 `extension.vsixmanifest` 为入口），并在启动时执行 install/update 投影。
 
-#### Scenario: Built-in modules installed on first launch
-- **WHEN** 应用首次启动
-- **AND** 数据库中不存在内置模块
-- **THEN** `SystemModuleInstaller` 从硬编码路径列表安装内置模块
-- **AND** 后续启动跳过已安装的模块
+#### Scenario: Built-in modules discovered from app Modules directory
+- **WHEN** 应用启动
+- **THEN** 扫描 `{AppBaseDir}/Modules/` 下的模块目录
+- **AND** 对每个包含 `extension.vsixmanifest` 的模块执行 install/update（含菜单投影）
 
-#### Scenario: User modules installed via CLI or UI
-- **WHEN** 用户希望安装新模块
-- **THEN** 通过 CLI 命令 (如 `modulus install xxx.modpkg`) 或 UI 操作安装
-- **AND** 不支持将模块放入目录自动发现
+#### Scenario: User modules discovered from user Modules directory
+- **WHEN** 应用启动
+- **THEN** 扫描 `%APPDATA%/Modulus/Modules/` 下的模块目录
+- **AND** 对每个包含 `extension.vsixmanifest` 的模块执行 install/update（含菜单投影）
 
 #### Scenario: Startup loads from database only
-- **WHEN** 应用启动
-- **THEN** 直接从数据库查询已启用模块
-- **AND** 不扫描任何目录
-- **AND** 不调用 `IModuleProvider` (已移除)
+- **WHEN** 应用启动加载模块
+- **THEN** 直接从数据库查询已启用模块并加载
+- **AND** 导航菜单渲染仅从数据库读取

@@ -19,10 +19,13 @@ using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Modulus.Host.Avalonia;
 
+[AvaloniaMenu("extensions", "Extensions", typeof(ModuleListViewModel), Icon = IconKind.AppsAddIn, Order = 1000, Location = MenuLocation.Main)]
+[AvaloniaMenu("settings", "Settings", typeof(SettingsViewModel), Icon = IconKind.Settings, Order = 100, Location = MenuLocation.Bottom)]
 public class AvaloniaHostModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
@@ -134,7 +137,7 @@ public partial class App : Application
             services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
             services.AddScoped<SystemModuleInstaller>();
             services.AddScoped<ModuleIntegrityChecker>();
-            services.AddScoped<IHostDataSeeder, AvaloniaHostDataSeeder>();
+            services.AddScoped<HostModuleSeeder>();
             services.AddSingleton<ILazyModuleLoader, LazyModuleLoader>();
 
             // Get host version from assembly
@@ -158,12 +161,18 @@ public partial class App : Application
             // Initialize Database
             var database = Services.GetRequiredService<IAppDatabase>();
             database.InitializeAsync().GetAwaiter().GetResult();
-            
-            // Seed Host module and bundled modules to database (from bundled-modules.json)
+
+            // Seed host module menus to database (menus come from DB only at render time)
             using (var scope = Services.CreateScope())
             {
-                var hostSeeder = scope.ServiceProvider.GetRequiredService<IHostDataSeeder>();
-                hostSeeder.SeedAsync().GetAwaiter().GetResult();
+                var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
+                var hostVersionString = typeof(AvaloniaHostModule).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+                hostSeeder.SeedOrUpdateFromAttributesAsync(
+                    ModulusHostIds.Avalonia,
+                    "Modulus Host (Avalonia)",
+                    hostVersionString,
+                    typeof(AvaloniaHostModule)
+                ).GetAwaiter().GetResult();
             }
             
             // Initialize Theme Service (load saved theme)

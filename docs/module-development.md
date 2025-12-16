@@ -257,15 +257,9 @@ public class MyModuleAvaloniaModule : ModulusPackage
            TargetHost="Modulus.Host.Avalonia" />
     <Asset Type="Modulus.Package" Path="MyModule.UI.Blazor.dll" 
            TargetHost="Modulus.Host.Blazor" />
-    
-    <!-- Menu items -->
-    <Asset Type="Modulus.Menu" 
-           Id="mymodule-main" 
-           DisplayName="My Module"
-           Icon="Folder"
-           Route="MyModule.ViewModels.MainViewModel"
-           Location="Main"
-           Order="100" />
+
+    <!-- Menu items are NOT declared in the manifest anymore.
+         They are declared via attributes on the host-specific module entry type and projected to DB at install/update time. -->
   </Assets>
 </PackageManifest>
 ```
@@ -280,18 +274,16 @@ public class MyModuleAvaloniaModule : ModulusPackage
 
 ### Multiple Menus
 
-```xml
-<Assets>
-  <Asset Type="Modulus.Menu" Id="mymodule-main" 
-         DisplayName="Dashboard" Icon="Home" 
-         Route="MyModule.ViewModels.DashboardViewModel" 
-         Location="Main" Order="10" />
-         
-  <Asset Type="Modulus.Menu" Id="mymodule-settings" 
-         DisplayName="Settings" Icon="Settings" 
-         Route="MyModule.ViewModels.SettingsViewModel" 
-         Location="Bottom" Order="100" />
-</Assets>
+```csharp
+// Avalonia UI module entry
+[AvaloniaMenu("dashboard", "Dashboard", typeof(DashboardViewModel), Icon = IconKind.Home, Location = MenuLocation.Main, Order = 10)]
+[AvaloniaMenu("settings", "Settings", typeof(SettingsViewModel), Icon = IconKind.Settings, Location = MenuLocation.Bottom, Order = 100)]
+public sealed class MyModuleAvaloniaModule : ModulusPackage { }
+
+// Blazor UI module entry
+[BlazorMenu("dashboard", "Dashboard", "/dashboard", Icon = IconKind.Home, Location = MenuLocation.Main, Order = 10)]
+[BlazorMenu("settings", "Settings", "/settings", Icon = IconKind.Settings, Location = MenuLocation.Bottom, Order = 100)]
+public sealed class MyModuleBlazorModule : ModulusPackage { }
 ```
 
 ## Testing

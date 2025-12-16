@@ -279,6 +279,8 @@ nuke publish-libs
 | `Agibuild.Modulus.Cli` | CLI tool |
 | `Agibuild.Modulus.Templates` | Project templates |
 
+> Note: `modulus new` generates a `Directory.Build.props` with `ModulusCliLibDir` so newly generated modules can compile against the same Modulus assemblies shipped with the CLI.
+
 ## Contributing
 
 Pull requests and issues are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.

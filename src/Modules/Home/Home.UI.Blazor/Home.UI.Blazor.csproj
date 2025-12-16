@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <Import Project="..\..\..\..\build\Modulus.Architecture.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Modulus.Modules.Home.UI.Blazor</RootNamespace>
+    <ModulusAssemblyDomain>Module</ModulusAssemblyDomain>
+    <OutputPath>..\..\..\..\artifacts\bin\Modules\Home\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Home.Core\Home.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="8.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.1" />
+  </ItemGroup>
+
+  <!-- Copy extension.vsixmanifest to output directory -->
+  <ItemGroup>
+    <None Include="..\extension.vsixmanifest" CopyToOutputDirectory="PreserveNewest" Link="extension.vsixmanifest" />
+  </ItemGroup>
+
+  <!-- Optional module-provided CSS for Blazor runtime injection -->
+  <ItemGroup>
+    <Content Include="module.css" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -128,6 +128,25 @@ public static class ModulusApplicationFactory
             var db = scope.ServiceProvider.GetRequiredService<ModulusDbContext>();
             await db.Database.MigrateAsync();
 
+            // Fail fast on legacy database/menu formats. This change intentionally does NOT provide backward compatibility.
+            // New menu ids are projected as: {ModuleId}.{HostType}.{Key}.{Index} (>= 4 dot-separated parts).
+            if (!string.IsNullOrWhiteSpace(hostType))
+            {
+                // NOTE: Use client-side check to avoid provider-specific SQL translation issues.
+                var menuIds = await db.Menus
+                    .AsNoTracking()
+                    .Select(m => m.Id)
+                    .ToListAsync();
+                var hasLegacyMenus = menuIds.Any(id => id.Split('.', StringSplitOptions.RemoveEmptyEntries).Length < 4);
+
+                if (hasLegacyMenus)
+                {
+                    throw new InvalidOperationException(
+                        $"Legacy database detected (menu ids are not in the expected format). " +
+                        $"Delete the database file and restart. DatabasePath='{databasePath}', HostType='{hostType}'.");
+                }
+            }
+
             var installer = scope.ServiceProvider.GetRequiredService<SystemModuleInstaller>();
 
             // Install modules from specified directories

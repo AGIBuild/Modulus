@@ -21,6 +21,10 @@ public class TemplateEngine
     public async Task GenerateAsync(string outputPath)
     {
         var moduleDir = Path.Combine(outputPath, _context.ModuleName);
+        Directory.CreateDirectory(moduleDir);
+
+        // Write shared build props so generated projects can reference Modulus assemblies from the CLI installation.
+        await GenerateDirectoryBuildPropsAsync(moduleDir);
         
         // Create Core project
         await GenerateCoreProjectAsync(moduleDir);
@@ -43,6 +47,29 @@ public class TemplateEngine
         
         // Create .gitignore
         await GenerateGitIgnoreAsync(moduleDir);
+    }
+
+    private static async Task GenerateDirectoryBuildPropsAsync(string moduleDir)
+    {
+        var cliDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? ".";
+        var content = $@"<Project>
+  <PropertyGroup>
+    <!-- Absolute path to Modulus CLI installation directory (contains Modulus.*.dll). -->
+    <ModulusCliLibDir>{EscapeXml(cliDir)}</ModulusCliLibDir>
+  </PropertyGroup>
+</Project>
+";
+        await File.WriteAllTextAsync(Path.Combine(moduleDir, "Directory.Build.props"), content, Encoding.UTF8);
+    }
+
+    private static string EscapeXml(string value)
+    {
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;")
+            .Replace("'", "&apos;");
     }
 
     private async Task GenerateCoreProjectAsync(string moduleDir)

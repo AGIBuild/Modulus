@@ -17,6 +17,8 @@ using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 namespace Modulus.Host.Blazor;
 
 [DependsOn()]
+[BlazorMenu("extensions", "Extensions", "/modules", Icon = IconKind.AppsAddIn, Order = 1000, Location = MenuLocation.Main)]
+[BlazorMenu("settings", "Settings", "/settings", Icon = IconKind.Settings, Order = 100, Location = MenuLocation.Bottom)]
 public class BlazorHostModule : ModulusPackage
 {
     public override void ConfigureServices(IModuleLifecycleContext context)
@@ -38,6 +40,7 @@ public class BlazorHostModule : ModulusPackage
         context.Services.AddSingleton<IMenuRegistry, MenuRegistry>();
         context.Services.AddScoped<BlazorNavigationService>();
         context.Services.AddScoped<INavigationService>(sp => sp.GetRequiredService<BlazorNavigationService>());
+        context.Services.AddSingleton<ModuleStylesheetService>();
 
         // Shell ViewModels
         context.Services.AddSingleton<ShellViewModel>();
@@ -108,7 +111,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         builder.Services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
         builder.Services.AddScoped<SystemModuleInstaller>();
-        builder.Services.AddScoped<IHostDataSeeder, BlazorHostDataSeeder>();
+        builder.Services.AddScoped<HostModuleSeeder>();
 
         // Get host version from assembly
         var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version ?? new Version(1, 0, 0);
@@ -124,11 +127,17 @@ public static class MauiProgram
         // Build the app
         var app = builder.Build();
         
-        // Seed Host module and bundled modules to database (from bundled-modules.json)
+        // Seed Host menus to database (menus are read from DB at render time)
         using (var scope = app.Services.CreateScope())
         {
-            var hostSeeder = scope.ServiceProvider.GetRequiredService<IHostDataSeeder>();
-            hostSeeder.SeedAsync().GetAwaiter().GetResult();
+            var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
+            var hostVersionString = typeof(BlazorHostModule).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+            hostSeeder.SeedOrUpdateFromAttributesAsync(
+                ModulusHostIds.Blazor,
+                "Modulus Host (Blazor)",
+                hostVersionString,
+                typeof(BlazorHostModule)
+            ).GetAwaiter().GetResult();
         }
 
         return app;

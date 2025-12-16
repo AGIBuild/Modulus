@@ -1,0 +1,12 @@
+/* Home module styles for Blazor runtime injection.
+   Keep selectors global (no CSS isolation), as dynamic modules do not guarantee scoped css support. */
+
+:root {
+  --modulus-home-css-signal: 1;
+}
+
+.home-container {
+  min-height: 100vh;
+}
+
+

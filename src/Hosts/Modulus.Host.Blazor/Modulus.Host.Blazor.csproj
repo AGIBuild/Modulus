@@ -76,7 +76,12 @@
         <ProjectReference Include="..\..\Modulus.Core\Modulus.Core.csproj" />
         <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
         <ProjectReference Include="..\..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
-        <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.Core\SimpleNotes.Core.csproj" />
+
+        <!-- Built-in modules included with the host. Build-time only; do NOT reference output assemblies (avoid default ALC load). -->
+        <ProjectReference Include="..\..\Modules\Home\Home.UI.Blazor\Home.UI.Blazor.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\Modules\EchoPlugin\EchoPlugin.UI.Blazor\EchoPlugin.UI.Blazor.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\Modules\ComponentsDemo\ComponentsDemo.UI.Blazor\ComponentsDemo.UI.Blazor.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.UI.Blazor\SimpleNotes.UI.Blazor.csproj" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <!-- Windows-only: Content files -->

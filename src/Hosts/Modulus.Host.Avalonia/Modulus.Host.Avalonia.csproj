@@ -56,6 +56,12 @@
     <ProjectReference Include="..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
     <ProjectReference Include="..\..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
     <ProjectReference Include="..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
+
+    <!-- Built-in modules included with the host. Build-time only; do NOT reference output assemblies (avoid default ALC load). -->
+    <ProjectReference Include="..\..\Modules\Home\Home.UI.Avalonia\Home.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Modules\EchoPlugin\EchoPlugin.UI.Avalonia\EchoPlugin.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Modules\ComponentsDemo\ComponentsDemo.UI.Avalonia\ComponentsDemo.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.UI.Avalonia\SimpleNotes.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   
   <ItemGroup>

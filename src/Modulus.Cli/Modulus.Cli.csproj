@@ -32,6 +32,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Modulus.Core\Modulus.Core.csproj" />
     <ProjectReference Include="..\Shared\Modulus.Infrastructure.Data\Modulus.Infrastructure.Data.csproj" />
+    <!-- Required so `modulus new` generated projects can build against the same Modulus UI assemblies without external NuGet feeds. -->
+    <ProjectReference Include="..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
+    <ProjectReference Include="..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
   </ItemGroup>
 
   <!-- Include template files as embedded resources -->

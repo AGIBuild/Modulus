@@ -278,7 +278,8 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
 
         var componentTypes = loadedAssemblies
             .SelectMany(SafeGetTypes)
-            .Where(t => typeof(IModule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+            // Only ModulusPackage entry points are supported (no legacy ModulusComponent-only entry points).
+            .Where(t => typeof(ModulusPackage).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
             .ToList();
 
         IReadOnlyList<Type> sortedTypes;

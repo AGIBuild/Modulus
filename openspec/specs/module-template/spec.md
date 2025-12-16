@@ -84,32 +84,27 @@
 
 ### Requirement: NuGet Package References
 
-系统 SHALL 在生成的项目中使用 NuGet 包引用。
+系统 SHALL 在生成的项目中使用与当前 CLI/SDK API 一致的依赖方式，确保生成项目可直接编译通过。
 
 #### Scenario: Core 项目包引用
 
 - **WHEN** 生成 Core 项目
-- **THEN** `.csproj` 包含：
-  - `Modulus.Sdk`
-  - `Modulus.UI.Abstractions`
+- **THEN** `.csproj` 引用 `Modulus.Sdk` 与 `Modulus.UI.Abstractions`（不依赖过时的外部 NuGet 包版本）
 
 #### Scenario: Avalonia UI 项目包引用
 
 - **WHEN** 生成 Avalonia UI 项目
-- **THEN** `.csproj` 包含：
-  - `Modulus.Sdk`
-  - `Modulus.UI.Abstractions`
-  - `Modulus.UI.Avalonia`
-  - `Avalonia`
+- **THEN** `.csproj` 引用 `Modulus.Sdk`、`Modulus.UI.Abstractions`、`Modulus.UI.Avalonia`，并包含 `Avalonia` 依赖
 
 #### Scenario: Blazor UI 项目包引用
 
 - **WHEN** 生成 Blazor UI 项目
-- **THEN** `.csproj` 包含：
-  - `Modulus.Sdk`
-  - `Modulus.UI.Abstractions`
-  - `MudBlazor`
-  - `Microsoft.AspNetCore.Components.Web`
+- **THEN** `.csproj` 引用 `Modulus.Sdk`、`Modulus.UI.Abstractions`、`Modulus.UI.Blazor`，并包含 `MudBlazor`、`Microsoft.AspNetCore.Components.Web` 依赖
+
+#### Scenario: CLI generated projects compile without external Modulus NuGet feeds
+- **WHEN** 用户通过 `modulus new` 生成模块项目
+- **THEN** 生成的根目录包含 `Directory.Build.props`
+- **AND** 该文件提供 `ModulusCliLibDir` 用于从 CLI 安装目录解析 `Modulus.*.dll`
 
 ### Requirement: Generated Project Compilability
 

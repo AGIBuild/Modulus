@@ -175,13 +175,14 @@ dotnet run --project path/to/Modulus/src/Hosts/Modulus.Host.Avalonia
   <Assets>
     <!-- 模块程序集 -->
     <Asset Type="Modulus.Package" Path="MyFirstModule.Core.dll" />
+
+    <!-- Host-specific UI packages -->
+    <Asset Type="Modulus.Package" Path="MyFirstModule.UI.Avalonia.dll" TargetHost="Modulus.Host.Avalonia" />
+    <Asset Type="Modulus.Package" Path="MyFirstModule.UI.Blazor.dll" TargetHost="Modulus.Host.Blazor" />
     
-    <!-- 菜单注册 -->
-    <Asset Type="Modulus.Menu" 
-           Id="myfirstmodule-main" 
-           DisplayName="我的第一个模块"
-           Icon="Folder"
-           Route="MyFirstModule.ViewModels.MainViewModel" />
+    <!-- 菜单不再在清单中声明。
+         菜单通过 host-specific 模块入口类型上的 [AvaloniaMenu]/[BlazorMenu] 声明，
+         并在安装/启动同步时投影到数据库。 -->
   </Assets>
 </PackageManifest>
 ```
@@ -271,7 +272,12 @@ dotnet restore
 
 ### 模块未出现在菜单中
 
-检查您的清单是否具有正确的 `Modulus.Menu` 资产，其 `Route` 指向您的 ViewModel。
+检查 host-specific 模块入口类型是否声明了菜单属性：
+
+- Avalonia：`[AvaloniaMenu("key", "Display", typeof(MainViewModel), ...)]`
+- Blazor：`[BlazorMenu("key", "Display", "/route", ...)]`
+
+导航菜单渲染时只读取数据库。如从旧版本升级，请删除 Host 的数据库文件后重启。
 
 ## 获取帮助
 

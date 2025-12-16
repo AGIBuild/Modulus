@@ -279,6 +279,8 @@ nuke publish-libs
 | `Agibuild.Modulus.Cli` | CLI 工具 |
 | `Agibuild.Modulus.Templates` | 项目模板 |
 
+> 说明：`modulus new` 会生成 `Directory.Build.props`，通过 `ModulusCliLibDir` 从 CLI 安装目录解析 `Modulus.*.dll`，确保新生成的模块可直接编译通过。
+
 ## 贡献
 
 欢迎提交 Issue 和 PR！请参阅 [CONTRIBUTING.zh-CN.md](./CONTRIBUTING.zh-CN.md)。
