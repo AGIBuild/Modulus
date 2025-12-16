@@ -1,0 +1,65 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#0a0a0f" Width="700">
+            <controls:CliTerminal Title="Terminal — Quick Start">
+                <controls:CliTerminal.Commands>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>modulus new MyModule -t avalonia</x:String>
+                        <x:String>modulus build</x:String>
+                    </x:Array>
+                </controls:CliTerminal.Commands>
+            </controls:CliTerminal>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- CliTerminal Default Style -->
+    <Style Selector="controls|CliTerminal">
+        <Setter Property="Background" Value="#CC14141c"/>
+        <Setter Property="BorderBrush" Value="#0Fffffff"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="32"/>
+        <Setter Property="PromptForeground" Value="#10b981"/>
+        <Setter Property="FontFamily" Value="JetBrains Mono, Consolas, Menlo, monospace"/>
+        <Setter Property="ClipToBounds" Value="False"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:CliTerminal">
+                <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        BoxShadow="0 4 30 0 #30000000">
+
+                    <StackPanel>
+                        <!-- Terminal Header (macOS style dots) -->
+                        <StackPanel x:Name="PART_Header" Orientation="Horizontal" Spacing="8" Margin="0,0,0,20">
+                            <Ellipse Width="12" Height="12" Fill="#ff5f56"/>
+                            <Ellipse Width="12" Height="12" Fill="#ffbd2e"/>
+                            <Ellipse Width="12" Height="12" Fill="#27ca3f"/>
+                            <TextBlock x:Name="PART_Title"
+                                       Text="{TemplateBinding Title}"
+                                       FontSize="14" Foreground="#707070"
+                                       Margin="12,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Command Lines -->
+                        <ItemsControl x:Name="PART_Commands"
+                                      ItemsSource="{TemplateBinding Commands}"
+                                      ItemTemplate="{TemplateBinding CommandTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="8"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+</Styles>

@@ -1,0 +1,83 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#0a0a0f" Width="400" Height="400">
+            <controls:OrbitalSystem Size="300" CoreSize="80" CoreContent="M" OrbitCount="3"/>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- OrbitalSystem Default Style - Static decorative orbits with interactive core -->
+    <Style Selector="controls|OrbitalSystem">
+        <Setter Property="ClipToBounds" Value="False"/>
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <Setter Property="CoreBackground" Value="{DynamicResource PrimaryGradientBrush}"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:OrbitalSystem">
+                <Panel Width="{TemplateBinding Size}" Height="{TemplateBinding Size}">
+
+                    <!-- Orbit Ring 1 (innermost, ~40%) -->
+                    <Border Width="120" Height="120"
+                            BorderBrush="{DynamicResource HomeAccentBrush}"
+                            BorderThickness="1"
+                            CornerRadius="1000"
+                            Opacity="0.3"
+                            IsHitTestVisible="False"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Orbit Ring 2 (~65%) -->
+                    <Border Width="195" Height="195"
+                            BorderBrush="{DynamicResource HomeAccentBrush}"
+                            BorderThickness="1"
+                            CornerRadius="1000"
+                            Opacity="0.2"
+                            IsHitTestVisible="False"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Orbit Ring 3 (outermost, ~90%) -->
+                    <Border Width="270" Height="270"
+                            BorderBrush="{DynamicResource HomeAccentBrush}"
+                            BorderThickness="1"
+                            CornerRadius="1000"
+                            Opacity="0.12"
+                            IsHitTestVisible="False"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Central Core with hover effect -->
+                    <Border x:Name="PART_Core"
+                            Background="{TemplateBinding CoreBackground}"
+                            Width="{TemplateBinding CoreSize}" Height="{TemplateBinding CoreSize}"
+                            CornerRadius="20"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            BoxShadow="0 0 40 0 #806366f1, 0 0 80 0 #406366f1"
+                            RenderTransformOrigin="0.5,0.5"
+                            Cursor="Hand">
+                        <Border.Transitions>
+                            <Transitions>
+                                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.3"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" Easing="CubicEaseOut"/>
+                            </Transitions>
+                        </Border.Transitions>
+                        <ContentPresenter Content="{TemplateBinding CoreContent}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Panel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- Core text styling -->
+    <Style Selector="controls|OrbitalSystem /template/ Border#PART_Core > ContentPresenter > TextBlock">
+        <Setter Property="FontSize" Value="36"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <!-- Core hover effect - scale up with enhanced glow -->
+    <Style Selector="controls|OrbitalSystem /template/ Border#PART_Core:pointerover">
+        <Setter Property="BoxShadow" Value="0 0 60 0 #CC6366f1, 0 0 100 0 #666366f1"/>
+        <Setter Property="RenderTransform" Value="scale(1.1)"/>
+    </Style>
+
+</Styles>

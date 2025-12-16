@@ -142,7 +142,7 @@ public class ModuleInstallerService : IModuleInstallerService
             Description = manifest.Metadata.Description,
             Tags = manifest.Metadata.Tags,
             Website = manifest.Metadata.MoreInfo,
-            Path = Path.GetRelativePath(Directory.GetCurrentDirectory(), manifestPath),
+            Path = Path.GetRelativePath(AppContext.BaseDirectory, manifestPath),
             ManifestHash = manifestHash,
             ValidatedAt = DateTime.UtcNow,
             IsSystem = isSystem,

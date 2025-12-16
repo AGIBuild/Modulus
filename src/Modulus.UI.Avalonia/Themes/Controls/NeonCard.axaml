@@ -1,0 +1,114 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+    
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#1a1a1a">
+            <StackPanel Spacing="16">
+                <controls:NeonCard Width="200" Height="100">
+                    <TextBlock Text="Default Card" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </controls:NeonCard>
+                <controls:NeonCard Width="200" Height="100" GlowColor="#00C853">
+                    <TextBlock Text="Green Glow" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </controls:NeonCard>
+                <controls:NeonCard Width="200" Height="100" IsHoverAnimationEnabled="False" IsFloatAnimationEnabled="False">
+                    <TextBlock Text="No Animation" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </controls:NeonCard>
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+    
+    <!-- NeonCard Default Style -->
+    <!-- NeonCard is a Button-derived control. Keep template consistent with Button semantics. -->
+    <Style Selector="controls|NeonCard">
+        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumHighBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="ClipToBounds" Value="False"/>
+        
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:NeonCard">
+                <Border x:Name="PART_RootBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        BoxShadow="{Binding NormalBoxShadows, RelativeSource={RelativeSource TemplatedParent}}"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.RenderTransform>
+                        <TranslateTransform Y="0"/>
+                    </Border.RenderTransform>
+                    <Border.Transitions>
+                        <Transitions>
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                            <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.25"/>
+                            <BrushTransition Property="BorderBrush" Duration="0:0:0.25"/>
+                        </Transitions>
+                    </Border.Transitions>
+
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+    <!-- Hover state with glow animation -->
+    <Style Selector="controls|NeonCard:pointerover:hover-animation /template/ Border#PART_RootBorder">
+        <Setter Property="BoxShadow" Value="{Binding HoverBoxShadows, RelativeSource={RelativeSource TemplatedParent}}"/>
+        <Setter Property="BorderBrush" Value="{Binding GlowBorderBrush, RelativeSource={RelativeSource TemplatedParent}}"/>
+    </Style>
+    
+    <!-- Hover state with float animation (uses default 6px float) -->
+    <Style Selector="controls|NeonCard:pointerover:float-animation /template/ Border#PART_RootBorder">
+        <Setter Property="RenderTransform" Value="translateY(-6px)"/>
+    </Style>
+    
+    <!-- Focus state (keyboard navigation) -->
+    <Style Selector="controls|NeonCard:focus-visible /template/ Border#PART_RootBorder">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPurpleBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BoxShadow" Value="0 0 0 3 #406366f1"/>
+    </Style>
+    
+    <!-- Disabled state -->
+    <Style Selector="controls|NeonCard:disabled">
+        <Setter Property="Opacity" Value="0.5"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+    
+    <!-- Pressed state -->
+    <Style Selector="controls|NeonCard:pressed /template/ Border#PART_RootBorder">
+        <Setter Property="Opacity" Value="0.9"/>
+        <Setter Property="RenderTransform">
+            <TranslateTransform Y="-2"/>
+        </Setter>
+    </Style>
+
+    <!-- Compact Class -->
+    <Style Selector="controls|NeonCard.compact">
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+    
+    <!-- Feature Class (no float, use scale) -->
+    <Style Selector="controls|NeonCard.feature">
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="IsFloatAnimationEnabled" Value="False"/>
+    </Style>
+    <Style Selector="controls|NeonCard.feature:pointerover /template/ Border#PART_RootBorder">
+        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+    </Style>
+
+</Styles>

@@ -1,0 +1,65 @@
+@namespace Modulus.UI.Blazor.Components
+
+<div class="orbital-system" style="width: @(Size)px; height: @(Size)px;">
+    <!-- Orbit Rings -->
+    <div class="orbit orbit-1" style="@GetOrbitStyle(0.4)"></div>
+    <div class="orbit orbit-2" style="@GetOrbitStyle(0.64)"></div>
+    <div class="orbit orbit-3" style="@GetOrbitStyle(0.88)"></div>
+    
+    <!-- Central Core -->
+    <div class="core" style="width: @(CoreSize)px; height: @(CoreSize)px; background: @CoreBackground;">
+        @if (CoreContent != null)
+        {
+            @CoreContent
+        }
+        else
+        {
+            <span>M</span>
+        }
+    </div>
+    
+    <!-- Satellites Container -->
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The overall size of the orbital system in pixels.
+    /// </summary>
+    [Parameter]
+    public double Size { get; set; } = 500;
+
+    /// <summary>
+    /// The size of the central core in pixels.
+    /// </summary>
+    [Parameter]
+    public double CoreSize { get; set; } = 100;
+
+    /// <summary>
+    /// CSS background for the core (gradient or color).
+    /// </summary>
+    [Parameter]
+    public string CoreBackground { get; set; } = "linear-gradient(135deg, #6366f1, #8b5cf6)";
+
+    /// <summary>
+    /// Content to render in the central core.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CoreContent { get; set; }
+
+    /// <summary>
+    /// Child content (satellites).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string GetOrbitStyle(double factor)
+    {
+        var size = Size * factor;
+        return $"width: {size}px; height: {size}px;";
+    }
+}
+

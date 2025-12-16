@@ -191,8 +191,8 @@ public partial class App : Application
             var shellVm = Services.GetRequiredService<ShellViewModel>();
             mainWindow.DataContext = shellVm;
             
-            // Navigate to default view (Modules)
-            shellVm.NavigateTo<ModuleListViewModel>();
+            // Navigate to default view (Home)
+            shellVm.NavigateToRoute("Modulus.Modules.Home.ViewModels.HomeViewModel");
         }
 
         base.OnFrameworkInitializationCompleted();

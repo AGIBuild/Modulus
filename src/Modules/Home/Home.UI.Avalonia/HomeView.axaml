@@ -1,0 +1,329 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Modulus.Modules.Home.ViewModels"
+             xmlns:svc="using:Modulus.Modules.Home.Services"
+             xmlns:controls="using:Modulus.UI.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="900"
+             x:Class="Modulus.Modules.Home.UI.Avalonia.HomeView"
+             x:DataType="vm:HomeViewModel"
+             x:Name="Root">
+    
+    <UserControl.Styles>
+        <!-- Transparent background - let host window show through -->
+        <Style Selector="Border.space-bg">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        
+        <!-- No overlay needed with transparent background -->
+        <Style Selector="Border.gradient-overlay">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        
+        <!-- Hero content styling -->
+        <Style Selector="TextBlock.hero-title">
+            <Setter Property="FontSize" Value="56"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LineHeight" Value="62"/>
+            <Setter Property="Foreground" Value="{DynamicResource HomeTextPrimaryBrush}"/>
+        </Style>
+        
+        <Style Selector="TextBlock.hero-subtitle">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Foreground" Value="{DynamicResource HomeTextSecondaryBrush}"/>
+            <Setter Property="LineHeight" Value="30"/>
+        </Style>
+        
+        <!-- Primary button -->
+        <Style Selector="Button.btn-primary">
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.btn-primary:pointerover">
+            <Setter Property="RenderTransform" Value="translateY(-2px)"/>
+        </Style>
+        
+        <!-- Secondary button -->
+        <Style Selector="Button.btn-secondary">
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="#0Dffffff"/>
+            <Setter Property="BorderBrush" Value="#1Affffff"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.btn-secondary:pointerover">
+            <Setter Property="Background" Value="#1Affffff"/>
+            <Setter Property="BorderBrush" Value="#33ffffff"/>
+        </Style>
+        
+        <!-- Section title -->
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource HomeTextMutedBrush}"/>
+            <Setter Property="LetterSpacing" Value="2"/>
+        </Style>
+        
+        <!-- Copy button -->
+        <Style Selector="Button.copy-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Opacity" Value="0.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.copy-btn:pointerover">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        
+        <!-- GitHub button -->
+        <Style Selector="Button.github-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Opacity" Value="0.6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.github-btn:pointerover">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        
+        <!-- CLI Terminal Box -->
+        <Style Selector="Border.cli-terminal">
+            <Setter Property="Background" Value="{DynamicResource HomeSurfaceGlassBrush}"/>
+            <Setter Property="BorderBrush" Value="#0Fffffff"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="32"/>
+        </Style>
+        
+        <!-- Entry animations -->
+        <Style Selector="StackPanel.animate-in">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform">
+                <TranslateTransform Y="20"/>
+            </Setter>
+        </Style>
+        <Style Selector="StackPanel.animate-in.loaded">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.6" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.6" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="RenderTransform" Value="translateY(0)"/>
+        </Style>
+        
+        <Style Selector="Grid.animate-in">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform">
+                <TranslateTransform Y="30"/>
+            </Setter>
+        </Style>
+        <Style Selector="Grid.animate-in.loaded">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.5" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.5" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="RenderTransform" Value="translateY(0)"/>
+        </Style>
+    </UserControl.Styles>
+    
+    <!-- Main Container -->
+    <Border Classes="space-bg">
+        <!-- Gradient Overlay -->
+        <Panel>
+            <Border Classes="gradient-overlay"/>
+            
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" 
+                      MaxWidth="1400" Margin="60,40" HorizontalAlignment="Center">
+                    
+                    <!-- Header with Logo and Stats -->
+                    <Grid x:Name="HeaderSection" Grid.Row="0" Classes="animate-in" 
+                          ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,60">
+                        
+                        <!-- Logo -->
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                            <Border Background="{DynamicResource HomeAccentBrush}" CornerRadius="12" Width="48" Height="48"
+                                    BoxShadow="0 0 30 0 #666366f1">
+                                <TextBlock Text="M" FontSize="24" FontWeight="Bold" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="MODULUS" FontSize="24" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource HomeTextPrimaryBrush}" LetterSpacing="2" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <!-- Stats -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="30">
+                            <controls:StatCard Value="{Binding InstalledModuleCount}" 
+                                               Label="INSTALLED" ValueForeground="{DynamicResource HomeAccentBrush}"/>
+                            <controls:StatCard Value="{Binding RunningModuleCount}" 
+                                               Label="RUNNING" ValueForeground="{DynamicResource HomeSuccessBrush}"/>
+                            
+                            <!-- GitHub -->
+                            <StackPanel HorizontalAlignment="Center">
+                                <Button Classes="github-btn" Command="{Binding OpenGitHubCommand}" 
+                                        ToolTip.Tip="View on GitHub">
+                                    <PathIcon Data="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                                            Width="24" Height="24" Foreground="{DynamicResource HomeTextSecondaryBrush}"/>
+                                </Button>
+                                <TextBlock Text="GitHub" FontSize="12" Foreground="{DynamicResource HomeTextMutedBrush}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <!-- Hero Section: Content + Orbital System -->
+                    <Grid x:Name="HeroSection" Grid.Row="1" Classes="animate-in"
+                          ColumnDefinitions="*,1.2*" Margin="0,0,0,80">
+                        
+                        <!-- Hero Content -->
+                        <StackPanel Spacing="24" VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock Classes="hero-title" Foreground="White">
+                                    <Run Text="Build Once,"/>
+                                </TextBlock>
+                                <TextBlock Classes="hero-title">
+                                    <TextBlock.Foreground>
+                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                            <GradientStop Color="#ffffff" Offset="0"/>
+                                            <GradientStop Color="#a5b4fc" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </TextBlock.Foreground>
+                                    <Run Text="Run Anywhere"/>
+                                </TextBlock>
+                            </StackPanel>
+                            
+                            <TextBlock Classes="hero-subtitle" TextWrapping="Wrap" MaxWidth="450">
+                                A modern cross-platform modular app framework. Write once, deploy to Avalonia desktop and Blazor web with VS Extension-style developer experience.
+                            </TextBlock>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                                <Button Classes="btn-primary" Content="Create Module"/>
+                                <Button Classes="btn-secondary" Content="Browse Marketplace"/>
+                            </StackPanel>
+                        </StackPanel>
+                        
+                        <!-- Orbital System - decorative rings with interactive core -->
+                        <controls:OrbitalSystem Grid.Column="1" Size="300" CoreSize="80" CoreContent="M"
+                                                OrbitCount="3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    
+                    <!-- Features Grid -->
+                    <StackPanel x:Name="FeaturesSection" Grid.Row="2" Classes="animate-in" Margin="0,0,0,60">
+                        <TextBlock Text="FRAMEWORK FEATURES" Classes="section-title" 
+                                   HorizontalAlignment="Center" Margin="0,0,0,24"/>
+                        
+                        <ItemsControl ItemsSource="{Binding Features}" HorizontalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FeatureItem">
+                                    <controls:GlassCard Margin="10" Width="280" IsInteractive="False">
+                                        <StackPanel Spacing="10">
+                                            <Border Background="#206366f1" CornerRadius="10" 
+                                                    Width="40" Height="40" HorizontalAlignment="Left">
+                                                <TextBlock Text="{Binding Icon}" FontSize="18"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource HomeTextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding Description}" FontSize="12" 
+                                                       Foreground="{DynamicResource HomeTextSecondaryBrush}" 
+                                                       TextWrapping="Wrap" MaxLines="3"/>
+                                        </StackPanel>
+                                    </controls:GlassCard>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    
+                    <!-- CLI Terminal Section -->
+                    <StackPanel x:Name="CliSection" Grid.Row="3" Classes="animate-in" 
+                                MaxWidth="700" HorizontalAlignment="Center" Margin="0,0,0,40">
+                        <Border Classes="cli-terminal" BoxShadow="0 4 30 0 #30000000">
+                            <StackPanel>
+                                <!-- Terminal Header (macOS style dots) -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,20">
+                                    <Ellipse Width="12" Height="12" Fill="#ff5f56"/>
+                                    <Ellipse Width="12" Height="12" Fill="#ffbd2e"/>
+                                    <Ellipse Width="12" Height="12" Fill="#27ca3f"/>
+                                    <TextBlock Text="Terminal — Quick Start" FontSize="14" Foreground="#707070"
+                                               Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <!-- Command Lines: Description above, Command below with copy button -->
+                                <ItemsControl ItemsSource="{Binding QuickStartCommands}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="16"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CliCommand">
+                                            <StackPanel Spacing="6">
+                                                <!-- Description (what this command does) -->
+                                                <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#a0a0a0"/>
+                                                <!-- Command line with $ prompt and copy button -->
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <TextBlock Text="$" FontSize="14" Foreground="#10b981" 
+                                                               FontFamily="JetBrains Mono, Consolas, monospace" 
+                                                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Command}" FontSize="13" Foreground="#72696E"
+                                                               FontFamily="JetBrains Mono, Consolas, monospace" VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="2" Classes="copy-btn" 
+                                                            Click="OnCopyCommandClick" Tag="{Binding Command}"
+                                                            ToolTip.Tip="Copy command" VerticalAlignment="Center">
+                                                        <PathIcon Data="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                                                                  Width="14" Height="14" Foreground="#707070"/>
+                                                    </Button>
+                                                </Grid>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    
+                    <!-- Footer -->
+                    <StackPanel Grid.Row="4" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,20">
+                        <TextBlock FontSize="11" Foreground="#4a5568" HorizontalAlignment="Center">
+                            <Run Text="Host: "/>
+                            <Run Text="{Binding HostType}"/>
+                        </TextBlock>
+                    </StackPanel>
+                    
+                </Grid>
+            </ScrollViewer>
+        </Panel>
+    </Border>
+</UserControl>

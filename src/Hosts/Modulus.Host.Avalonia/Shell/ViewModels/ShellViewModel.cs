@@ -258,6 +258,42 @@ public partial class ShellViewModel : ViewModelBase,
     }
 
     /// <summary>
+    /// Navigate to a view by its navigation key (route string).
+    /// </summary>
+    public void NavigateToRoute(string navigationKey)
+    {
+        _logger.LogInformation("NavigateToRoute: {NavKey}", navigationKey);
+        
+        _isNavigating = true;
+        try
+        {
+            _ = _navigationService.NavigateToAsync(navigationKey);
+
+            // Find and select corresponding menu item
+            var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
+            var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
+            
+            _logger.LogInformation("NavigateToRoute: Found mainItem={MainFound}, bottomItem={BottomFound}",
+                mainItem?.DisplayName ?? "null", bottomItem?.DisplayName ?? "null");
+
+            if (mainItem != null)
+            {
+                SelectedMainMenuItem = mainItem;
+                SelectedBottomMenuItem = null;
+            }
+            else if (bottomItem != null)
+            {
+                SelectedBottomMenuItem = bottomItem;
+                SelectedMainMenuItem = null;
+            }
+        }
+        finally
+        {
+            _isNavigating = false;
+        }
+    }
+
+    /// <summary>
     /// Select a menu item programmatically (updates selection state).
     /// </summary>
     public void SelectMenuItem(MenuItem item)

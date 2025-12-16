@@ -1,0 +1,39 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#0a0a0f">
+            <StackPanel Orientation="Horizontal" Spacing="30">
+                <controls:StatCard Value="3" Label="INSTALLED" ValueForeground="#6366f1"/>
+                <controls:StatCard Value="2" Label="RUNNING" ValueForeground="#10b981"/>
+                <controls:StatCard Value="v1.0" Label="VERSION"/>
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- StatCard Default Style -->
+    <Style Selector="controls|StatCard">
+        <Setter Property="Foreground" Value="{DynamicResource HomeTextPrimaryBrush}"/>
+        <Setter Property="ValueForeground" Value="{DynamicResource HomeAccentBrush}"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:StatCard">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock x:Name="PART_Value"
+                               Text="{TemplateBinding Value}"
+                               FontSize="{TemplateBinding ValueFontSize}"
+                               FontWeight="Bold"
+                               Foreground="{TemplateBinding ValueForeground}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="PART_Label"
+                               Text="{TemplateBinding Label}"
+                               FontSize="{TemplateBinding LabelFontSize}"
+                               Foreground="{DynamicResource HomeTextMutedBrush}"
+                               LetterSpacing="1"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+</Styles>

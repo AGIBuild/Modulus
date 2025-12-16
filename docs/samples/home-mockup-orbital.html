@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modulus Home - 轨道控制中心风格</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #e8e8e8;
+        }
+
+        /* Starfield Background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Gradient Overlay */
+        .gradient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 60px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .nav-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #707070;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Main Hero Section */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 80px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        .hero-content h1 {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-content p {
+            font-size: 18px;
+            color: #a0a0a0;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            padding: 14px 32px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Orbital System */
+        .orbital-system {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 0 auto;
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px dashed rgba(99, 102, 241, 0.2);
+            border-radius: 50%;
+            animation: rotate 30s linear infinite;
+        }
+
+        .orbit-1 {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 20s;
+        }
+
+        .orbit-2 {
+            width: 320px;
+            height: 320px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 30s;
+            animation-direction: reverse;
+        }
+
+        .orbit-3 {
+            width: 440px;
+            height: 440px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 40s;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Center Core */
+        .core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+            box-shadow: 
+                0 0 60px rgba(99, 102, 241, 0.6),
+                0 0 100px rgba(99, 102, 241, 0.3);
+            animation: pulse 3s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 60px rgba(99, 102, 241, 0.6),
+                    0 0 100px rgba(99, 102, 241, 0.3);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 80px rgba(99, 102, 241, 0.8),
+                    0 0 140px rgba(99, 102, 241, 0.4);
+            }
+        }
+
+        /* Module Satellites */
+        .satellite {
+            position: absolute;
+            padding: 12px 20px;
+            background: rgba(30, 30, 40, 0.9);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: float 4s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        .satellite-icon {
+            font-size: 20px;
+        }
+
+        .satellite.active {
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .satellite.active::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .sat-1 { top: 30px; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
+        .sat-2 { top: 120px; right: 20px; animation-delay: 0.5s; }
+        .sat-3 { bottom: 120px; right: 30px; animation-delay: 1s; }
+        .sat-4 { bottom: 40px; left: 50%; transform: translateX(-50%); animation-delay: 1.5s; }
+        .sat-5 { bottom: 140px; left: 20px; animation-delay: 2s; }
+        .sat-6 { top: 140px; left: 10px; animation-delay: 2.5s; }
+
+        /* Features Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .feature-card {
+            padding: 28px;
+            background: rgba(30, 30, 40, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: #707070;
+            line-height: 1.6;
+        }
+
+        /* CLI Section */
+        .cli-section {
+            background: rgba(20, 20, 28, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .cli-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cli-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .cli-dot.red { background: #ff5f56; }
+        .cli-dot.yellow { background: #ffbd2e; }
+        .cli-dot.green { background: #27ca3f; }
+
+        .cli-title {
+            margin-left: 12px;
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .cli-content {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .cli-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cli-prompt {
+            color: #10b981;
+        }
+
+        .cli-command {
+            color: #e8e8e8;
+        }
+
+        .cli-comment {
+            color: #4a5568;
+        }
+
+        .cli-highlight {
+            color: #6366f1;
+        }
+
+        /* Typing Animation */
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40) forwards;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="starfield" id="starfield"></div>
+    <div class="gradient-overlay"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">M</div>
+                <span class="logo-text">MODULUS</span>
+            </div>
+            <div class="nav-stats">
+                <div class="stat">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">已安装模块</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">运行中</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">v1.0</div>
+                    <div class="stat-label">版本</div>
+                </div>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Build Once,<br/>Run Anywhere</h1>
+                <p>Modulus 是现代化的跨平台插件式应用框架。<br/>一次开发，同时支持 Avalonia 桌面端和 Blazor 移动端，<br/>享受 VS Extension 风格的开发体验。</p>
+                <div class="hero-actions">
+                    <button class="btn-primary">创建模块</button>
+                    <button class="btn-secondary">浏览市场</button>
+                </div>
+            </div>
+
+            <div class="orbital-system">
+                <div class="orbit orbit-1"></div>
+                <div class="orbit orbit-2"></div>
+                <div class="orbit orbit-3"></div>
+                <div class="core">M</div>
+                
+                <div class="satellite sat-1 active">
+                    <span class="satellite-icon">🔌</span>
+                    <span>EchoPlugin</span>
+                </div>
+                <div class="satellite sat-2 active">
+                    <span class="satellite-icon">📝</span>
+                    <span>SimpleNotes</span>
+                </div>
+                <div class="satellite sat-3">
+                    <span class="satellite-icon">🎨</span>
+                    <span>ComponentsDemo</span>
+                </div>
+                <div class="satellite sat-4">
+                    <span class="satellite-icon">🤖</span>
+                    <span>AI Agent</span>
+                </div>
+                <div class="satellite sat-5">
+                    <span class="satellite-icon">📊</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="satellite sat-6">
+                    <span class="satellite-icon">⚙️</span>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>多宿主架构</h3>
+                <p>核心逻辑与 UI 分离，同一代码运行于多个平台</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>热重载隔离</h3>
+                <p>AssemblyLoadContext 实现模块级隔离和动态加载</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3>VS 扩展兼容</h3>
+                <p>采用 vsixmanifest 格式，熟悉的扩展开发体验</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Agent 就绪</h3>
+                <p>内置 LLM 集成支持，轻松构建智能插件</p>
+            </div>
+        </section>
+
+        <section class="cli-section">
+            <div class="cli-header">
+                <span class="cli-dot red"></span>
+                <span class="cli-dot yellow"></span>
+                <span class="cli-dot green"></span>
+                <span class="cli-title">Terminal — 快速开始</span>
+            </div>
+            <div class="cli-content">
+                <div class="cli-line">
+                    <span class="cli-prompt">$</span>
+                    <span class="cli-command">dotnet tool install -g <span class="cli-highlight">Agibuild.Modulus.Cli</span></span>
+                    <span class="cli-comment"># 安装 CLI 工具</span>
+                </div>
+                <div class="cli-line">
+                    <span class="cli-prompt">$</span>
+                    <span class="cli-command">modulus new <span class="cli-highlight">MyModule</span> -t avalonia</span>
+                    <span class="cli-comment"># 创建新模块</span>
+                </div>
+                <div class="cli-line">
+                    <span class="cli-prompt">$</span>
+                    <span class="cli-command">modulus build && modulus pack</span>
+                    <span class="cli-comment"># 构建并打包</span>
+                </div>
+                <div class="cli-line">
+                    <span class="cli-prompt">$</span>
+                    <span class="cli-command">modulus install <span class="cli-highlight">./MyModule-1.0.0.modpkg</span></span>
+                    <span class="cli-comment"># 安装模块</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Generate stars
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            star.style.opacity = Math.random() * 0.5 + 0.2;
+            starfield.appendChild(star);
+        }
+    </script>
+</body>
+</html>
