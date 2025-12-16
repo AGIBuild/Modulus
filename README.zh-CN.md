@@ -2,6 +2,16 @@
 
 Modulus 是一个现代化的跨平台插件式应用框架，帮助开发者快速构建可扩展、可维护、支持 AI 的工具类软件。
 
+## 🖼️ 界面截图
+
+| Home (Light) | Home (Dark) |
+|---|---|
+| ![Home (Light)](./docs/Images/home-light.jpg) | ![Home (Dark)](./docs/Images/home-dark.jpg) |
+
+### Module Manager
+
+![Module Manager](./docs/Images/module-manager.jpg)
+
 ## ✨ 特性亮点
 
 ### 多主机架构

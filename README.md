@@ -2,6 +2,16 @@
 
 Modulus is a modern, cross-platform, plugin-based application framework designed to help developers quickly build extensible, maintainable, and AI-ready tools.
 
+## 🖼️ Screenshots
+
+| Home (Light) | Home (Dark) |
+|---|---|
+| ![Home (Light)](./docs/Images/home-light.jpg) | ![Home (Dark)](./docs/Images/home-dark.jpg) |
+
+### Module Manager
+
+![Module Manager](./docs/Images/module-manager.jpg)
+
 ## ✨ Features
 
 ### Multi-Host Architecture
