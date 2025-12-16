@@ -23,7 +23,7 @@ Menu entries SHALL be projected to the database at install/update time and read 
 - **WHEN** Shell 渲染导航菜单
 - **THEN** 从数据库读取 `Menus` 与 `Modules`（仅 `IsEnabled=true` 且状态可加载）
 - **AND** 注册到 `IMenuRegistry`
-- **AND** 渲染过程不进行程序集反射/扫描
+- **AND** 渲染过程不进行任何 DLL 动态解析（不反射、不 metadata 扫描、不读取菜单属性）
 
 ### Requirement: ModulusPackage entry point discovery
 运行时 MUST 通过扫描 `Modulus.Package` 类型 Asset 中的入口点类来发现模块，并且仅支持 `ModulusPackage` 作为入口模型（不提供旧入口兼容）。
