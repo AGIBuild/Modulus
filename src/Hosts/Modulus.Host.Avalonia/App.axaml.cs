@@ -137,7 +137,6 @@ public partial class App : Application
             services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
             services.AddScoped<SystemModuleInstaller>();
             services.AddScoped<ModuleIntegrityChecker>();
-            services.AddScoped<HostModuleSeeder>();
             services.AddSingleton<ILazyModuleLoader, LazyModuleLoader>();
 
             // Get host version from assembly
@@ -161,19 +160,8 @@ public partial class App : Application
             // Initialize Database
             var database = Services.GetRequiredService<IAppDatabase>();
             database.InitializeAsync().GetAwaiter().GetResult();
-
-            // Seed host module menus to database (menus come from DB only at render time)
-            using (var scope = Services.CreateScope())
-            {
-                var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
-                var hostVersionString = typeof(AvaloniaHostModule).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-                hostSeeder.SeedOrUpdateFromAttributesAsync(
-                    ModulusHostIds.Avalonia,
-                    "Modulus Host (Avalonia)",
-                    hostVersionString,
-                    typeof(AvaloniaHostModule)
-                ).GetAwaiter().GetResult();
-            }
+            
+            // No bundled module seeding (menus are projected from module entry attributes during install/update)
             
             // Initialize Theme Service (load saved theme)
             var themeService = Services.GetRequiredService<IThemeService>() as AvaloniaThemeService;
