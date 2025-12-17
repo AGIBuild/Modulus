@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Blazor dynamic module runtime stylesheet injection
 Blazor Host MUST 支持为动态加载的第三方模块注入运行时样式，以避免依赖 CSS isolation/static web assets。

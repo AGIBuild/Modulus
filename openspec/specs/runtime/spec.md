@@ -1,10 +1,8 @@
 # runtime Specification
 
 ## Purpose
-运行时规范，定义模块加载、生命周期管理、清单验证和依赖解析。
-
+运行时规范，定义模块加载、生命周期管理、清单验证和依赖解析。本规范明确隔离域、共享程序集解析、安装/卸载流程与诊断输出要求，以保证运行时行为一致、可观测且可维护。
 ## Requirements
-
 ### Requirement: Hybrid Module/Component Runtime
 The runtime SHALL load modules (ModulusModule) as deployable units and resolve components (ModulusComponent) as code units with dependency ordering.
 
@@ -23,16 +21,17 @@ The runtime SHALL load modules (ModulusModule) as deployable units and resolve c
 ### Requirement: Menu Projection
 Menu entries SHALL be projected to the database at install/update time and read from the database at render time.
 
-#### Scenario: Install or update module
-- **WHEN** a module is installed or updated
-- **THEN** the installer reads host-specific menu attributes from the module entry type (Blazor: `[BlazorMenu]`, Avalonia: `[AvaloniaMenu]`)
-- **AND** writes menu rows with ids like `{ModuleId}.{HostType}.{Key}.{Index}` into `Menus`
-- **AND** replaces any existing menus for that module (bulk upsert).
+#### Scenario: Install or update module projects menus to database
+- **WHEN** 模块被安装或更新
+- **THEN** 安装器解析模块 host-specific 入口类型上的菜单属性（Blazor: `[BlazorMenu]`，Avalonia: `[AvaloniaMenu]`）
+- **AND** 将菜单写入数据库表 `Menus`（`ReplaceModuleMenusAsync` 覆盖该模块现有菜单）
+- **AND** 写入的菜单 ID 采用 `{ModuleId}.{HostType}.{Key}.{Index}` 规则（允许多条同 Key 菜单用于排错）
 
-#### Scenario: Render menus
-- **WHEN** the shell renders navigation
-- **THEN** it queries `Menus` joined with enabled modules
-- **AND** does not require reflection or DLL metadata parsing at render time.
+#### Scenario: Render menus reads from database only
+- **WHEN** Shell 渲染导航菜单
+- **THEN** 从数据库读取 `Menus` 与 `Modules`（仅 `IsEnabled=true` 且状态可加载）
+- **AND** 注册到 `IMenuRegistry`
+- **AND** 渲染过程不进行任何 DLL 动态解析（不反射、不 metadata 扫描、不读取菜单属性）
 
 ### Requirement: Detail Content Fallback
 Module detail pages SHALL prefer README content and fall back to manifest description.
@@ -237,28 +236,23 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **THEN** 跳过版本验证，仅验证 Host Id 匹配
 
 ### Requirement: ModulusPackage entry point discovery
-运行时 MUST 通过扫描 `Modulus.Package` 类型 Asset 中的入口点类来发现模块，同时保持对 `ModulusComponent` 的向后兼容。
+运行时 MUST 通过扫描 `Modulus.Package` 类型 Asset 中的入口点类来发现模块，并且仅支持 `ModulusPackage` 作为入口模型（不提供旧入口兼容）。
 
 #### Scenario: Package entry point discovered from Asset
 - **WHEN** 加载 `Modulus.Package` 类型的 Asset 程序集
-- **THEN** 扫描程序集中所有继承 `ModulusPackage` 或 `ModulusComponent` 的非抽象类型
-- **AND** 按 `[DependsOn]` 属性构建依赖图
-- **AND** 拓扑排序后按序实例化
+- **THEN** 扫描程序集内所有继承 `ModulusPackage` 的非抽象类型
+- **AND** 按 `[DependsOn]` 构建依赖图并拓扑排序
+- **AND** 依序执行生命周期（Pre/Configure/PostConfigureServices，Host 绑定后执行 OnApplicationInitializationAsync）
 
 #### Scenario: TargetHost filters Package loading
-- **WHEN** Asset 声明了 `TargetHost` 属性
+- **WHEN** Asset 声明了 `TargetHost`
 - **AND** `TargetHost` 不匹配当前 Host
-- **THEN** 跳过该 Asset 的加载
+- **THEN** 跳过该 Asset 的加载与入口点扫描
 
-#### Scenario: Assembly Asset loaded without entry point scan
-- **WHEN** 加载 `Modulus.Assembly` 类型的 Asset
-- **THEN** 仅加载程序集到 ALC
-- **AND** 不扫描入口点类型
-
-#### Scenario: Backward compatible with ModulusComponent
-- **WHEN** 程序集中存在 `ModulusComponent` 子类 (未继承 `ModulusPackage`)
-- **THEN** 仍然被发现和加载 (向后兼容)
-- **AND** 编译时产生 `[Obsolete]` 警告提示迁移
+#### Scenario: Legacy entry point is not supported
+- **WHEN** 程序集中不存在 `ModulusPackage` 子类（仅存在旧入口模型）
+- **THEN** 模块加载失败
+- **AND** 诊断信息提示模块需要迁移到 `ModulusPackage`
 
 ### Requirement: vsixmanifest Asset Type conventions
 模块程序集 MUST 通过 vsixmanifest `Assets` 元素声明，使用 Modulus 定义的 Asset Type 约定。
@@ -324,6 +318,11 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **AND** 在不执行模块代码的前提下解析入口类型菜单属性
 - **AND** 将菜单写入数据库 `Menus`
 
+#### Scenario: Menu attributes are host-specific
+- **WHEN** 当前 Host 为 `Modulus.Host.Blazor`
+- **THEN** 仅解析 `[BlazorMenu]`
+- **AND** 忽略 `[AvaloniaMenu]`
+
 #### Scenario: Multiple menus are allowed for diagnostics
 - **WHEN** 同一入口类型声明了多条菜单属性
 - **THEN** 全部投影到 DB 并在 UI 中显示（不做折叠）
@@ -337,11 +336,10 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **AND** 不创建可执行的模块实例
 - **AND** 不触发模块程序集的静态初始化
 
-#### Scenario: Manifest hash stored for change detection
-- **WHEN** 安装或更新模块
-- **THEN** 计算 manifest 文件的 SHA256 hash
-- **AND** 将 hash 存入 `ModuleEntity.ManifestHash`
-- **AND** 记录验证时间到 `ModuleEntity.ValidatedAt`
+#### Scenario: Failure fast on invalid metadata
+- **WHEN** 菜单属性缺失必填字段（如 `Route` / `DisplayName` / `Key`）
+- **THEN** 安装失败并输出清晰诊断信息
+- **AND** 不写入不完整菜单到数据库
 
 ### Requirement: Loading trusts database validation state
 模块加载 MUST 信任数据库中的验证状态，不重复执行 manifest 验证，以优化启动性能。
@@ -375,7 +373,17 @@ Host SHALL 在启动时注册版本信息到 RuntimeContext。
 - **THEN** 扫描 `%APPDATA%/Modulus/Modules/` 下的模块目录
 - **AND** 对每个包含 `extension.vsixmanifest` 的模块执行 install/update（含菜单投影）
 
-#### Scenario: Startup loads from database only
-- **WHEN** 应用启动加载模块
-- **THEN** 直接从数据库查询已启用模块并加载
-- **AND** 导航菜单渲染仅从数据库读取
+#### Scenario: Disabled modules are not loaded but remain installed
+- **WHEN** 数据库中模块 `IsEnabled=false`
+- **THEN** 启动时不加载该模块程序集
+- **AND** 模块文件仍保留在磁盘
+- **AND** 用户将其重新启用后可再次加载
+
+### Requirement: No legacy data or menu source compatibility
+系统 MUST 不兼容旧数据库与旧菜单来源；检测到旧数据结构或旧来源标记时应失败快并指导清理。
+
+#### Scenario: Legacy database detected
+- **WHEN** 启动时检测到数据库包含旧菜单来源结构（例如来自 vsixmanifest `Modulus.Menu` 或 bundled 清单路径）
+- **THEN** 启动失败
+- **AND** 日志明确提示删除数据库文件后重启
+

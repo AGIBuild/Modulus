@@ -1,7 +1,7 @@
 # module-template Specification
 
 ## Purpose
-模块项目模板规范，定义 Visual Studio 模板和 CLI 模板命令的行为。
+模块项目模板规范，定义 Visual Studio 模板和 CLI 模板命令的行为。本规范覆盖生成文件结构、默认依赖、可编译性与清单有效性等最低保障，以避免模板漂移导致的创建失败或编译失败。
 
 ## Requirements
 

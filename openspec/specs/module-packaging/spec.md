@@ -137,7 +137,7 @@ CLI install SHALL 输出 Host 版本兼容性警告。
 #### Scenario: Host includes built-in modules without referencing output assembly
 - **WHEN** Host 项目引用一个内置模块项目
 - **THEN** 该引用使用 `ProjectReference` 并设置 `ReferenceOutputAssembly="false"`
-- **AND** 构建输出将模块产物输出到 `artifacts/bin/Modules/{ModuleName}/`
+- **AND** 构建输出将模块产物复制到 `artifacts/bin/Modules/{ModuleName}/`
 - **AND** Host 运行时仍由 `ModuleLoader` 从 `Modules/` 目录加载该模块
 
 ### Requirement: Module packaging does not depend on bundled module lists

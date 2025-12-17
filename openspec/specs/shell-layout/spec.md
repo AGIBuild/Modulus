@@ -85,12 +85,13 @@ The Blazor host MUST provide a ThemeProvider component that manages MudBlazor th
 ### Requirement: Blazor dynamic module runtime stylesheet injection
 Blazor Host MUST 支持为动态加载的第三方模块注入运行时样式，以避免依赖 CSS isolation/static web assets。
 
-#### Scenario: Module provides runtime stylesheet file
-- **WHEN** 模块包目录包含 `module.css`
-- **THEN** Host 能在导航到该模块页面时读取该文件并注入到页面
+#### Scenario: Module provides stylesheet as embedded resource
+- **WHEN** 第三方模块声明一个可供 Host 读取的 CSS 资源（例如 embedded resource）
+- **THEN** Host 能在不执行模块代码的前提下定位该资源
+- **AND** 将 CSS 内容注入到 WebView 的 `<head>` 中
 
-#### Scenario: Navigation renders with injected stylesheet
-- **WHEN** 用户通过菜单导航到某个模块页面
+#### Scenario: Navigation triggers module stylesheet injection
+- **WHEN** 用户通过菜单导航到某个第三方模块页面
 - **THEN** Host 在渲染该页面前完成样式注入
-- **AND** 页面具备可观察的样式生效信号（例如 CSS 变量或可见样式变化）
+- **AND** 页面呈现使用新样式（具备可观察的样式生效信号）
 

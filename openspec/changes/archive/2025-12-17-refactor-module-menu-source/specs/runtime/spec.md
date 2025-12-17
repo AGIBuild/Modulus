@@ -1,13 +1,3 @@
-## RENAMED Requirements
-- FROM: `### Requirement: Menu declaration in manifest Assets`
-- TO: `### Requirement: Menu declaration in module entry attributes`
-
-- FROM: `### Requirement: Installation without assembly loading`
-- TO: `### Requirement: Installation without executing module code`
-
-- FROM: `### Requirement: Explicit module installation without directory scanning`
-- TO: `### Requirement: Module discovery by directory scanning`
-
 ## MODIFIED Requirements
 
 ### Requirement: Menu Projection
