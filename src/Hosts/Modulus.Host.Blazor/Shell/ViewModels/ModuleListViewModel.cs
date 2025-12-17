@@ -316,7 +316,9 @@ public partial class ModuleListViewModel : ObservableObject
 
             if (!result.Success)
             {
-                ErrorMessage = result.Error ?? "Installation failed.";
+                ErrorMessage =
+                    result.Error ??
+                    "Installation failed. The selected package may not be compatible with this host.";
                 IsLoading = false;
                 return;
             }

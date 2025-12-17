@@ -256,13 +256,34 @@ public class ModuleInstallerService : IModuleInstallerService
                     return ModuleInstallResult.Failed(
                         $"Module '{existingModule.DisplayName}' is a system module and cannot be overwritten by user installation.");
                 }
-                
-                // User module - require confirmation
+            }
+
+            // ===== CRITICAL: Host-aware manifest validation BEFORE confirmation / file operations =====
+            // This prevents a host from "installing" a package that targets a different UI host
+            // (e.g., Blazor host installing an Avalonia-only package) and then attempting to load it.
+            if (!string.IsNullOrWhiteSpace(hostType))
+            {
+                var validation = await _manifestValidator.ValidateAsync(tempDir, manifestPath, manifest, hostType, cancellationToken);
+                if (!validation.IsValid)
+                {
+                    // Fail fast: do not copy files, do not write DB records.
+                    var details = string.Join(Environment.NewLine, validation.Errors.Select(e => $"- {e}"));
+                    var message =
+                        $"Package is not compatible with host '{hostType}'." +
+                        Environment.NewLine +
+                        details;
+                    return ModuleInstallResult.Failed(message);
+                }
+            }
+
+            // User module - require confirmation (only after compatibility validation)
+            if (existingModule != null)
+            {
                 if (!overwrite)
                 {
                     return ModuleInstallResult.ConfirmationRequired(identity.Id, manifest.Metadata.DisplayName);
                 }
-                
+
                 // Get existing module's directory path for cleanup
                 existingModulePath = Path.GetDirectoryName(
                     Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, existingModule.Path)));

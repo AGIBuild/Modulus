@@ -80,8 +80,9 @@ public class DefaultManifestValidatorTests
         var manifestPath = Path.Combine(tempDir, "extension.vsixmanifest");
         var manifest = CreateTestManifest();
 
-        // Create the dll file so path validation passes
+        // Create the dll files so path validation passes
         File.WriteAllBytes(Path.Combine(tempDir, "Test.Core.dll"), Array.Empty<byte>());
+        File.WriteAllBytes(Path.Combine(tempDir, "Test.UI.Avalonia.dll"), Array.Empty<byte>());
 
         var validator = new DefaultManifestValidator(_logger);
         var result = await validator.ValidateAsync(tempDir, manifestPath, manifest, ModulusHostIds.Avalonia);
@@ -97,8 +98,9 @@ public class DefaultManifestValidatorTests
         var manifestPath = Path.Combine(tempDir, "extension.vsixmanifest");
         var manifest = CreateTestManifest();
 
-        // Create the dll file so path validation passes
+        // Create the dll files so path validation passes
         File.WriteAllBytes(Path.Combine(tempDir, "Test.Core.dll"), Array.Empty<byte>());
+        File.WriteAllBytes(Path.Combine(tempDir, "Test.UI.Avalonia.dll"), Array.Empty<byte>());
 
         // Unsupported asset types are rejected (only latest design is allowed).
         manifest.Assets.Add(new ManifestAsset { Type = "Unsupported.Asset", TargetHost = ModulusHostIds.Avalonia });
@@ -108,6 +110,28 @@ public class DefaultManifestValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.Contains("Unsupported asset type", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ValidateAsync_HostSpecificPackageAssetMissing_ReturnsError()
+    {
+        var tempDir = CreateTempDir();
+        var manifestPath = Path.Combine(tempDir, "extension.vsixmanifest");
+        var manifest = CreateTestManifest();
+        
+        // Remove host-specific package asset to simulate Avalonia-only host UI missing
+        manifest.Assets.RemoveAll(a =>
+            string.Equals(a.Type, ModulusAssetTypes.Package, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(a.TargetHost, ModulusHostIds.Avalonia, StringComparison.OrdinalIgnoreCase));
+
+        // Create only core dll file
+        File.WriteAllBytes(Path.Combine(tempDir, "Test.Core.dll"), Array.Empty<byte>());
+
+        var validator = new DefaultManifestValidator(_logger);
+        var result = await validator.ValidateAsync(tempDir, manifestPath, manifest, ModulusHostIds.Avalonia);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("No host-specific Package asset found", StringComparison.OrdinalIgnoreCase));
     }
 
     private static VsixManifest CreateTestManifest(
@@ -135,7 +159,8 @@ public class DefaultManifestValidatorTests
             },
             Assets = new List<ManifestAsset>
             {
-                new() { Type = ModulusAssetTypes.Package, Path = "Test.Core.dll" }
+                new() { Type = ModulusAssetTypes.Package, Path = "Test.Core.dll" },
+                new() { Type = ModulusAssetTypes.Package, Path = "Test.UI.Avalonia.dll", TargetHost = ModulusHostIds.Avalonia }
             }
         };
     }
