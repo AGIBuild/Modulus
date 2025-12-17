@@ -46,7 +46,8 @@ public class FullLifecycleTests : IDisposable
         Assert.Contains("Build succeeded", buildResult.StandardOutput);
         
         // Step 3: Pack module
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
+        // Pack already has access to build output; avoid building twice.
+        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory, noBuild: true);
         Assert.True(packResult.IsSuccess, $"[pack] Failed: {packResult.CombinedOutput}");
         Assert.Contains("Packaging complete", packResult.StandardOutput);
         
@@ -142,7 +143,8 @@ public class FullLifecycleTests : IDisposable
         
         // Pack version 2
         var output2 = _context.CreateSubDirectory("output-v2");
-        var packResult2 = await _runner.PackAsync(path: moduleDir, output: output2);
+        // Avoid a second build; only manifest version changes for packaging.
+        var packResult2 = await _runner.PackAsync(path: moduleDir, output: output2, noBuild: true);
         Assert.True(packResult2.IsSuccess, $"[pack v2] Failed: {packResult2.CombinedOutput}");
         
         // Force install version 2

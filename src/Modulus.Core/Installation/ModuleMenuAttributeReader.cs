@@ -42,12 +42,13 @@ public static class ModuleMenuAttributeReader
             if (!IsDerivedFrom(type, ModulusPackageFullName))
                 continue;
 
+            var declaringType = type.FullName ?? type.Name;
             var attrs = type.GetCustomAttributesData();
 
             if (isBlazor)
-                AppendBlazorMenus(attrs, menus);
+                AppendBlazorMenus(declaringType, attrs, menus);
             else if (isAvalonia)
-                AppendAvaloniaMenus(attrs, menus);
+                AppendAvaloniaMenus(declaringType, attrs, menus);
         }
 
         return menus;
@@ -98,7 +99,7 @@ public static class ModuleMenuAttributeReader
         return false;
     }
 
-    private static void AppendBlazorMenus(IList<CustomAttributeData> attrs, List<MenuInfo> menus)
+    private static void AppendBlazorMenus(string declaringType, IList<CustomAttributeData> attrs, List<MenuInfo> menus)
     {
         foreach (var a in attrs)
         {
@@ -106,11 +107,18 @@ public static class ModuleMenuAttributeReader
                 continue;
 
             if (a.ConstructorArguments.Count < 3)
-                continue;
+                throw new InvalidOperationException($"Invalid [BlazorMenu] on '{declaringType}': expected constructor arguments (key, displayName, route).");
 
-            var key = a.ConstructorArguments[0].Value as string ?? string.Empty;
-            var displayName = a.ConstructorArguments[1].Value as string ?? string.Empty;
-            var route = a.ConstructorArguments[2].Value as string ?? string.Empty;
+            var key = a.ConstructorArguments[0].Value as string;
+            var displayName = a.ConstructorArguments[1].Value as string;
+            var route = a.ConstructorArguments[2].Value as string;
+
+            if (string.IsNullOrWhiteSpace(key))
+                throw new InvalidOperationException($"Invalid [BlazorMenu] on '{declaringType}': 'key' is required.");
+            if (string.IsNullOrWhiteSpace(displayName))
+                throw new InvalidOperationException($"Invalid [BlazorMenu] on '{declaringType}': 'displayName' is required.");
+            if (string.IsNullOrWhiteSpace(route))
+                throw new InvalidOperationException($"Invalid [BlazorMenu] on '{declaringType}': 'route' is required.");
 
             var icon = IconKind.Grid;
             var location = MenuLocation.Main;
@@ -142,12 +150,13 @@ public static class ModuleMenuAttributeReader
                 Route = route,
                 Icon = icon.ToString(),
                 Location = location,
-                Order = order
+                Order = order,
+                DeclaringType = declaringType
             });
         }
     }
 
-    private static void AppendAvaloniaMenus(IList<CustomAttributeData> attrs, List<MenuInfo> menus)
+    private static void AppendAvaloniaMenus(string declaringType, IList<CustomAttributeData> attrs, List<MenuInfo> menus)
     {
         foreach (var a in attrs)
         {
@@ -155,12 +164,19 @@ public static class ModuleMenuAttributeReader
                 continue;
 
             if (a.ConstructorArguments.Count < 3)
-                continue;
+                throw new InvalidOperationException($"Invalid [AvaloniaMenu] on '{declaringType}': expected constructor arguments (key, displayName, viewModelType).");
 
-            var key = a.ConstructorArguments[0].Value as string ?? string.Empty;
-            var displayName = a.ConstructorArguments[1].Value as string ?? string.Empty;
+            var key = a.ConstructorArguments[0].Value as string;
+            var displayName = a.ConstructorArguments[1].Value as string;
             var viewModelType = a.ConstructorArguments[2].Value as Type;
             var route = viewModelType?.FullName ?? viewModelType?.Name ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(key))
+                throw new InvalidOperationException($"Invalid [AvaloniaMenu] on '{declaringType}': 'key' is required.");
+            if (string.IsNullOrWhiteSpace(displayName))
+                throw new InvalidOperationException($"Invalid [AvaloniaMenu] on '{declaringType}': 'displayName' is required.");
+            if (string.IsNullOrWhiteSpace(route))
+                throw new InvalidOperationException($"Invalid [AvaloniaMenu] on '{declaringType}': 'viewModelType' is required.");
 
             var icon = IconKind.Grid;
             var location = MenuLocation.Main;
@@ -192,7 +208,8 @@ public static class ModuleMenuAttributeReader
                 Route = route,
                 Icon = icon.ToString(),
                 Location = location,
-                Order = order
+                Order = order,
+                DeclaringType = declaringType
             });
         }
     }
@@ -249,5 +266,6 @@ public sealed class MenuInfo
     public string Icon { get; set; } = string.Empty;
     public MenuLocation Location { get; set; } = MenuLocation.Main;
     public int Order { get; set; }
+    public string DeclaringType { get; set; } = string.Empty;
 }
 

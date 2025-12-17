@@ -19,20 +19,13 @@ public class UninstallCommandTests : IDisposable
     [Fact]
     public async Task Uninstall_ByName_Succeeds()
     {
-        // Arrange - Create, pack and install a module
-        var newResult = await _runner.NewAsync("UninstallByName", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "UninstallByName");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
-        var installResult = await _runner.InstallAsync(packages[0], force: true);
+        // Arrange - reuse shared prebuilt package
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
+        var installResult = await _runner.InstallAsync(artifact.PackagePath, force: true);
         Assert.True(installResult.IsSuccess, $"Install failed: {installResult.CombinedOutput}");
         
         // Act - Uninstall by display name
-        var result = await _runner.UninstallAsync("UninstallByName", force: true);
+        var result = await _runner.UninstallAsync(artifact.ModuleName, force: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Uninstall failed: {result.CombinedOutput}");
@@ -53,31 +46,24 @@ public class UninstallCommandTests : IDisposable
     [Fact]
     public async Task Uninstall_AfterListConfirmsPresence()
     {
-        // Arrange - Install a module
-        var newResult = await _runner.NewAsync("ListThenUninstall", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "ListThenUninstall");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
-        var installResult = await _runner.InstallAsync(packages[0], force: true);
+        // Arrange - reuse shared prebuilt package
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
+        var installResult = await _runner.InstallAsync(artifact.PackagePath, force: true);
         Assert.True(installResult.IsSuccess, $"Install failed: {installResult.CombinedOutput}");
         
         // Verify module is in list
         var listBefore = await _runner.ListAsync();
         Assert.True(listBefore.IsSuccess);
-        Assert.Contains("ListThenUninstall", listBefore.StandardOutput);
+        Assert.Contains(artifact.ModuleName, listBefore.StandardOutput);
         
         // Act - Uninstall
-        var uninstallResult = await _runner.UninstallAsync("ListThenUninstall", force: true);
+        var uninstallResult = await _runner.UninstallAsync(artifact.ModuleName, force: true);
         Assert.True(uninstallResult.IsSuccess, $"Uninstall failed: {uninstallResult.CombinedOutput}");
         
         // Assert - Module should not be in list anymore
         var listAfter = await _runner.ListAsync();
         Assert.True(listAfter.IsSuccess);
-        Assert.DoesNotContain("ListThenUninstall", listAfter.StandardOutput);
+        Assert.DoesNotContain(artifact.ModuleName, listAfter.StandardOutput);
     }
     
     public void Dispose()

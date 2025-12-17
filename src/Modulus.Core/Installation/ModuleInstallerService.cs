@@ -69,6 +69,7 @@ public class ModuleInstallerService : IModuleInstallerService
         // Extract menus from module assembly attributes (metadata-only parsing)
         var menus = new List<MenuInfo>();
         var moduleLocation = MenuLocation.Main;
+        var requestedBottom = false;
 
         if (hostType != null && validationResult.IsValid)
         {
@@ -91,7 +92,7 @@ public class ModuleInstallerService : IModuleInstallerService
                         menus = ModuleMenuAttributeReader.ReadMenus(assemblyPath, hostType).ToList();
                         
                         // Determine module location from menu attributes
-                        var requestedBottom = menus.Any(m => m.Location == MenuLocation.Bottom);
+                        requestedBottom = menus.Any(m => m.Location == MenuLocation.Bottom);
                         moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
 
                         if (!isSystem && requestedBottom)
@@ -101,12 +102,16 @@ public class ModuleInstallerService : IModuleInstallerService
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to read menu attributes from {AssemblyPath} for module {ModuleId}. Menus will be empty.", assemblyPath, identity.Id);
+                        _logger.LogError(ex, "Failed to read menu attributes from {AssemblyPath} for module {ModuleId}.", assemblyPath, identity.Id);
+                        throw new InvalidOperationException(
+                            $"Invalid menu metadata in '{assemblyPath}' for module '{identity.Id}'. " +
+                            "Fix [BlazorMenu]/[AvaloniaMenu] declarations and reinstall.",
+                            ex);
                     }
                 }
                 else
                 {
-                    _logger.LogWarning("Package assembly not found at {AssemblyPath} for module {ModuleId}. Menus will be empty.", assemblyPath, identity.Id);
+                    throw new InvalidOperationException($"Package assembly not found at '{assemblyPath}' for module '{identity.Id}'.");
                 }
             }
             else
@@ -115,15 +120,11 @@ public class ModuleInstallerService : IModuleInstallerService
             }
         }
 
-        var moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
-
         // Compute manifest hash for change detection
         var manifestHash = await VsixManifestReader.ComputeHashAsync(manifestPath, cancellationToken);
 
         // Preserve existing IsEnabled state when updating
         var existingModule = await _moduleRepository.GetAsync(identity.Id, cancellationToken);
-        // Preserve disabled state across updates, but do not keep a module enabled if validation fails.
-        var preserveIsEnabled = existingModule?.IsEnabled == false ? false : validationResult.IsValid;
 
         // Prepare entities
         var moduleState = validationResult.IsValid
@@ -198,12 +199,19 @@ public class ModuleInstallerService : IModuleInstallerService
         _logger.LogInformation("Module {ModuleId} installed successfully.", identity.Id);
     }
 
-    public Task RegisterDevelopmentModuleAsync(string manifestPath, CancellationToken cancellationToken = default)
+    public Task RegisterDevelopmentModuleAsync(string manifestPath, string? hostType = null, CancellationToken cancellationToken = default)
     {
-        var dir = Path.GetDirectoryName(manifestPath);
-        if (dir == null) throw new ArgumentException("Invalid manifest path");
-        
-        return InstallFromPathAsync(dir, isSystem: false, hostType: null, cancellationToken);
+        if (string.IsNullOrWhiteSpace(manifestPath))
+            throw new ArgumentException("Manifest path is required.", nameof(manifestPath));
+
+        var dir = Directory.Exists(manifestPath)
+            ? manifestPath
+            : Path.GetDirectoryName(manifestPath);
+
+        if (string.IsNullOrWhiteSpace(dir))
+            throw new ArgumentException("Invalid manifest path.", nameof(manifestPath));
+
+        return InstallFromPathAsync(dir, isSystem: false, hostType: hostType, cancellationToken);
     }
 
     public async Task<ModuleInstallResult> InstallFromPackageAsync(string packagePath, bool overwrite = false, string? hostType = null, CancellationToken cancellationToken = default)

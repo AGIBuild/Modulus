@@ -47,27 +47,25 @@ public class CliRunner
             };
             
             using var process = new Process { StartInfo = psi };
-            
-            var outputBuilder = new System.Text.StringBuilder();
-            var errorBuilder = new System.Text.StringBuilder();
-            
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (e.Data != null) outputBuilder.AppendLine(e.Data);
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (e.Data != null) errorBuilder.AppendLine(e.Data);
-            };
-            
             process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
             
             using var cts = new CancellationTokenSource(Timeout);
             try
             {
-                await process.WaitForExitAsync(cts.Token);
+                // Read output streams concurrently to avoid deadlocks on large/verbose output.
+                var stdoutTask = process.StandardOutput.ReadToEndAsync(cts.Token);
+                var stderrTask = process.StandardError.ReadToEndAsync(cts.Token);
+                await Task.WhenAll(process.WaitForExitAsync(cts.Token), stdoutTask, stderrTask);
+                
+                var stdout = await stdoutTask;
+                var stderr = await stderrTask;
+                
+                return new CliResult
+                {
+                    ExitCode = process.ExitCode,
+                    StandardOutput = stdout,
+                    StandardError = stderr
+                };
             }
             catch (OperationCanceledException)
             {
@@ -75,18 +73,11 @@ public class CliRunner
                 return new CliResult
                 {
                     ExitCode = -1,
-                    StandardOutput = outputBuilder.ToString(),
-                    StandardError = $"Command timed out after {Timeout.TotalSeconds}s\n{errorBuilder}",
+                    StandardOutput = "",
+                    StandardError = $"Command timed out after {Timeout.TotalSeconds}s",
                     Exception = new TimeoutException($"CLI command timed out: {arguments}")
                 };
             }
-            
-            return new CliResult
-            {
-                ExitCode = process.ExitCode,
-                StandardOutput = outputBuilder.ToString(),
-                StandardError = errorBuilder.ToString()
-            };
         }
         catch (Exception ex)
         {

@@ -30,16 +30,9 @@ public class ListCommandTests : IDisposable
     [Fact]
     public async Task List_WithInstalledModule_ShowsModule()
     {
-        // Arrange - Install a module
-        var newResult = await _runner.NewAsync("ListShow", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "ListShow");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
-        var installResult = await _runner.InstallAsync(packages[0], force: true);
+        // Arrange - reuse shared prebuilt package
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
+        var installResult = await _runner.InstallAsync(artifact.PackagePath, force: true);
         Assert.True(installResult.IsSuccess, $"Install failed: {installResult.CombinedOutput}");
         
         // Act
@@ -47,23 +40,16 @@ public class ListCommandTests : IDisposable
         
         // Assert
         Assert.True(result.IsSuccess, $"List failed: {result.CombinedOutput}");
-        Assert.Contains("ListShow", result.StandardOutput);
+        Assert.Contains(artifact.ModuleName, result.StandardOutput);
         Assert.Contains("Installed modules", result.StandardOutput);
     }
     
     [Fact]
     public async Task List_Verbose_ShowsDetails()
     {
-        // Arrange - Install a module
-        var newResult = await _runner.NewAsync("VerboseList", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "VerboseList");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
-        var installResult = await _runner.InstallAsync(packages[0], force: true);
+        // Arrange - reuse shared prebuilt package
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
+        var installResult = await _runner.InstallAsync(artifact.PackagePath, force: true);
         Assert.True(installResult.IsSuccess, $"Install failed: {installResult.CombinedOutput}");
         
         // Act
@@ -71,7 +57,7 @@ public class ListCommandTests : IDisposable
         
         // Assert
         Assert.True(result.IsSuccess, $"List failed: {result.CombinedOutput}");
-        Assert.Contains("VerboseList", result.StandardOutput);
+        Assert.Contains(artifact.ModuleName, result.StandardOutput);
         // Verbose should include path
         Assert.Contains("Path:", result.StandardOutput);
     }
@@ -79,35 +65,23 @@ public class ListCommandTests : IDisposable
     [Fact]
     public async Task List_MultipleModules_ShowsAll()
     {
-        // Arrange - Install multiple modules
-        var modules = new[] { "ModuleA", "ModuleB" };
-        
-        foreach (var moduleName in modules)
-        {
-            var newResult = await _runner.NewAsync(moduleName, "avalonia");
-            Assert.True(newResult.IsSuccess, $"Failed to create {moduleName}: {newResult.CombinedOutput}");
-            
-            var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);
-            var outputDir = _context.CreateSubDirectory($"output-{moduleName}");
-            var packResult = await _runner.PackAsync(path: moduleDir, output: outputDir);
-            Assert.True(packResult.IsSuccess, $"Pack failed for {moduleName}: {packResult.CombinedOutput}");
-            
-            var packages = Directory.GetFiles(outputDir, "*.modpkg");
-            Assert.NotEmpty(packages);
-            
-            var installResult = await _runner.InstallAsync(packages[0], force: true);
-            Assert.True(installResult.IsSuccess, $"Install failed for {moduleName}: {installResult.CombinedOutput}");
-        }
+        // Arrange - install two shared prebuilt modules (distinct identities)
+        var a = await SharedCliArtifacts.GetAvaloniaAAsync();
+        var b = await SharedCliArtifacts.GetAvaloniaBAsync();
+
+        var installA = await _runner.InstallAsync(a.PackagePath, force: true);
+        Assert.True(installA.IsSuccess, $"Install failed for {a.ModuleName}: {installA.CombinedOutput}");
+
+        var installB = await _runner.InstallAsync(b.PackagePath, force: true);
+        Assert.True(installB.IsSuccess, $"Install failed for {b.ModuleName}: {installB.CombinedOutput}");
         
         // Act
         var result = await _runner.ListAsync();
         
         // Assert
         Assert.True(result.IsSuccess, $"List failed: {result.CombinedOutput}");
-        foreach (var moduleName in modules)
-        {
-            Assert.Contains(moduleName, result.StandardOutput);
-        }
+        Assert.Contains(a.ModuleName, result.StandardOutput);
+        Assert.Contains(b.ModuleName, result.StandardOutput);
         Assert.Contains("Installed modules", result.StandardOutput);
     }
     

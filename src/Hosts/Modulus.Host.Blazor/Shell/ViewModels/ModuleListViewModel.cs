@@ -206,6 +206,13 @@ public partial class ModuleListViewModel : ObservableObject
                  if (packagePath != null)
                  {
                      await _moduleLoader.LoadAsync(packagePath, moduleVm.IsSystem);
+
+                     // Register menus from database and notify shell (incremental)
+                     var addedMenus = await RegisterModuleMenusAsync(moduleVm.Id);
+                     if (addedMenus.Count > 0)
+                     {
+                         WeakReferenceMessenger.Default.Send(new MenuItemsAddedMessage(addedMenus));
+                     }
                  }
              }
 
@@ -283,7 +290,7 @@ public partial class ModuleListViewModel : ObservableObject
 
         try
         {
-            await _moduleInstaller.RegisterDevelopmentModuleAsync(path);
+            await _moduleInstaller.RegisterDevelopmentModuleAsync(path, hostType: _runtimeContext.HostType);
             ImportPath = string.Empty;
             await RefreshModulesAsync();
             SuccessMessage = "Module imported successfully.";

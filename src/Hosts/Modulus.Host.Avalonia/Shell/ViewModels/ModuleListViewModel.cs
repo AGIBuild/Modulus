@@ -316,15 +316,15 @@ public partial class ModuleListViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(ImportPath)) return;
         
-        // ImportPath could be a directory or manifest.json
+        // ImportPath could be a directory or extension.vsixmanifest
         var path = ImportPath;
-        if (File.Exists(path) && Path.GetFileName(path) == "manifest.json")
+        if (File.Exists(path) && Path.GetFileName(path) == SystemModuleInstaller.VsixManifestFileName)
         {
             // ok
         }
         else if (Directory.Exists(path))
         {
-            path = Path.Combine(path, "manifest.json");
+            path = Path.Combine(path, SystemModuleInstaller.VsixManifestFileName);
         }
         else
         {
@@ -334,7 +334,7 @@ public partial class ModuleListViewModel : ViewModelBase
 
         try
         {
-            await _moduleInstaller.RegisterDevelopmentModuleAsync(path);
+            await _moduleInstaller.RegisterDevelopmentModuleAsync(path, hostType: _runtimeContext.HostType);
             ImportPath = string.Empty;
             await RefreshModulesAsync();
             _notificationService?.ShowInfoAsync("Success", "Module imported.");

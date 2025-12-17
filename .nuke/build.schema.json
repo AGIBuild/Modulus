@@ -33,7 +33,6 @@
         "CleanPluginsArtifacts",
         "Compile",
         "Default",
-        "GenerateBundledModules",
         "Pack",
         "PackCli",
         "PackLibs",
