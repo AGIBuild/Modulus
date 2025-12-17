@@ -16,6 +16,7 @@ using Modulus.Infrastructure.Data;
 using Modulus.Infrastructure.Data.Models;
 using Modulus.Infrastructure.Data.Repositories;
 using Modulus.Sdk;
+using Modulus.UI.Abstractions;
 
 namespace Modulus.Core.Runtime;
 
@@ -149,6 +150,18 @@ public static class ModulusApplicationFactory
 
             var installer = scope.ServiceProvider.GetRequiredService<SystemModuleInstaller>();
 
+            // Project Host menus into DB (unified projection pipeline; host menus also come from DB at render time).
+            // This replaces HostModuleSeeder and keeps host behavior consistent across Avalonia/Blazor.
+            if (!string.IsNullOrWhiteSpace(hostType))
+            {
+                await ProjectHostModuleAndMenusAsync<TStartupModule>(
+                    scope.ServiceProvider,
+                    hostType!,
+                    hostVersion,
+                    loggerFactory.CreateLogger("HostMenuProjection"),
+                    CancellationToken.None);
+            }
+
             // Install modules from specified directories
             if (moduleDirectories != null)
             {
@@ -255,6 +268,113 @@ public static class ModulusApplicationFactory
         app.ConfigureServices();
 
         return app;
+    }
+
+    private static async Task ProjectHostModuleAndMenusAsync<TStartupModule>(
+        IServiceProvider serviceProvider,
+        string hostType,
+        Version? hostVersion,
+        ILogger logger,
+        CancellationToken cancellationToken)
+        where TStartupModule : IModule, new()
+    {
+        var moduleRepo = serviceProvider.GetRequiredService<IModuleRepository>();
+        var menuRepo = serviceProvider.GetRequiredService<IMenuRepository>();
+
+        var displayName =
+            ModulusHostIds.Matches(hostType, ModulusHostIds.Blazor) ? "Modulus Host (Blazor)" :
+            ModulusHostIds.Matches(hostType, ModulusHostIds.Avalonia) ? "Modulus Host (Avalonia)" :
+            "Modulus Host";
+
+        var resolvedVersion =
+            hostVersion?.ToString(3)
+            ?? typeof(TStartupModule).Assembly.GetName().Version?.ToString(3)
+            ?? "1.0.0";
+
+        var hostModule = new ModuleEntity
+        {
+            Id = hostType,
+            DisplayName = displayName,
+            Version = resolvedVersion,
+            Language = "en-US",
+            Publisher = "Modulus Framework",
+            Website = "https://github.com/AGIBuild/Modulus",
+            Path = "built-in", // Special marker for host module (no physical package path)
+            IsSystem = true,
+            IsEnabled = true,
+            State = Modulus.Infrastructure.Data.Models.ModuleState.Ready,
+            MenuLocation = MenuLocation.Main
+        };
+
+        await moduleRepo.UpsertAsync(hostModule, cancellationToken);
+
+        var hostModuleType = typeof(TStartupModule);
+        var menus = BuildHostMenuEntities(hostType, hostModuleType);
+        await menuRepo.ReplaceModuleMenusAsync(hostType, menus, cancellationToken);
+
+        logger.LogInformation("Host module {HostType} projected {MenuCount} menus to database.", hostType, menus.Length);
+    }
+
+    private static MenuEntity[] BuildHostMenuEntities(string hostType, Type hostModuleType)
+    {
+        if (ModulusHostIds.Matches(hostType, ModulusHostIds.Blazor))
+        {
+            var attrs = (BlazorMenuAttribute[])Attribute.GetCustomAttributes(hostModuleType, typeof(BlazorMenuAttribute), inherit: false);
+            return BuildMenuEntities(hostType, hostType, attrs.Select(a => new MenuProjection(a.Key, a.DisplayName, a.Route)
+            {
+                Icon = a.Icon.ToString(),
+                Location = a.Location,
+                Order = a.Order
+            }).ToList());
+        }
+
+        if (ModulusHostIds.Matches(hostType, ModulusHostIds.Avalonia))
+        {
+            var attrs = (AvaloniaMenuAttribute[])Attribute.GetCustomAttributes(hostModuleType, typeof(AvaloniaMenuAttribute), inherit: false);
+            return BuildMenuEntities(hostType, hostType, attrs.Select(a => new MenuProjection(
+                a.Key,
+                a.DisplayName,
+                a.ViewModelType.FullName ?? a.ViewModelType.Name)
+            {
+                Icon = a.Icon.ToString(),
+                Location = a.Location,
+                Order = a.Order
+            }).ToList());
+        }
+
+        return Array.Empty<MenuEntity>();
+    }
+
+    private static MenuEntity[] BuildMenuEntities(string moduleId, string hostType, List<MenuProjection> projections)
+    {
+        var entities = new List<MenuEntity>();
+        foreach (var group in projections.GroupBy(p => p.Key))
+        {
+            var idx = 0;
+            foreach (var p in group)
+            {
+                entities.Add(new MenuEntity
+                {
+                    Id = $"{moduleId}.{hostType}.{p.Key}.{idx}",
+                    ModuleId = moduleId,
+                    DisplayName = p.DisplayName,
+                    Icon = p.Icon,
+                    Route = p.Route,
+                    Location = p.Location,
+                    Order = p.Order,
+                    ParentId = null
+                });
+                idx++;
+            }
+        }
+        return entities.ToArray();
+    }
+
+    private sealed record MenuProjection(string Key, string DisplayName, string Route)
+    {
+        public string Icon { get; init; } = IconKind.Grid.ToString();
+        public MenuLocation Location { get; init; } = MenuLocation.Main;
+        public int Order { get; init; } = 50;
     }
 
     private static async Task<IReadOnlyList<ModuleEntity>> OrderModulesAsync(

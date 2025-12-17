@@ -20,5 +20,12 @@
     <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/ContentHost.axaml"/>
     <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/TitleBar.axaml"/>
     <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/SideNav.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/NeonCard.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/OrbitalSystem.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/Satellite.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/StatCard.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/CliTerminal.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/GlassCard.axaml"/>
+    <StyleInclude Source="avares://Modulus.UI.Avalonia/Themes/Controls/CardGrid.axaml"/>
     
 </Styles>

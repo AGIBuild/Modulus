@@ -76,11 +76,11 @@
                                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                                         <Button Content="Enable" Classes="accent" Padding="24,8"
                                                 Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}"
-                                                CommandParameter="{Binding}" IsVisible="{Binding !IsEnabled}"/>
+                                                CommandParameter="{Binding}" IsVisible="{Binding ShowEnableButton}"/>
                                                 
                                         <Button Content="Disable" Classes="secondary" Padding="24,8"
                                                 Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).ToggleModuleCommand}"
-                                                CommandParameter="{Binding}" IsVisible="{Binding IsEnabled}"/>
+                                                CommandParameter="{Binding}" IsVisible="{Binding ShowDisableButton}"/>
                                                 
                                         <Button Content="Uninstall" Classes="danger" Padding="16,8"
                                                 Command="{Binding $parent[UserControl].((vm:ModuleListViewModel)DataContext).RemoveModuleCommand}"
@@ -121,21 +121,6 @@
                                     </Border>
                                 </StackPanel>
 
-                                <!-- Menu Placement -->
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="Menu Location" FontWeight="Bold" FontSize="16"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
-                                    <TextBlock Text="{Binding MenuLocation}" 
-                                               Foreground="{DynamicResource SecondaryTextBrush}"/>
-                                </StackPanel>
-
-                                <!-- Technical Info -->
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="Manifest Path" FontWeight="Bold" FontSize="16"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"/>
-                                    <TextBox Text="{Binding Entity.Path}" IsReadOnly="True" FontFamily="Consolas" 
-                                             Background="{DynamicResource CardBackgroundBrush}"/>
-                                </StackPanel>
                             </StackPanel>
                         </DataTemplate>
                     </ContentControl.ContentTemplate>
@@ -174,15 +159,6 @@
                         <Button Content="Install from Package..." 
                                 Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Padding="10" Click="OnInstallPackageClick"/>
-                        
-                        <Separator Height="1" Background="{DynamicResource ContentBorderBrush}" Margin="0,4"/>
-                        
-                        <TextBlock Text="Developer Import" FontSize="12"
-                                   Foreground="{DynamicResource SecondaryTextBrush}"/>
-                        <TextBox Watermark="Path to manifest directory" Text="{Binding ImportPath}" FontSize="12"/>
-                        <Button Command="{Binding ImportModuleCommand}" Content="Import from Path" 
-                                Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                Padding="8"/>
                     </StackPanel>
                 </Border>
 

@@ -11,6 +11,8 @@ public sealed class RuntimeModule
     private ModuleState _state;
     private readonly object _stateLock = new();
 
+    public event EventHandler<RuntimeModuleStateChangedEventArgs>? StateChanged;
+
     public ModuleDescriptor Descriptor { get; }
     public ModuleLoadContext LoadContext { get; }
     public string PackagePath { get; }
@@ -59,13 +61,21 @@ public sealed class RuntimeModule
     /// </summary>
     public void TransitionTo(ModuleState newState, string? reason, Exception? exception = null)
     {
+        ModuleState fromState;
+        var changed = false;
         lock (_stateLock)
         {
             if (_state == newState) return;
 
-            var fromState = _state;
+            fromState = _state;
             _state = newState;
             Diagnostics.RecordTransition(fromState, newState, reason, exception);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            StateChanged?.Invoke(this, new RuntimeModuleStateChangedEventArgs(fromState, newState, reason, exception));
         }
     }
 
@@ -122,4 +132,20 @@ public sealed class RuntimeModule
             _ => false
         };
     }
+}
+
+public sealed class RuntimeModuleStateChangedEventArgs : EventArgs
+{
+    public RuntimeModuleStateChangedEventArgs(ModuleState fromState, ModuleState toState, string? reason, Exception? exception)
+    {
+        FromState = fromState;
+        ToState = toState;
+        Reason = reason;
+        Exception = exception;
+    }
+
+    public ModuleState FromState { get; }
+    public ModuleState ToState { get; }
+    public string? Reason { get; }
+    public Exception? Exception { get; }
 }

@@ -1,0 +1,26 @@
+@using System
+@using System.Linq
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
+@using Modulus.UI.Abstractions
+@inject ILogger<NotFoundDiagnostics> Logger
+@inject NavigationManager NavigationManager
+@inject IMenuRegistry MenuRegistry
+
+@code {
+    protected override void OnInitialized()
+    {
+        var path = new Uri(NavigationManager.Uri).AbsolutePath;
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, path, StringComparison.OrdinalIgnoreCase));
+
+        Logger.LogWarning(
+            "Route NOT found: {Path}. MenuId={MenuId} ModuleId={ModuleId}",
+            path,
+            menu?.Id ?? "(none)",
+            menu?.ModuleId ?? "(none)");
+    }
+}
+
+

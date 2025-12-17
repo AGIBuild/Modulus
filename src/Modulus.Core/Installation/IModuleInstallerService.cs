@@ -16,11 +16,6 @@ public interface IModuleInstallerService
     Task InstallFromPathAsync(string packagePath, bool isSystem = false, string? hostType = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Registers a development module that exists on disk but is not in the database.
-    /// </summary>
-    Task RegisterDevelopmentModuleAsync(string manifestPath, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Installs a module from a .modpkg package file.
     /// Extracts the package, copies to user modules directory, and registers in database.
     /// </summary>

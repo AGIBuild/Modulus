@@ -1,0 +1,43 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#1a1a1a" Width="600">
+            <controls:CardGrid CardMinWidth="150" CardSpacing="12">
+                <controls:CardGrid.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>Card 1</x:String>
+                        <x:String>Card 2</x:String>
+                        <x:String>Card 3</x:String>
+                        <x:String>Card 4</x:String>
+                    </x:Array>
+                </controls:CardGrid.ItemsSource>
+            </controls:CardGrid>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- CardGrid Default Style -->
+    <Style Selector="controls|CardGrid">
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:CardGrid">
+                <ItemsControl x:Name="PART_ItemsControl"
+                              ItemsSource="{TemplateBinding ItemsSource}"
+                              ItemTemplate="{TemplateBinding ItemTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" 
+                                       HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerTheme>
+                        <ControlTheme TargetType="ContentPresenter">
+                            <Setter Property="Margin" Value="8"/>
+                        </ControlTheme>
+                    </ItemsControl.ItemContainerTheme>
+                </ItemsControl>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+</Styles>

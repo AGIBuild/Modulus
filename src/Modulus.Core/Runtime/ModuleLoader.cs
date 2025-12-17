@@ -213,6 +213,10 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             return existingModule!.Descriptor;
         }
 
+        // Allow explicit reload after unload by resetting execution health.
+        // Unload marks the module as Unloaded in the execution guard; a subsequent Load/Reload is an explicit recovery attempt.
+        _executionGuard.ResetHealth(identity.Id);
+
         if (!NuGetVersion.TryParse(identity.Version, out _))
         {
             _logger.LogWarning("Module {ModuleId} version {Version} is not a valid semantic version.", identity.Id, identity.Version);

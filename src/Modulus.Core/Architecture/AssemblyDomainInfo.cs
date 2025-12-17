@@ -75,7 +75,15 @@ public static class AssemblyDomainInfo
     {
         var callingAssembly = Assembly.GetCallingAssembly();
         var context = AssemblyLoadContext.GetLoadContext(callingAssembly);
-        return context != AssemblyLoadContext.Default && context?.Name?.StartsWith("Module_") == true;
+        if (context == null || context == AssemblyLoadContext.Default)
+            return false;
+
+        // ModuleLoadContext is collectible. Some older code assumed "Module_" prefix, but
+        // our ModuleLoadContext name is the ModuleId itself.
+        if (context.IsCollectible)
+            return true;
+
+        return context.Name?.StartsWith("Module_", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     /// <summary>
@@ -90,11 +98,15 @@ public static class AssemblyDomainInfo
             return null;
             
         var contextName = context?.Name;
-        if (contextName?.StartsWith("Module_") == true)
+        if (contextName?.StartsWith("Module_", StringComparison.OrdinalIgnoreCase) == true)
         {
             return contextName.Substring("Module_".Length);
         }
-        
+
+        // ModuleLoadContext name is the module id.
+        if (context?.IsCollectible == true && !string.IsNullOrWhiteSpace(contextName))
+            return contextName;
+
         return null;
     }
 

@@ -78,7 +78,7 @@ public class BuildCommandTests : IDisposable
         Assert.Contains("No module project found", result.CombinedOutput);
     }
     
-    [Fact(Skip = "Verbose build has process wait issues in test environment")]
+    [Fact]
     public async Task Build_Verbose_ShowsDetails()
     {
         // Arrange

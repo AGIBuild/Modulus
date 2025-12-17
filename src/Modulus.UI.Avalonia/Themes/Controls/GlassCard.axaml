@@ -1,0 +1,93 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#6366f1">
+            <StackPanel Spacing="12">
+                <controls:GlassCard Width="200" Height="80">
+                    <TextBlock Text="Glass Card" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </controls:GlassCard>
+                <controls:GlassCard Width="200" Height="80" IsInteractive="False">
+                    <TextBlock Text="Non-Interactive" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </controls:GlassCard>
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- GlassCard Default Style -->
+    <Style Selector="controls|GlassCard">
+        <Setter Property="Background" Value="#07FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#20ffffff"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="ClipToBounds" Value="False"/>
+        
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:GlassCard">
+                <Border x:Name="PART_RootBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        BoxShadow="0 2 12 0 #20000000"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.Transitions>
+                        <Transitions>
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                            <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2"/>
+                            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                        </Transitions>
+                    </Border.Transitions>
+
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- Hover state - scale up with glow effect -->
+    <Style Selector="controls|GlassCard:pointerover /template/ Border#PART_RootBorder">
+        <Setter Property="RenderTransform" Value="scale(1.03)"/>
+        <Setter Property="BoxShadow" Value="0 0 20 4 #606366f1, 0 6 24 0 #30000000"/>
+        <Setter Property="BorderBrush" Value="#506366f1"/>
+    </Style>
+    
+    <!-- Interactive: hand cursor -->
+    <Style Selector="controls|GlassCard:interactive">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    
+    <!-- Non-interactive: default cursor -->
+    <Style Selector="controls|GlassCard:not(:interactive)">
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+
+    <!-- Focus state -->
+    <Style Selector="controls|GlassCard:focus-visible /template/ Border#PART_RootBorder">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPurpleBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BoxShadow" Value="0 0 0 3 #406366f1"/>
+    </Style>
+    
+    <!-- Pressed state -->
+    <Style Selector="controls|GlassCard:interactive:pressed /template/ Border#PART_RootBorder">
+        <Setter Property="Opacity" Value="0.9"/>
+        <Setter Property="RenderTransform" Value="scale(0.98)"/>
+    </Style>
+    
+    <!-- Disabled state -->
+    <Style Selector="controls|GlassCard:disabled">
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+</Styles>

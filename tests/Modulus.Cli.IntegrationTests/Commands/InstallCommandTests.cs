@@ -20,19 +20,11 @@ public class InstallCommandTests : IDisposable
     [Fact]
     public async Task Install_FromModpkg_Succeeds()
     {
-        // Arrange - Create and pack a module
-        var newResult = await _runner.NewAsync("InstallTest", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "InstallTest");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
-        Assert.Single(packages);
+        // Arrange - reuse shared prebuilt package to avoid repeated new/pack/build cost
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
         
         // Act
-        var result = await _runner.InstallAsync(packages[0], force: true);
+        var result = await _runner.InstallAsync(artifact.PackagePath, force: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Install failed: {result.CombinedOutput}");
@@ -42,16 +34,11 @@ public class InstallCommandTests : IDisposable
     [Fact]
     public async Task Install_FromDirectory_Succeeds()
     {
-        // Arrange - Create and build a module (not packed)
-        var newResult = await _runner.NewAsync("DirInstall", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "DirInstall");
-        var buildResult = await _runner.BuildAsync(path: moduleDir);
-        Assert.True(buildResult.IsSuccess, $"Build failed: {buildResult.CombinedOutput}");
+        // Arrange - reuse extracted directory from shared package (valid manifest + DLLs present)
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
         
         // Act - Install from module directory
-        var result = await _runner.InstallAsync(moduleDir, force: true);
+        var result = await _runner.InstallAsync(artifact.ExtractedDir, force: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Install failed: {result.CombinedOutput}");
@@ -61,22 +48,15 @@ public class InstallCommandTests : IDisposable
     [Fact]
     public async Task Install_ForceOverwrite_Succeeds()
     {
-        // Arrange - Create and install a module
-        var newResult = await _runner.NewAsync("ForceInstall", "avalonia");
-        Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
-        
-        var moduleDir = Path.Combine(_context.WorkingDirectory, "ForceInstall");
-        var packResult = await _runner.PackAsync(path: moduleDir, output: _context.OutputDirectory);
-        Assert.True(packResult.IsSuccess, $"Pack failed: {packResult.CombinedOutput}");
-        
-        var packages = Directory.GetFiles(_context.OutputDirectory, "*.modpkg");
+        // Arrange - install the same shared package twice (force overwrite)
+        var artifact = await SharedCliArtifacts.GetAvaloniaAsync();
         
         // Install first time
-        var firstInstall = await _runner.InstallAsync(packages[0], force: true);
+        var firstInstall = await _runner.InstallAsync(artifact.PackagePath, force: true);
         Assert.True(firstInstall.IsSuccess, $"First install failed: {firstInstall.CombinedOutput}");
         
         // Act - Install again with force
-        var result = await _runner.InstallAsync(packages[0], force: true);
+        var result = await _runner.InstallAsync(artifact.PackagePath, force: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Second install failed: {result.CombinedOutput}");

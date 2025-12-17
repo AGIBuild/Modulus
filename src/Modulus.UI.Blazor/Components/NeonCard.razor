@@ -1,0 +1,139 @@
+@namespace Modulus.UI.Blazor.Components
+@inherits MudBlazor.MudComponentBase
+
+<div class="neon-card @Class @(_isHovered ? "hovered" : "") @(IsFloatAnimationEnabled && _isHovered ? "float" : "") @(IsHoverAnimationEnabled && _isHovered ? "glow" : "")"
+     style="@Style @GetGlowStyle()"
+     @onclick="OnCardClick"
+     @onmouseenter="OnMouseEnter"
+     @onmouseleave="OnMouseLeave">
+    @ChildContent
+</div>
+
+<style>
+    .neon-card {
+        background: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-lines-default);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.25s ease,
+                    border-color 0.25s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .neon-card.float.hovered {
+        transform: translateY(-6px);
+    }
+
+    .neon-card.glow.hovered {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18),
+                    0 0 20px 2px var(--neon-card-glow-color, rgba(187, 139, 255, 0.5));
+        border-color: var(--neon-card-border-color, #BB8BFF);
+    }
+
+    .neon-card:active {
+        transform: translateY(-2px);
+        opacity: 0.9;
+    }
+
+    .neon-card.disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    /* Compact variant */
+    .neon-card.compact {
+        padding: 12px 8px;
+        border-radius: 8px;
+    }
+
+    /* Feature variant (scale instead of float) */
+    .neon-card.feature {
+        padding: 16px 12px;
+        border-radius: 8px;
+    }
+
+    .neon-card.feature.hovered {
+        transform: scale(1.02);
+    }
+
+    .neon-card.feature.float.hovered {
+        transform: scale(1.02);
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// The content to render inside the card.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Whether the hover glow animation is enabled.
+    /// </summary>
+    [Parameter]
+    public bool IsHoverAnimationEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether the float (rise) animation is enabled on hover.
+    /// </summary>
+    [Parameter]
+    public bool IsFloatAnimationEnabled { get; set; } = true;
+
+    /// <summary>
+    /// The glow color for the neon effect (CSS color value).
+    /// </summary>
+    [Parameter]
+    public string GlowColor { get; set; } = "#BB8BFF";
+
+    /// <summary>
+    /// The intensity of the glow effect (blur radius in pixels).
+    /// </summary>
+    [Parameter]
+    public double GlowIntensity { get; set; } = 20.0;
+
+    /// <summary>
+    /// Command to execute when the card is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// Whether the card is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private bool _isHovered;
+
+    private string GetGlowStyle()
+    {
+        return $"--neon-card-glow-color: {GlowColor}80; --neon-card-border-color: {GlowColor};";
+    }
+
+    private void OnMouseEnter()
+    {
+        if (!Disabled)
+        {
+            _isHovered = true;
+        }
+    }
+
+    private void OnMouseLeave()
+    {
+        _isHovered = false;
+    }
+
+    private async Task OnCardClick()
+    {
+        if (!Disabled && OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+}
+
+

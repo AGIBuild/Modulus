@@ -50,4 +50,23 @@
     <x:Double x:Key="AcrylicTintOpacity">0.85</x:Double>
     <x:Double x:Key="AcrylicMaterialOpacity">0.5</x:Double>
     
+    <!-- Home Page Theme (Dark - Space Style) -->
+    <LinearGradientBrush x:Key="HomeBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0A0A0F" Offset="0"/>
+        <GradientStop Color="#12121A" Offset="1"/>
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="HomeOverlayBrush" Center="20%,20%" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#266366f1" Offset="0"/>
+        <GradientStop Color="Transparent" Offset="1"/>
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="HomeTextPrimaryBrush" Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="HomeTextSecondaryBrush" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="HomeTextMutedBrush" Color="#707070"/>
+    <SolidColorBrush x:Key="HomeSurfaceBrush" Color="#1E1E28"/>
+    <SolidColorBrush x:Key="HomeSurfaceGlassBrush" Color="#CC14141c"/>
+    <SolidColorBrush x:Key="HomeAccentBrush" Color="#6366F1"/>
+    <SolidColorBrush x:Key="HomeSuccessBrush" Color="#10B981"/>
+    <Color x:Key="HomeGlowColor">#6366F1</Color>
+    <Color x:Key="HomeOrbitColor">#336366f1</Color>
+    
 </ResourceDictionary>

@@ -1,0 +1,95 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Modulus.UI.Avalonia.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#0a0a0f">
+            <StackPanel Spacing="12">
+                <controls:Satellite Icon="🔌" Label="EchoPlugin" IsActive="True"/>
+                <controls:Satellite Icon="📝" Label="SimpleNotes" IsActive="True"/>
+                <controls:Satellite Icon="🎨" Label="ComponentsDemo" IsActive="False"/>
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- Satellite Default Style - Compact, self-sizing card with glass effect -->
+    <Style Selector="controls|Satellite">
+        <Setter Property="Background" Value="{DynamicResource HomeSurfaceGlassBrush}"/>
+        <Setter Property="BorderBrush" Value="#256366f1"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="ClipToBounds" Value="False"/>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="controls:Satellite">
+                <Border x:Name="PART_RootBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        BoxShadow="0 2 12 0 #30000000"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.Transitions>
+                        <Transitions>
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                            <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.2"/>
+                            <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                        </Transitions>
+                    </Border.Transitions>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <!-- Icon -->
+                        <TextBlock x:Name="PART_Icon"
+                                   Text="{TemplateBinding Icon}"
+                                   FontSize="16" VerticalAlignment="Center"/>
+                        <!-- Label -->
+                        <TextBlock x:Name="PART_Label"
+                                   Text="{TemplateBinding Label}"
+                                   FontSize="13" FontWeight="Medium"
+                                   Foreground="{DynamicResource HomeTextPrimaryBrush}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- Active state indicator (green border) -->
+    <Style Selector="controls|Satellite:active-satellite">
+        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+    </Style>
+    <Style Selector="controls|Satellite:active-satellite /template/ Border#PART_RootBorder">
+        <Setter Property="BoxShadow" Value="0 0 12 0 #4010b981, 0 2 12 0 #30000000"/>
+    </Style>
+
+    <!-- Hover state - scale up slightly with glow -->
+    <Style Selector="controls|Satellite:pointerover /template/ Border#PART_RootBorder">
+        <Setter Property="RenderTransform" Value="scale(1.05)"/>
+        <Setter Property="BoxShadow" Value="0 0 16 2 #606366f1, 0 4 20 0 #40000000"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPurpleBrush}"/>
+    </Style>
+
+    <!-- Focus state (keyboard navigation) -->
+    <Style Selector="controls|Satellite:focus-visible /template/ Border#PART_RootBorder">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPurpleBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BoxShadow" Value="0 0 0 3 #406366f1"/>
+    </Style>
+    
+    <!-- Pressed state -->
+    <Style Selector="controls|Satellite:pressed /template/ Border#PART_RootBorder">
+        <Setter Property="Opacity" Value="0.85"/>
+        <Setter Property="RenderTransform" Value="scale(0.98)"/>
+    </Style>
+    
+    <!-- Disabled state -->
+    <Style Selector="controls|Satellite:disabled">
+        <Setter Property="Opacity" Value="0.5"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+
+</Styles>

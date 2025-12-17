@@ -111,7 +111,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         builder.Services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
         builder.Services.AddScoped<SystemModuleInstaller>();
-        builder.Services.AddScoped<HostModuleSeeder>();
 
         // Get host version from assembly
         var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version ?? new Version(1, 0, 0);
@@ -127,18 +126,7 @@ public static class MauiProgram
         // Build the app
         var app = builder.Build();
         
-        // Seed Host menus to database (menus are read from DB at render time)
-        using (var scope = app.Services.CreateScope())
-        {
-            var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
-            var hostVersionString = typeof(BlazorHostModule).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-            hostSeeder.SeedOrUpdateFromAttributesAsync(
-                ModulusHostIds.Blazor,
-                "Modulus Host (Blazor)",
-                hostVersionString,
-                typeof(BlazorHostModule)
-            ).GetAwaiter().GetResult();
-        }
+        // No bundled module seeding (menus are projected from module entry attributes during install/update)
 
         return app;
     }

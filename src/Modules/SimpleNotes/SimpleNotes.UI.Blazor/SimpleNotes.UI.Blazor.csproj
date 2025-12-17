@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleNotes.Core\SimpleNotes.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Core\Modulus.Core.csproj" />
     <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
     <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
   </ItemGroup>

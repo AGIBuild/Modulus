@@ -88,14 +88,6 @@
 
                 <MudText Typo="Typo.subtitle2" Class="mt-6" GutterBottom="true">Status</MudText>
                 <MudChip T="string" Size="Size.Small" Color="@GetColor(module.StatusColor)" Variant="Variant.Filled">@module.StatusText</MudChip>
-
-                <MudText Typo="Typo.subtitle2" Class="mt-4" GutterBottom="true">Menu Location</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@module.MenuLocation</MudChip>
-
-                <MudText Typo="Typo.subtitle2" Class="mt-4" GutterBottom="true">Path</MudText>
-                <MudPaper Class="pa-2 mud-theme-dark" Elevation="0">
-                    <code style="color: white; word-break: break-all;">@module.Entity.Path</code>
-                </MudPaper>
             }
             else
             {
@@ -131,12 +123,6 @@
                 </MudFileUpload>
                 
                 <MudDivider Class="my-3" />
-                
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Developer Import</MudText>
-                <MudTextField @bind-Value="ViewModel.ImportPath" Placeholder="Path to manifest directory" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="@ImportModule" Disabled="@ViewModel.IsLoading">
-                    Import from Path
-                </MudButton>
                 
                 <MudButton Variant="Variant.Text" StartIcon="@MudBlazor.Icons.Material.Filled.Refresh" FullWidth="true" OnClick="@RefreshModules" Class="mt-2">
                     Refresh List
@@ -199,12 +185,6 @@
     private async Task RemoveModule(ModuleViewModel module)
     {
         await ViewModel.RemoveModuleAsync(module);
-        StateHasChanged();
-    }
-
-    private async Task ImportModule()
-    {
-        await ViewModel.ImportModuleAsync();
         StateHasChanged();
     }
 

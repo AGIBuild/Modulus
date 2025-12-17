@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Modulus.Core.Data;
-using Modulus.Core.Installation;
 using Modulus.Core.Runtime;
 using Modulus.Host.Blazor.Shell.Services;
 using Modulus.Sdk;
@@ -66,19 +65,6 @@ public partial class App : Application
                 // Initialize Theme Service (load saved theme)
                 var themeService = services.GetRequiredService<IThemeService>() as BlazorThemeService;
                 themeService?.InitializeAsync().GetAwaiter().GetResult();
-
-                // Seed host module menus to database (menus come from DB only at render time)
-                using (var scope = services.CreateScope())
-                {
-                    var hostSeeder = scope.ServiceProvider.GetRequiredService<HostModuleSeeder>();
-                    var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-                    hostSeeder.SeedOrUpdateFromAttributesAsync(
-                        ModulusHostIds.Blazor,
-                        "Modulus Host (Blazor)",
-                        hostVersion,
-                        typeof(BlazorHostModule)
-                    ).GetAwaiter().GetResult();
-                }
                 
                 // Initialize Modules
                 _modulusApp.InitializeAsync().GetAwaiter().GetResult();

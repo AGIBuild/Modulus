@@ -1,0 +1,63 @@
+@page "/echo"
+@using System
+@using System.Linq
+@using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Logging
+@using Modulus.Core.Runtime
+@using Modulus.UI.Abstractions
+@using Modulus.Modules.EchoPlugin.ViewModels
+@inherits ComponentBase
+@inject RuntimeContext RuntimeContext
+@inject IMenuRegistry MenuRegistry
+@inject ILogger<EchoPage> Logger
+
+@if (_viewModel == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EchoView ViewModel="_viewModel" />
+}
+
+@code {
+    private EchoViewModel? _viewModel;
+
+    protected override void OnInitialized()
+    {
+        var moduleId = ResolveModuleId("/echo");
+        if (string.IsNullOrWhiteSpace(moduleId))
+        {
+            Logger.LogWarning("EchoPage: could not resolve ModuleId for route '/echo' from menu registry.");
+            return;
+        }
+
+        if (RuntimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+        {
+            try
+            {
+                // Create via ActivatorUtilities so constructor dependencies can come from both module + host services.
+                _viewModel = ActivatorUtilities.CreateInstance<EchoViewModel>(handle.CompositeServiceProvider);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "EchoPage: failed to create EchoViewModel for ModuleId={ModuleId}.", moduleId);
+            }
+        }
+        else
+        {
+            Logger.LogWarning("EchoPage: module handle not found for ModuleId={ModuleId}.", moduleId);
+        }
+    }
+
+    private string? ResolveModuleId(string route)
+    {
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, route, StringComparison.OrdinalIgnoreCase));
+
+        return menu?.ModuleId;
+    }
+}
+
+

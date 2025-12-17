@@ -57,4 +57,24 @@
     <x:Double x:Key="AcrylicTintOpacity">0.25</x:Double>
     <x:Double x:Key="AcrylicMaterialOpacity">0.15</x:Double>
     
+    <!-- Home Page Theme (Light - Purple Gradient Style) -->
+    <LinearGradientBrush x:Key="HomeBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#E8DBFF" Offset="0"/>
+        <GradientStop Color="#D4C4F0" Offset="0.5"/>
+        <GradientStop Color="#C9B8E8" Offset="1"/>
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="HomeOverlayBrush" Center="20%,20%" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#409C27B0" Offset="0"/>
+        <GradientStop Color="Transparent" Offset="1"/>
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="HomeTextPrimaryBrush" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="HomeTextSecondaryBrush" Color="#4A4A4A"/>
+    <SolidColorBrush x:Key="HomeTextMutedBrush" Color="#6A6A6A"/>
+    <SolidColorBrush x:Key="HomeSurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="HomeSurfaceGlassBrush" Color="#CCFFFFFF"/>
+    <SolidColorBrush x:Key="HomeAccentBrush" Color="#7B1FA2"/>
+    <SolidColorBrush x:Key="HomeSuccessBrush" Color="#2E7D32"/>
+    <Color x:Key="HomeGlowColor">#9C27B0</Color>
+    <Color x:Key="HomeOrbitColor">#409C27B0</Color>
+    
 </ResourceDictionary>

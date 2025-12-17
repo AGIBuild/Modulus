@@ -1,0 +1,219 @@
+@page "/home"
+@using Modulus.Modules.Home.ViewModels
+@using Modulus.Modules.Home.Services
+@using Modulus.Core.Runtime
+@using Modulus.Core.Architecture
+@using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Logging
+@using Modulus.UI.Abstractions
+@using Modulus.UI.Blazor.Components
+@using MudBlazor
+@inherits ComponentBase
+@inject IThemeService ThemeService
+@inject IJSRuntime JSRuntime
+@inject RuntimeContext RuntimeContext
+@inject IMenuRegistry MenuRegistry
+@inject ILogger<HomePage> Logger
+@implements IDisposable
+
+<div class="home-container @(_themeClass)">
+    @if (_viewModel == null || _viewModel.IsLoading)
+    {
+        <div class="loading-container">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else
+    {
+        <!-- Header with Logo and Stats -->
+        <header class="header fade-in @(_loaded ? "visible" : "")">
+            <div class="logo-section">
+                <div class="logo-icon">M</div>
+                <span class="logo-text">MODULUS</span>
+            </div>
+            
+            <div class="stats-section">
+                <div class="stat-item">
+                    <div class="stat-value accent">@_viewModel!.InstalledModuleCount</div>
+                    <div class="stat-label">INSTALLED</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value success">@_viewModel!.RunningModuleCount</div>
+                    <div class="stat-label">RUNNING</div>
+                </div>
+                <div class="stat-item">
+                    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" 
+                                   Size="Size.Medium" 
+                                   Class="github-btn"
+                                   Href="@_viewModel!.GitHubUrl" 
+                                   Target="_blank"
+                                   title="View on GitHub" />
+                    <div class="stat-label">GitHub</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero fade-in delay-1 @(_loaded ? "visible" : "")">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span>Build Once,</span>
+                    <span class="gradient-text">Run Anywhere</span>
+                </h1>
+                <p class="hero-subtitle">
+                    A modern cross-platform modular app framework. Write once, deploy to Avalonia desktop and Blazor web with VS Extension-style developer experience.
+                </p>
+                <div class="hero-actions">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="btn-primary">Create Module</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" Class="btn-secondary">Browse Marketplace</MudButton>
+                </div>
+            </div>
+            
+            <div class="orbital-container">
+                <OrbitalSystem Size="300" CoreSize="80">
+                    <CoreContent>
+                        <span>M</span>
+                    </CoreContent>
+                </OrbitalSystem>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features fade-in delay-2 @(_loaded ? "visible" : "")">
+            <div class="section-title">FRAMEWORK FEATURES</div>
+            <div class="features-grid">
+                @foreach (var feature in _viewModel!.Features)
+                {
+                    <div class="glass-card">
+                        <div class="feature-icon">@feature.Icon</div>
+                        <div class="feature-title">@feature.Title</div>
+                        <div class="feature-desc">@feature.Description</div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- CLI Terminal Section -->
+        <section class="cli-section fade-in delay-3 @(_loaded ? "visible" : "")">
+            <div class="cli-terminal">
+                <div class="cli-header">
+                    <span class="cli-dot red"></span>
+                    <span class="cli-dot yellow"></span>
+                    <span class="cli-dot green"></span>
+                    <span class="cli-title">Terminal — Quick Start</span>
+                </div>
+                <div class="cli-content">
+                    @foreach (var cmd in _viewModel!.QuickStartCommands)
+                    {
+                        <div class="cli-line">
+                            <div class="cli-desc">@cmd.Description</div>
+                            <div class="cli-command-row">
+                                <span class="cli-prompt">$</span>
+                                <span class="cli-command">@cmd.Command</span>
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                               Size="Size.Small" 
+                                               Class="copy-btn"
+                                               OnClick="() => CopyToClipboard(cmd.Command)"
+                                               title="Copy command" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            Host: @_viewModel!.HostType
+        </footer>
+    }
+</div>
+
+@code {
+    private HomeViewModel? _viewModel;
+    private bool _loaded = false;
+    private string _themeClass = "dark-theme";
+    
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateThemeClass();
+        ThemeService.ThemeChanged += OnThemeChanged;
+        
+        var moduleId = ResolveModuleId("/home");
+        if (string.IsNullOrWhiteSpace(moduleId))
+        {
+            Logger.LogWarning("HomePage: could not resolve ModuleId for route '/home' from menu registry.");
+            return;
+        }
+
+        // Get ViewModel from module's CompositeServiceProvider
+        if (RuntimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+        {
+            try
+            {
+                // Create via ActivatorUtilities so constructor dependencies can come from both module + host services.
+                _viewModel = ActivatorUtilities.CreateInstance<HomeViewModel>(handle.CompositeServiceProvider);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HomePage: failed to create HomeViewModel for ModuleId={ModuleId}.", moduleId);
+            }
+        }
+        
+        if (_viewModel != null)
+        {
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+        }
+        else
+        {
+            Logger.LogWarning("HomePage: HomeViewModel not resolved for ModuleId={ModuleId}.", moduleId);
+        }
+    }
+
+    private string? ResolveModuleId(string route)
+    {
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, route, StringComparison.OrdinalIgnoreCase));
+
+        return menu?.ModuleId;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _viewModel != null && !_viewModel.IsLoading)
+        {
+            await Task.Delay(50);
+            _loaded = true;
+            StateHasChanged();
+        }
+    }
+    
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        UpdateThemeClass();
+        InvokeAsync(StateHasChanged);
+    }
+    
+    private void UpdateThemeClass()
+    {
+        _themeClass = ThemeService.CurrentTheme == AppTheme.Light ? "light-theme" : "dark-theme";
+    }
+    
+    private async Task CopyToClipboard(string text)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+        catch
+        {
+            // Ignore clipboard errors
+        }
+    }
+    
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+}

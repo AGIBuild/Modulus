@@ -1,4 +1,6 @@
 ﻿@using Modulus.UI.Abstractions
+@using Modulus.UI.Abstractions.Messages
+@using CommunityToolkit.Mvvm.Messaging
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Routing
 @using MudBlazor
@@ -196,6 +198,11 @@
         ThemeService.ThemeChanged += OnThemeChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
         ModuleStylesheetService.Changed += OnModuleStylesheetChanged;
+
+        // Keep navigation menu in sync with runtime installs/enables (menus are still sourced from DB only).
+        WeakReferenceMessenger.Default.Register<MenuRefreshMessage>(this, (_, _) => RefreshMenus());
+        WeakReferenceMessenger.Default.Register<MenuItemsAddedMessage>(this, (_, _) => RefreshMenus());
+        WeakReferenceMessenger.Default.Register<MenuItemsRemovedMessage>(this, (_, _) => RefreshMenus());
 
         // Don't assume dark mode here - will be set properly in OnAfterRenderAsync
         _isDarkMode = ThemeService.CurrentTheme == AppTheme.Dark;
@@ -395,10 +402,21 @@
         _errorBoundary?.Recover();
     }
 
+    private void RefreshMenus()
+    {
+        _ = InvokeAsync(() =>
+        {
+            _mainMenuItems = MenuRegistry.GetItems(MenuLocation.Main).ToList();
+            _bottomMenuItems = MenuRegistry.GetItems(MenuLocation.Bottom).ToList();
+            StateHasChanged();
+        });
+    }
+
     public void Dispose()
     {
         ThemeService.ThemeChanged -= OnThemeChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
         ModuleStylesheetService.Changed -= OnModuleStylesheetChanged;
+        WeakReferenceMessenger.Default.UnregisterAll(this);
     }
 }
