@@ -145,13 +145,45 @@ public sealed class DefaultManifestValidator : IManifestValidator
         // Host-specific Asset validation
         if (hostType != null)
         {
-            var hasHostPackage = packageAssets.Any(a =>
-                string.IsNullOrEmpty(a.TargetHost) || // No target = all hosts
-                string.Equals(a.TargetHost, hostType, StringComparison.OrdinalIgnoreCase));
+            // IMPORTANT:
+            // - TargetHost is used to differentiate host UI packages (Blazor/Avalonia).
+            // - A host-agnostic core package (TargetHost empty) MUST NOT satisfy the UI requirement.
+            var hostSpecificPackages = packageAssets
+                .Where(a =>
+                    !string.IsNullOrWhiteSpace(a.TargetHost) &&
+                    string.Equals(a.TargetHost, hostType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            if (!hasHostPackage)
+            if (hostSpecificPackages.Count == 0)
             {
-                errors.Add($"No Package asset available for host '{hostType}'.");
+                var declaredTargets = packageAssets
+                    .Select(a => a.TargetHost)
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var declaredTargetsText = declaredTargets.Count == 0
+                    ? "(none)"
+                    : string.Join(", ", declaredTargets);
+
+                errors.Add(
+                    $"No host-specific Package asset found for host '{hostType}'. " +
+                    $"Expected a '{ModulusAssetTypes.Package}' asset with TargetHost='{hostType}'. " +
+                    $"Declared TargetHost values: {declaredTargetsText}.");
+            }
+            else
+            {
+                // Ensure host-specific package entries have a usable path.
+                foreach (var a in hostSpecificPackages)
+                {
+                    if (string.IsNullOrWhiteSpace(a.Path))
+                    {
+                        errors.Add(
+                            $"Host-specific Package asset for host '{hostType}' is missing Path. " +
+                            $"Asset Type='{a.Type}', TargetHost='{a.TargetHost}'.");
+                    }
+                }
             }
         }
 

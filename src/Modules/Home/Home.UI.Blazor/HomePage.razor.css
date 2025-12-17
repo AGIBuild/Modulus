@@ -7,16 +7,8 @@
     margin: 0 auto;
 }
 
-/* Theme backgrounds */
-.home-container.dark-theme {
-    background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
-    color: #e8e8e8;
-}
-
-.home-container.light-theme {
-    background: linear-gradient(135deg, #E8DBFF 0%, #D4C4F0 50%, #C9B8E8 100%);
-    color: #1a1a1a;
-}
+/* Theme backgrounds
+   Intentionally NOT setting page background here. The host app owns the content background. */
 
 .loading-container {
     display: flex;

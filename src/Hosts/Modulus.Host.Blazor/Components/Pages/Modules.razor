@@ -10,7 +10,7 @@
 @if (!string.IsNullOrEmpty(ViewModel.ErrorMessage))
 {
     <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="@(() => ViewModel.ErrorMessage = null)">
-        @ViewModel.ErrorMessage
+        <MudText Typo="Typo.body2" Style="white-space: pre-line">@ViewModel.ErrorMessage</MudText>
     </MudAlert>
 }
 

@@ -195,21 +195,28 @@ public class MessageDialog : Window
         contentPanel.Children.Add(buttonPanel);
 
         // Message
+        // Use read-only TextBox so multi-line diagnostics render reliably and users can copy details.
+        var messageBox = new TextBox
+        {
+            Text = _message.Replace("\r\n", "\n"),
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 14,
+            Foreground = new SolidColorBrush(MessageTextColor),
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            MinHeight = 60
+        };
+
         var messageScroll = new ScrollViewer
         {
             MaxHeight = 200,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = messageBox
         };
 
-        var messageText = new TextBlock
-        {
-            Text = _message,
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 14,
-            Foreground = new SolidColorBrush(MessageTextColor)
-        };
-
-        messageScroll.Content = messageText;
         contentPanel.Children.Add(messageScroll);
 
         contentBorder.Child = contentPanel;
