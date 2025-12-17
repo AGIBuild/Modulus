@@ -4,13 +4,12 @@ Modulus 是一个现代化的跨平台插件式应用框架，帮助开发者快
 
 ## 🖼️ 界面截图
 
-| Home (Light) | Home (Dark) |
-|---|---|
-| ![Home (Light)](./docs/Images/home-light.jpg) | ![Home (Dark)](./docs/Images/home-dark.jpg) |
+### Home (Light)
+![Home (Light)](./docs/Images/home-light.jpg)
 
-### Module Manager
+### Home (Dark)
+![Home (Dark)](./docs/Images/home-dark.jpg) 
 
-![Module Manager](./docs/Images/module-manager.jpg)
 
 ## ✨ 特性亮点
 

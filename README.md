@@ -4,13 +4,12 @@ Modulus is a modern, cross-platform, plugin-based application framework designed
 
 ## 🖼️ Screenshots
 
-| Home (Light) | Home (Dark) |
-|---|---|
-| ![Home (Light)](./docs/Images/home-light.jpg) | ![Home (Dark)](./docs/Images/home-dark.jpg) |
+### Home (Light)
+![Home (Light)](./docs/Images/home-light.jpg)
 
-### Module Manager
+### Home (Dark)
+![Home (Dark)](./docs/Images/home-dark.jpg) 
 
-![Module Manager](./docs/Images/module-manager.jpg)
 
 ## ✨ Features
 
