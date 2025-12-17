@@ -35,48 +35,43 @@ Create a new Modulus module project with all necessary files and structure.
 ### Syntax
 
 ```bash
-modulus new <name> [options]
+modulus new [<template>] -n <name> [options]
 ```
 
 ### Arguments
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `<name>` | Yes | The module name (used for project and namespace) |
+| `<template>` | No | Template name: `module-avalonia` or `module-blazor` (default: `module-avalonia`) |
 
 ### Options
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| `--target` | `-t` | Target host: `avalonia` or `blazor` | (interactive) |
-| `--display-name` | `-d` | Display name shown in menus | Same as name |
-| `--description` | | Module description | Generated |
-| `--publisher` | `-p` | Publisher name | (interactive) |
-| `--icon` | `-i` | Menu icon (IconKind value) | `Folder` |
-| `--order` | `-o` | Menu order | `100` |
-| `--output` | | Output directory | Current directory |
+| `--name` | `-n` | The module name (used for project and namespace) | (required) |
+| `--output` | `-o` | Output directory | Current directory |
 | `--force` | `-f` | Overwrite existing directory | `false` |
+| `--list` | | List available templates and exit | `false` |
 
-### Available Icons
+### Templates
 
-Common icon values: `Folder`, `Home`, `Settings`, `Terminal`, `Code`, `Database`, `Cloud`, `User`, `Star`, `Heart`, `Search`, `Edit`, `Delete`, `Add`, `Check`, `Close`, `Info`, `Warning`, `Error`
-
-See the full list in `Modulus.UI.Abstractions.IconKind` enum.
+- `module-avalonia`: Modulus module (Avalonia)
+- `module-blazor`: Modulus module (Blazor)
 
 ### Examples
 
 ```bash
-# Interactive mode (prompts for all options)
-modulus new MyModule
+# List templates
+modulus new --list
 
-# Create Avalonia module with all options
-modulus new MyModule -t avalonia -d "My Module" -p "Acme Corp" -i Home
+# Create an Avalonia module (default template)
+modulus new -n MyModule
 
-# Create Blazor module in specific directory
-modulus new MyModule -t blazor --output ./src/Modules/
+# Create a Blazor module in a specific directory
+modulus new module-blazor -n MyModule -o ./src/Modules/
 
 # Overwrite existing project
-modulus new MyModule -t avalonia --force
+modulus new -n MyModule --force
 ```
 
 ### Generated Structure

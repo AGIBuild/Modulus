@@ -72,7 +72,7 @@ public partial class HomeViewModel : ViewModelBase
     /// </summary>
     public IReadOnlyList<CliCommand> QuickStartCommands { get; } =
     [
-        new("Create a new module", "modulus new MyModule -t avalonia"),
+        new("Create a new module", "modulus new -n MyModule"),
         new("Build all modules", "modulus build"),
         new("Run with hot reload", "modulus run --watch"),
         new("Install a module", "modulus install ./MyModule.modpkg")

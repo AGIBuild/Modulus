@@ -851,7 +851,7 @@ class BuildTasks : NukeBuild
             LogNormal("");
             LogNormal("To use these packages in module templates:");
             LogNormal("  1. Run 'nuke add-local-source' (if not done)");
-            LogNormal("  2. Run 'modulus new MyModule --target avalonia'");
+            LogNormal("  2. Run 'modulus new -n MyModule'");
             LogNormal("  3. dotnet restore will find packages from local source");
         });
 

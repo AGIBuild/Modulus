@@ -2,9 +2,7 @@
 
 ## Purpose
 模块项目模板规范，定义 Visual Studio 模板和 CLI 模板命令的行为。本规范覆盖生成文件结构、默认依赖、可编译性与清单有效性等最低保障，以避免模板漂移导致的创建失败或编译失败。
-
 ## Requirements
-
 ### Requirement: Visual Studio Project Template
 
 系统 SHALL 提供 Visual Studio 多项目模板，支持通过 VS 向导创建 Modulus 模块。
@@ -27,20 +25,28 @@
 
 ### Requirement: CLI Template Command
 
-系统 SHALL 提供 `modulus new` CLI 命令，用于创建 Modulus 模块。
+系统 SHALL 提供 `modulus new` CLI 命令，用于创建 Modulus 模块，并遵循 `dotnet new` 的最佳实践：以模板选择为主、以通用参数为辅，避免暴露模板内部元数据参数。
 
-#### Scenario: CLI 向导模式创建模块
+#### Scenario: Default template is module-avalonia
+- **WHEN** 用户执行 `modulus new -n MyModule`
+- **THEN** 系统使用 `module-avalonia` 模板创建模块
+- **AND** 创建包含 `MyModule.Core` 与 `MyModule.UI.Avalonia` 的解决方案
 
-- **WHEN** 用户执行 `modulus new MyModule`，且未提供 `--target` 参数
-- **THEN** 系统进入交互式向导模式
-- **AND** 提示用户选择目标 Host（Avalonia 或 Blazor）
-- **AND** 提示用户输入可选信息（显示名称、描述等）
+#### Scenario: Explicit template creates module
+- **WHEN** 用户执行 `modulus new module-blazor -n MyModule`
+- **THEN** 系统使用 `module-blazor` 模板创建模块
+- **AND** 创建包含 `MyModule.Core` 与 `MyModule.UI.Blazor` 的解决方案
 
-#### Scenario: CLI 批处理模式创建模块
+#### Scenario: List templates
+- **WHEN** 用户执行 `modulus new --list`
+- **THEN** 系统输出可用模板列表（至少包含 `module-avalonia` 与 `module-blazor`）
+- **AND** 命令退出码为 0
+- **AND** 不创建任何文件或目录
 
+#### Scenario: Removed legacy options are rejected
 - **WHEN** 用户执行 `modulus new MyModule --target avalonia`
-- **THEN** 系统直接使用提供的参数值创建项目
-- **AND** 未提供的可选参数使用默认值
+- **THEN** 系统提示参数不受支持（legacy options removed）
+- **AND** 命令退出码为非 0
 
 ### Requirement: Module Project Structure
 

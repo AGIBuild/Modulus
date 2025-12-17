@@ -20,19 +20,19 @@ public class FullLifecycleTests : IDisposable
     [Fact]
     public async Task FullLifecycle_Avalonia_CompletesSuccessfully()
     {
-        await RunFullLifecycleTest("AvaloniaLifecycle", "avalonia");
+        await RunFullLifecycleTest("AvaloniaLifecycle", template: null);
     }
     
     [Fact]
     public async Task FullLifecycle_Blazor_CompletesSuccessfully()
     {
-        await RunFullLifecycleTest("BlazorLifecycle", "blazor");
+        await RunFullLifecycleTest("BlazorLifecycle", template: "module-blazor");
     }
     
-    private async Task RunFullLifecycleTest(string moduleName, string target)
+    private async Task RunFullLifecycleTest(string moduleName, string? template)
     {
         // Step 1: Create new module
-        var newResult = await _runner.NewAsync(moduleName, target);
+        var newResult = await _runner.NewAsync(moduleName, template: template, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         Assert.Contains($"Created {moduleName}.sln", newResult.StandardOutput);
         
@@ -84,7 +84,7 @@ public class FullLifecycleTests : IDisposable
         var moduleName = "ReinstallTest";
         
         // Create and pack module
-        var newResult = await _runner.NewAsync(moduleName, "avalonia");
+        var newResult = await _runner.NewAsync(moduleName, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);
@@ -123,7 +123,7 @@ public class FullLifecycleTests : IDisposable
         var moduleName = "UpdateTest";
         
         // Create, pack and install version 1
-        var newResult = await _runner.NewAsync(moduleName, "avalonia");
+        var newResult = await _runner.NewAsync(moduleName, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);

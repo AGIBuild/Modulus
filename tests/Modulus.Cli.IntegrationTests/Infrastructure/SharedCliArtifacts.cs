@@ -19,13 +19,13 @@ internal static class SharedCliArtifacts
     private static CliTestContext? _context;
     private static CliRunner? _runner;
 
-    public static Task<SharedModuleArtifact> GetAvaloniaAsync() => GetAsync("SharedAvalonia", "avalonia");
-    public static Task<SharedModuleArtifact> GetAvaloniaAAsync() => GetAsync("SharedModuleA", "avalonia");
-    public static Task<SharedModuleArtifact> GetAvaloniaBAsync() => GetAsync("SharedModuleB", "avalonia");
+    public static Task<SharedModuleArtifact> GetAvaloniaAsync() => GetAsync("SharedAvalonia", "module-avalonia");
+    public static Task<SharedModuleArtifact> GetAvaloniaAAsync() => GetAsync("SharedModuleA", "module-avalonia");
+    public static Task<SharedModuleArtifact> GetAvaloniaBAsync() => GetAsync("SharedModuleB", "module-avalonia");
 
-    public static async Task<SharedModuleArtifact> GetAsync(string moduleName, string target)
+    public static async Task<SharedModuleArtifact> GetAsync(string moduleName, string template)
     {
-        var key = $"{target}:{moduleName}";
+        var key = $"{template}:{moduleName}";
         if (Cache.TryGetValue(key, out var existing))
             return existing;
 
@@ -39,11 +39,11 @@ internal static class SharedCliArtifacts
             _runner ??= new CliRunner(_context);
 
             // Ensure output isolation per artifact to avoid accidental cross-pickup.
-            var artifactOutputDir = Path.Combine(_context.OutputDirectory, $"{moduleName}-{target}");
+            var artifactOutputDir = Path.Combine(_context.OutputDirectory, $"{moduleName}-{template}");
             Directory.CreateDirectory(artifactOutputDir);
 
             // Generate (or overwrite) module in the shared context.
-            var newResult = await _runner.NewAsync(moduleName, target, outputPath: _context.WorkingDirectory, force: true);
+            var newResult = await _runner.NewAsync(moduleName, template: template, outputPath: _context.WorkingDirectory, force: true);
             if (!newResult.IsSuccess)
                 throw new InvalidOperationException($"[SharedCliArtifacts:new] Failed: {newResult.CombinedOutput}");
 
@@ -73,7 +73,7 @@ internal static class SharedCliArtifacts
             Directory.CreateDirectory(extractedDir);
             ZipFile.ExtractToDirectory(packagePath, extractedDir);
 
-            var artifact = new SharedModuleArtifact(moduleName, target, moduleDir, packagePath, extractedDir);
+            var artifact = new SharedModuleArtifact(moduleName, template, moduleDir, packagePath, extractedDir);
             Cache[key] = artifact;
             return artifact;
         }
@@ -86,7 +86,7 @@ internal static class SharedCliArtifacts
 
 internal sealed record SharedModuleArtifact(
     string ModuleName,
-    string Target,
+    string Template,
     string ModuleDir,
     string PackagePath,
     string ExtractedDir);

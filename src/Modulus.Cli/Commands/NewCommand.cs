@@ -1,103 +1,134 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using Modulus.Cli.Templates;
 
 namespace Modulus.Cli.Commands;
 
 /// <summary>
-/// New command: modulus new &lt;name&gt; [options]
+/// New command: modulus new [<template>] -n <name> [options]
 /// </summary>
 public static class NewCommand
 {
+    private const string DefaultTemplate = "module-avalonia";
+
+    private static readonly (string Name, string Description)[] Templates =
+    [
+        ("module-avalonia", "Modulus module (Avalonia)"),
+        ("module-blazor", "Modulus module (Blazor)"),
+    ];
+
     public static Command Create()
     {
-        var nameArg = new Argument<string>("name") { Description = "Module name (PascalCase, e.g., MyModule)" };
+        var templateArg = new Argument<string?>("template")
+        {
+            Description = "Template name (module-avalonia or module-blazor)",
+            Arity = ArgumentArity.ZeroOrOne
+        };
 
-        var targetOption = new Option<string?>("--target", "-t") { Description = "Target host: avalonia or blazor" };
-        var displayNameOption = new Option<string?>("--display-name", "-d") { Description = "Display name shown in menus" };
-        var descriptionOption = new Option<string?>("--description") { Description = "Module description" };
-        var publisherOption = new Option<string?>("--publisher", "-p") { Description = "Publisher name" };
-        var iconOption = new Option<string?>("--icon", "-i") { Description = "Menu icon (e.g., Apps, Terminal, Settings)" };
-        var orderOption = new Option<int?>("--order", "-o") { Description = "Menu order (default: 100)" };
-        var outputOption = new Option<string?>("--output") { Description = "Output directory (default: current directory)" };
+        var nameOption = new Option<string?>("--name", "-n") { Description = "Module name (PascalCase, e.g., MyModule)" };
+        var outputOption = new Option<string?>("--output", "-o") { Description = "Output directory (default: current directory)" };
         var forceOption = new Option<bool>("--force", "-f") { Description = "Overwrite existing directory without prompting" };
+        var listOption = new Option<bool>("--list") { Description = "List available templates and exit" };
 
         var command = new Command("new", "Create a new Modulus module project");
-        command.Arguments.Add(nameArg);
-        command.Options.Add(targetOption);
-        command.Options.Add(displayNameOption);
-        command.Options.Add(descriptionOption);
-        command.Options.Add(publisherOption);
-        command.Options.Add(iconOption);
-        command.Options.Add(orderOption);
+        command.Arguments.Add(templateArg);
+        command.Options.Add(nameOption);
         command.Options.Add(outputOption);
         command.Options.Add(forceOption);
+        command.Options.Add(listOption);
+
+        // Validate template when provided
+        templateArg.Validators.Add(argumentResult =>
+        {
+            var template = argumentResult.GetValueOrDefault<string?>();
+            if (string.IsNullOrWhiteSpace(template))
+            {
+                return;
+            }
+
+            if (!Templates.Any(t => string.Equals(t.Name, template, StringComparison.OrdinalIgnoreCase)))
+            {
+                argumentResult.AddError($"Unknown template '{template}'. Use --list to see available templates.");
+            }
+        });
+
+        // Validate: --name is required unless --list is specified
+        command.Validators.Add(commandResult =>
+        {
+            var isList = commandResult.GetValue(listOption);
+            var name = commandResult.GetValue(nameOption);
+
+            if (!isList && string.IsNullOrWhiteSpace(name))
+            {
+                commandResult.AddError("Missing required option --name. Use --list to list templates.");
+            }
+        });
+
+        // Validate module name format when provided
+        nameOption.Validators.Add(optionResult =>
+        {
+            var name = optionResult.GetValueOrDefault<string?>();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            if (!IsValidModuleName(name))
+            {
+                optionResult.AddError("Module name must be PascalCase (e.g., MyModule)");
+            }
+        });
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var name = parseResult.GetValue(nameArg)!;
-            var target = parseResult.GetValue(targetOption);
-            var displayName = parseResult.GetValue(displayNameOption);
-            var description = parseResult.GetValue(descriptionOption);
-            var publisher = parseResult.GetValue(publisherOption);
-            var icon = parseResult.GetValue(iconOption);
-            var order = parseResult.GetValue(orderOption);
+            var template = parseResult.GetValue(templateArg);
+            var name = parseResult.GetValue(nameOption);
             var output = parseResult.GetValue(outputOption);
             var force = parseResult.GetValue(forceOption);
+            var list = parseResult.GetValue(listOption);
 
-            await HandleAsync(name, target, displayName, description, publisher, icon, order, output, force);
+            await HandleAsync(template, name, output, force, list);
         });
 
         return command;
     }
 
     private static async Task HandleAsync(
-        string name,
-        string? target,
-        string? displayName,
-        string? description,
-        string? publisher,
-        string? icon,
-        int? order,
+        string? template,
+        string? name,
         string? output,
-        bool force)
+        bool force,
+        bool list)
     {
-        // Validate module name
-        if (!IsValidModuleName(name))
+        if (list)
         {
-            Console.WriteLine("Error: Module name must be PascalCase (e.g., MyModule)");
+            PrintTemplates();
             return;
         }
 
-        // Determine if we need interactive mode
-        var isInteractive = !Console.IsInputRedirected && string.IsNullOrEmpty(target);
+        // Command validator guarantees name is present and valid unless --list is specified.
+        name ??= "";
 
-        // Get target host
+        // Determine template/target
+        var effectiveTemplate = string.IsNullOrWhiteSpace(template) ? DefaultTemplate : template;
         TargetHostType targetHost;
-        if (!string.IsNullOrEmpty(target))
+        switch (effectiveTemplate)
         {
-            if (!TryParseTarget(target, out targetHost))
-            {
-                Console.WriteLine("Error: Invalid target. Use 'avalonia' or 'blazor'.");
+            case "module-avalonia":
+                targetHost = TargetHostType.Avalonia;
+                break;
+            case "module-blazor":
+                targetHost = TargetHostType.Blazor;
+                break;
+            default:
+                // Should be unreachable due to FromAmong validator.
+                Console.Error.WriteLine($"Error: Unknown template '{effectiveTemplate}'.");
                 return;
-            }
-        }
-        else if (isInteractive)
-        {
-            targetHost = PromptForTarget();
-        }
-        else
-        {
-            Console.WriteLine("Error: --target is required in non-interactive mode.");
-            return;
         }
 
-        // Collect other options with defaults or prompts
-        displayName ??= isInteractive ? PromptWithDefault("Display name", name) : name;
-        description ??= isInteractive ? PromptWithDefault("Description", "A Modulus module.") : "A Modulus module.";
-        publisher ??= isInteractive ? PromptWithDefault("Publisher", "Modulus Team") : "Modulus Team";
-        icon ??= isInteractive ? PromptWithDefault("Icon", "Folder") : "Folder";
-        order ??= isInteractive ? int.Parse(PromptWithDefault("Menu order", "100")) : 100;
-        output ??= Directory.GetCurrentDirectory();
+        // Resolve output directory
+        output = string.IsNullOrWhiteSpace(output) ? Directory.GetCurrentDirectory() : output;
+        output = Path.GetFullPath(output);
 
         // Check output directory
         var moduleDir = Path.Combine(output, name);
@@ -105,6 +136,12 @@ public static class NewCommand
         {
             if (!force)
             {
+                if (Console.IsInputRedirected)
+                {
+                    Console.Error.WriteLine($"Error: Directory '{moduleDir}' already exists. Use --force to overwrite in non-interactive mode.");
+                    return;
+                }
+
                 Console.Write($"Directory '{moduleDir}' already exists. Overwrite? [y/N]: ");
                 var response = Console.ReadLine()?.Trim().ToLowerInvariant();
                 if (response != "y" && response != "yes")
@@ -120,18 +157,18 @@ public static class NewCommand
         var context = new ModuleTemplateContext
         {
             ModuleName = name,
-            DisplayName = displayName,
-            Description = description,
-            Publisher = publisher,
+            DisplayName = name,
+            Description = "A Modulus module.",
+            Publisher = "Modulus Team",
             ModuleId = Guid.NewGuid().ToString("D"),
-            Icon = icon,
-            Order = order.Value,
+            Icon = "Folder",
+            Order = 100,
             TargetHost = targetHost
         };
 
         // Generate project
         Console.WriteLine();
-        Console.WriteLine($"Creating Modulus module '{name}' ({targetHost})...");
+        Console.WriteLine($"Creating Modulus module '{name}' ({effectiveTemplate})...");
         Console.WriteLine();
 
         var engine = new TemplateEngine(context);
@@ -158,36 +195,12 @@ public static class NewCommand
         return name.All(c => char.IsLetterOrDigit(c));
     }
 
-    private static bool TryParseTarget(string target, out TargetHostType result)
+    private static void PrintTemplates()
     {
-        result = target.ToLowerInvariant() switch
+        Console.WriteLine("Available templates:");
+        foreach (var (name, description) in Templates)
         {
-            "avalonia" => TargetHostType.Avalonia,
-            "blazor" => TargetHostType.Blazor,
-            _ => default
-        };
-        return target.ToLowerInvariant() is "avalonia" or "blazor";
-    }
-
-    private static TargetHostType PromptForTarget()
-    {
-        Console.WriteLine("Select target host:");
-        Console.WriteLine("  1. Avalonia (Desktop)");
-        Console.WriteLine("  2. Blazor (Web)");
-        Console.Write("Enter choice [1]: ");
-
-        var input = Console.ReadLine()?.Trim();
-        return input switch
-        {
-            "2" => TargetHostType.Blazor,
-            _ => TargetHostType.Avalonia
-        };
-    }
-
-    private static string PromptWithDefault(string prompt, string defaultValue)
-    {
-        Console.Write($"{prompt} [{defaultValue}]: ");
-        var input = Console.ReadLine()?.Trim();
-        return string.IsNullOrEmpty(input) ? defaultValue : input;
+            Console.WriteLine($"  {name,-15} {description}");
+        }
     }
 }

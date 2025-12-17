@@ -24,7 +24,7 @@ public class ModuleLoadTests : IDisposable
     {
         // Arrange - Create and pack a module
         var moduleName = "LoadableAvalonia";
-        var newResult = await _runner.NewAsync(moduleName, "avalonia");
+        var newResult = await _runner.NewAsync(moduleName, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);
@@ -50,7 +50,7 @@ public class ModuleLoadTests : IDisposable
     {
         // Arrange
         var moduleName = "LoadableBlazor";
-        var newResult = await _runner.NewAsync(moduleName, "blazor");
+        var newResult = await _runner.NewAsync(moduleName, template: "module-blazor", force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);
@@ -76,7 +76,7 @@ public class ModuleLoadTests : IDisposable
     {
         // Arrange
         var moduleName = "ManifestCheck";
-        var newResult = await _runner.NewAsync(moduleName, "avalonia");
+        var newResult = await _runner.NewAsync(moduleName, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);
@@ -111,7 +111,7 @@ public class ModuleLoadTests : IDisposable
     {
         // Arrange
         var moduleName = "DllCheck";
-        var newResult = await _runner.NewAsync(moduleName, "avalonia");
+        var newResult = await _runner.NewAsync(moduleName, force: true);
         Assert.True(newResult.IsSuccess, $"[new] Failed: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, moduleName);

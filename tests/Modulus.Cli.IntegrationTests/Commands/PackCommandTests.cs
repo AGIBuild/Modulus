@@ -21,7 +21,7 @@ public class PackCommandTests : IDisposable
     public async Task Pack_ValidModule_CreatesPackage()
     {
         // Arrange - Create and build a module
-        var newResult = await _runner.NewAsync("PackTest", "avalonia");
+        var newResult = await _runner.NewAsync("PackTest", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "PackTest");
@@ -43,7 +43,7 @@ public class PackCommandTests : IDisposable
     public async Task Pack_WithNoBuild_UsesExistingBuild()
     {
         // Arrange - Create, build, then pack with --no-build
-        var newResult = await _runner.NewAsync("NoBuildPack", "avalonia");
+        var newResult = await _runner.NewAsync("NoBuildPack", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "NoBuildPack");
@@ -64,7 +64,7 @@ public class PackCommandTests : IDisposable
     public async Task Pack_PackageContentsValid()
     {
         // Arrange
-        var newResult = await _runner.NewAsync("ContentCheck", "avalonia");
+        var newResult = await _runner.NewAsync("ContentCheck", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "ContentCheck");
@@ -102,7 +102,7 @@ public class PackCommandTests : IDisposable
     public async Task Pack_BlazorModule_CreatesPackage()
     {
         // Arrange
-        var newResult = await _runner.NewAsync("BlazorPack", "blazor");
+        var newResult = await _runner.NewAsync("BlazorPack", template: "module-blazor", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "BlazorPack");
