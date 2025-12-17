@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.Extensions.Logging;
 using UiNavigationEventArgs = Modulus.UI.Abstractions.NavigationEventArgs;
 using UiNavigationOptions = Modulus.UI.Abstractions.NavigationOptions;
 using UiNavigationContext = Modulus.UI.Abstractions.NavigationContext;
@@ -19,6 +20,7 @@ public class BlazorNavigationService : INavigationService
 {
     private readonly NavigationManager _navigationManager;
     private readonly IMenuRegistry _menuRegistry;
+    private readonly ILogger<BlazorNavigationService> _logger;
     private readonly List<INavigationGuard> _guards = new();
     private readonly ConcurrentDictionary<string, object> _singletonViewModels = new();
     private readonly object _guardsLock = new();
@@ -31,10 +33,12 @@ public class BlazorNavigationService : INavigationService
 
     public BlazorNavigationService(
         NavigationManager navigationManager,
-        IMenuRegistry menuRegistry)
+        IMenuRegistry menuRegistry,
+        ILogger<BlazorNavigationService> logger)
     {
         _navigationManager = navigationManager;
         _menuRegistry = menuRegistry;
+        _logger = logger;
 
         // Track navigation changes
         _navigationManager.LocationChanged += OnLocationChanged;
@@ -45,6 +49,8 @@ public class BlazorNavigationService : INavigationService
         var uri = new Uri(e.Location);
         var previousKey = _currentNavigationKey;
         _currentNavigationKey = uri.AbsolutePath;
+
+        // Intentionally no logs for normal navigation; only Warning/Error logs for abnormal behavior are emitted elsewhere.
 
         Navigated?.Invoke(this, new UiNavigationEventArgs
         {
@@ -57,6 +63,8 @@ public class BlazorNavigationService : INavigationService
     {
         options ??= new UiNavigationOptions();
 
+        // Intentionally no logs for normal navigation requests; only Warning/Error logs for abnormal behavior are emitted.
+
         var context = new UiNavigationContext
         {
             FromKey = _currentNavigationKey,
@@ -67,6 +75,10 @@ public class BlazorNavigationService : INavigationService
         // Evaluate guards
         if (!await EvaluateGuardsAsync(context))
         {
+            _logger.LogWarning(
+                "Navigation blocked by guard(s): {From} -> {To}",
+                context.FromKey ?? "(null)",
+                context.ToKey ?? "(null)");
             return false;
         }
 

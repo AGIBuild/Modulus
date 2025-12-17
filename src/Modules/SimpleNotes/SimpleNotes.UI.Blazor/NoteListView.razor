@@ -1,5 +1,5 @@
 @using SimpleNotes.Core.Application.ViewModels
-@inject NoteListViewModel ViewModel
+@implements IDisposable
 
 <div class="simple-notes">
     <h3>@ViewModel.Title</h3>
@@ -29,13 +29,23 @@
 </div>
 
 @code {
+    [Parameter]
+    public NoteListViewModel ViewModel { get; set; } = default!;
+
     protected override void OnInitialized()
     {
-        // Subscribe to property changes if needed, or use a base component that supports INotifyPropertyChanged
-        ViewModel.PropertyChanged += (s, e) => StateHasChanged();
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         base.OnInitialized();
     }
     
-    // Dispose subscription? Usually yes.
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+    }
 }
 

@@ -41,9 +41,6 @@ public partial class ModuleListViewModel : ObservableObject
     private bool _isLoading;
 
     [ObservableProperty]
-    private string _importPath = string.Empty;
-
-    [ObservableProperty]
     private string? _errorMessage;
 
     [ObservableProperty]
@@ -137,8 +134,20 @@ public partial class ModuleListViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
+            foreach (var vm in Modules)
+            {
+                if (vm is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
             Modules.Clear();
             var dbModules = await _moduleRepository.GetAllAsync();
+            // Hide the host pseudo-module from Installed Modules list.
+            // Host is still stored in DB for menu projection but should not appear as an installed module.
+            dbModules = dbModules
+                .Where(m => !string.Equals(m.Path, "built-in", StringComparison.OrdinalIgnoreCase))
+                .ToList();
             
             foreach (var dbModule in dbModules)
             {
@@ -178,6 +187,11 @@ public partial class ModuleListViewModel : ObservableObject
     public async Task ToggleModuleAsync(ModuleViewModel moduleVm)
     {
         if (moduleVm == null) return;
+        if (moduleVm.IsSystem)
+        {
+            ErrorMessage = $"Built-in module '{moduleVm.Name}' cannot be enabled/disabled.";
+            return;
+        }
         ErrorMessage = null;
 
         try
@@ -272,32 +286,6 @@ public partial class ModuleListViewModel : ObservableObject
         catch (Exception ex)
         {
             ErrorMessage = $"Error removing module: {ex.Message}";
-        }
-    }
-
-    [RelayCommand]
-    public async Task ImportModuleAsync()
-    {
-        if (string.IsNullOrWhiteSpace(ImportPath)) return;
-        ErrorMessage = null;
-        SuccessMessage = null;
-
-        var path = ImportPath;
-        if (Directory.Exists(path))
-        {
-            path = Path.Combine(path, SystemModuleInstaller.VsixManifestFileName);
-        }
-
-        try
-        {
-            await _moduleInstaller.RegisterDevelopmentModuleAsync(path, hostType: _runtimeContext.HostType);
-            ImportPath = string.Empty;
-            await RefreshModulesAsync();
-            SuccessMessage = "Module imported successfully.";
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Import failed: {ex.Message}";
         }
     }
 
@@ -425,7 +413,7 @@ public partial class ModuleListViewModel : ObservableObject
     }
 }
 
-public partial class ModuleViewModel : ObservableObject
+public partial class ModuleViewModel : ObservableObject, IDisposable
 {
     public ModuleEntity Entity { get; }
     public RuntimeModule? RuntimeModule { get; }
@@ -434,6 +422,10 @@ public partial class ModuleViewModel : ObservableObject
     {
         Entity = entity;
         RuntimeModule = runtimeModule;
+        if (RuntimeModule != null)
+        {
+            RuntimeModule.StateChanged += OnRuntimeModuleStateChanged;
+        }
     }
 
     public string Id => Entity.Id;
@@ -443,7 +435,7 @@ public partial class ModuleViewModel : ObservableObject
     public bool IsSystem => Entity.IsSystem;
     public string MenuLocation => Entity.MenuLocation.ToString();
     
-    public bool IsRunning => RuntimeModule?.State == RuntimeModuleState.Active;
+    public bool IsRunning => RuntimeModule?.State is RuntimeModuleState.Loaded or RuntimeModuleState.Active;
     
     public string StatusText 
     {
@@ -451,6 +443,7 @@ public partial class ModuleViewModel : ObservableObject
         {
             if (Entity.State == DataModuleState.MissingFiles) return "Missing Files";
             if (Entity.State == DataModuleState.Disabled) return "Disabled";
+            if (RuntimeModule?.State == RuntimeModuleState.Error) return "Error";
             if (IsRunning) return "Running";
             return "Stopped";
         }
@@ -466,4 +459,19 @@ public partial class ModuleViewModel : ObservableObject
 
     public bool ShowToggle => !IsSystem; 
     public bool CanRemove => !IsSystem;
+
+    private void OnRuntimeModuleStateChanged(object? sender, RuntimeModuleStateChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(IsRunning));
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(StatusColor));
+    }
+
+    public void Dispose()
+    {
+        if (RuntimeModule != null)
+        {
+            RuntimeModule.StateChanged -= OnRuntimeModuleStateChanged;
+        }
+    }
 }

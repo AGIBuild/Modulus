@@ -36,14 +36,21 @@ public class HomeStatisticsService : IHomeStatisticsService
         var compositeProvider = handle.CompositeServiceProvider;
 
         // Get installed modules from repository
-        int installedCount = 0;
+        var installedCount = 0;
         using (var scope = compositeProvider.CreateScope())
         {
             var moduleRepo = scope.ServiceProvider.GetService<IModuleRepository>();
             if (moduleRepo != null)
             {
                 var modules = await moduleRepo.GetAllAsync(cancellationToken);
-                installedCount = modules.Count;
+                // "Installed" includes bundled modules but excludes the host pseudo-module entry (Path == "built-in").
+                installedCount = modules.Count(m => !string.Equals(m.Path, "built-in", StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                // If host services aren't bound yet (or repo isn't available in this scope),
+                // fall back to the runtime module descriptors we do have.
+                installedCount = _runtimeContext.Modules.Count;
             }
         }
 
@@ -107,7 +114,7 @@ public class HomeStatisticsService : IHomeStatisticsService
 
         return new HomeStatistics
         {
-            InstalledModuleCount = 0,
+            InstalledModuleCount = _runtimeContext.Modules.Count,
             RunningModuleCount = runningModules.Count,
             FrameworkVersion = frameworkVersion,
             HostType = _runtimeContext.HostType ?? "Unknown",

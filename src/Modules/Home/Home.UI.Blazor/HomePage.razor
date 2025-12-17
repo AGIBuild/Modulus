@@ -4,6 +4,7 @@
 @using Modulus.Core.Runtime
 @using Modulus.Core.Architecture
 @using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Logging
 @using Modulus.UI.Abstractions
 @using Modulus.UI.Blazor.Components
 @using MudBlazor
@@ -11,6 +12,8 @@
 @inject IThemeService ThemeService
 @inject IJSRuntime JSRuntime
 @inject RuntimeContext RuntimeContext
+@inject IMenuRegistry MenuRegistry
+@inject ILogger<HomePage> Logger
 @implements IDisposable
 
 <div class="home-container @(_themeClass)">
@@ -131,24 +134,49 @@
     private bool _loaded = false;
     private string _themeClass = "dark-theme";
     
-    // Home module ID from extension.vsixmanifest
-    private const string HomeModuleId = "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f";
-    
     protected override async Task OnInitializedAsync()
     {
         UpdateThemeClass();
         ThemeService.ThemeChanged += OnThemeChanged;
         
-        // Get ViewModel from module's CompositeServiceProvider
-        if (RuntimeContext.TryGetModuleHandle(HomeModuleId, out var handle) && handle != null)
+        var moduleId = ResolveModuleId("/home");
+        if (string.IsNullOrWhiteSpace(moduleId))
         {
-            _viewModel = handle.CompositeServiceProvider.GetService<HomeViewModel>();
+            Logger.LogWarning("HomePage: could not resolve ModuleId for route '/home' from menu registry.");
+            return;
+        }
+
+        // Get ViewModel from module's CompositeServiceProvider
+        if (RuntimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+        {
+            try
+            {
+                // Create via ActivatorUtilities so constructor dependencies can come from both module + host services.
+                _viewModel = ActivatorUtilities.CreateInstance<HomeViewModel>(handle.CompositeServiceProvider);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HomePage: failed to create HomeViewModel for ModuleId={ModuleId}.", moduleId);
+            }
         }
         
         if (_viewModel != null)
         {
             await _viewModel.LoadCommand.ExecuteAsync(null);
         }
+        else
+        {
+            Logger.LogWarning("HomePage: HomeViewModel not resolved for ModuleId={ModuleId}.", moduleId);
+        }
+    }
+
+    private string? ResolveModuleId(string route)
+    {
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, route, StringComparison.OrdinalIgnoreCase));
+
+        return menu?.ModuleId;
     }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)

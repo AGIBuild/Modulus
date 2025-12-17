@@ -23,7 +23,7 @@ public class ContentHost : TemplatedControl
     /// Defines the <see cref="ContentCornerRadius"/> property.
     /// </summary>
     public static readonly StyledProperty<CornerRadius> ContentCornerRadiusProperty =
-        AvaloniaProperty.Register<ContentHost, CornerRadius>(nameof(ContentCornerRadius), new CornerRadius(12, 0, 0, 0));
+        AvaloniaProperty.Register<ContentHost, CornerRadius>(nameof(ContentCornerRadius), new CornerRadius(3, 0, 0, 0));
 
     /// <summary>
     /// Defines the <see cref="ContentPadding"/> property.

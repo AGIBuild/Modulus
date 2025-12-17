@@ -143,27 +143,17 @@ public partial class ShellViewModel : ViewModelBase,
         foreach (var item in _menuRegistry.GetItems(MenuLocation.Main))
         {
             MainMenuItems.Add(item);
-            _logger.LogDebug("Added Main menu: {Id}, DisplayName={Name}, NavigationKey={NavKey}",
-                item.Id, item.DisplayName, item.NavigationKey ?? "null");
         }
 
         BottomMenuItems.Clear();
         foreach (var item in _menuRegistry.GetItems(MenuLocation.Bottom))
         {
             BottomMenuItems.Add(item);
-            _logger.LogDebug("Added Bottom menu: {Id}, DisplayName={Name}, NavigationKey={NavKey}",
-                item.Id, item.DisplayName, item.NavigationKey ?? "null");
         }
-        
-        _logger.LogInformation("Menu refreshed: {MainCount} main items, {BottomCount} bottom items",
-            MainMenuItems.Count, BottomMenuItems.Count);
     }
 
     partial void OnSelectedMainMenuItemChanged(MenuItem? value)
     {
-        _logger.LogInformation("OnSelectedMainMenuItemChanged: value={DisplayName}, NavigationKey={NavKey}, _isNavigating={IsNav}",
-            value?.DisplayName ?? "null", value?.NavigationKey ?? "null", _isNavigating);
-            
         if (value != null && !_isNavigating)
         {
             // Clear bottom selection
@@ -190,28 +180,25 @@ public partial class ShellViewModel : ViewModelBase,
 
     private async Task NavigateToMenuItemAsync(MenuItem item)
     {
-        _logger.LogInformation("NavigateToMenuItemAsync: {DisplayName}, IsEnabled={IsEnabled}, NavigationKey={NavKey}",
-            item.DisplayName, item.IsEnabled, item.NavigationKey ?? "null");
-            
         // Skip if disabled
         if (!item.IsEnabled)
         {
-            _logger.LogInformation("Navigation skipped: item is disabled");
             return;
         }
 
         // Skip groups without navigation key
         if (string.IsNullOrEmpty(item.NavigationKey))
         {
-            _logger.LogInformation("Navigation skipped: no NavigationKey, toggling expansion");
             // Toggle expansion for groups
             item.IsExpanded = !item.IsExpanded;
             return;
         }
 
-        _logger.LogInformation("Calling NavigationService.NavigateToAsync({NavKey})", item.NavigationKey);
         var result = await _navigationService.NavigateToAsync(item.NavigationKey);
-        _logger.LogInformation("NavigateToAsync result: {Result}", result);
+        if (!result)
+        {
+            _logger.LogWarning("Navigation failed or blocked: NavigationKey={NavKey}", item.NavigationKey);
+        }
     }
 
     private void OnNavigationViewChanged(object? view, string title)
@@ -226,7 +213,6 @@ public partial class ShellViewModel : ViewModelBase,
     public void NavigateTo<TViewModel>() where TViewModel : class
     {
         var vmName = typeof(TViewModel).FullName;
-        _logger.LogInformation("NavigateTo<{VMType}>: looking for NavigationKey={NavKey}", typeof(TViewModel).Name, vmName);
         
         _isNavigating = true;
         try
@@ -237,8 +223,10 @@ public partial class ShellViewModel : ViewModelBase,
             var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
             var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
             
-            _logger.LogInformation("NavigateTo: Found mainItem={MainFound}, bottomItem={BottomFound}",
-                mainItem?.DisplayName ?? "null", bottomItem?.DisplayName ?? "null");
+            if (mainItem == null && bottomItem == null && !string.IsNullOrWhiteSpace(vmName))
+            {
+                _logger.LogWarning("NavigateTo: no menu item found for NavigationKey={NavKey}", vmName);
+            }
 
             if (mainItem != null)
             {
@@ -262,8 +250,6 @@ public partial class ShellViewModel : ViewModelBase,
     /// </summary>
     public void NavigateToRoute(string navigationKey)
     {
-        _logger.LogInformation("NavigateToRoute: {NavKey}", navigationKey);
-        
         _isNavigating = true;
         try
         {
@@ -273,8 +259,10 @@ public partial class ShellViewModel : ViewModelBase,
             var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
             var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
             
-            _logger.LogInformation("NavigateToRoute: Found mainItem={MainFound}, bottomItem={BottomFound}",
-                mainItem?.DisplayName ?? "null", bottomItem?.DisplayName ?? "null");
+            if (mainItem == null && bottomItem == null && !string.IsNullOrWhiteSpace(navigationKey))
+            {
+                _logger.LogWarning("NavigateToRoute: no menu item found for NavigationKey={NavKey}", navigationKey);
+            }
 
             if (mainItem != null)
             {

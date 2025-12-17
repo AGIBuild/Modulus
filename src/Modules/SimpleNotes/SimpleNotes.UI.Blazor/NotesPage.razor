@@ -1,0 +1,63 @@
+@page "/notes"
+@using System
+@using System.Linq
+@using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Logging
+@using Modulus.Core.Runtime
+@using Modulus.UI.Abstractions
+@using SimpleNotes.Core.Application.ViewModels
+@inherits ComponentBase
+@inject RuntimeContext RuntimeContext
+@inject IMenuRegistry MenuRegistry
+@inject ILogger<NotesPage> Logger
+
+@if (_viewModel == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <NoteListView ViewModel="_viewModel" />
+}
+
+@code {
+    private NoteListViewModel? _viewModel;
+
+    protected override void OnInitialized()
+    {
+        var moduleId = ResolveModuleId("/notes");
+        if (string.IsNullOrWhiteSpace(moduleId))
+        {
+            Logger.LogWarning("NotesPage: could not resolve ModuleId for route '/notes' from menu registry.");
+            return;
+        }
+
+        if (RuntimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+        {
+            try
+            {
+                // Create via ActivatorUtilities so constructor dependencies can come from both module + host services.
+                _viewModel = ActivatorUtilities.CreateInstance<NoteListViewModel>(handle.CompositeServiceProvider);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "NotesPage: failed to create NoteListViewModel for ModuleId={ModuleId}.", moduleId);
+            }
+        }
+        else
+        {
+            Logger.LogWarning("NotesPage: module handle not found for ModuleId={ModuleId}.", moduleId);
+        }
+    }
+
+    private string? ResolveModuleId(string route)
+    {
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, route, StringComparison.OrdinalIgnoreCase));
+
+        return menu?.ModuleId;
+    }
+}
+
+

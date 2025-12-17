@@ -17,7 +17,7 @@
 
     <!-- GlassCard Default Style -->
     <Style Selector="controls|GlassCard">
-        <Setter Property="Background" Value="#1EFFFFFF"/>
+        <Setter Property="Background" Value="#07FFFFFF"/>
         <Setter Property="BorderBrush" Value="#20ffffff"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="16"/>

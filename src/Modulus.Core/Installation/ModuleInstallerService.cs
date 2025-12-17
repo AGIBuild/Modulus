@@ -199,21 +199,6 @@ public class ModuleInstallerService : IModuleInstallerService
         _logger.LogInformation("Module {ModuleId} installed successfully.", identity.Id);
     }
 
-    public Task RegisterDevelopmentModuleAsync(string manifestPath, string? hostType = null, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(manifestPath))
-            throw new ArgumentException("Manifest path is required.", nameof(manifestPath));
-
-        var dir = Directory.Exists(manifestPath)
-            ? manifestPath
-            : Path.GetDirectoryName(manifestPath);
-
-        if (string.IsNullOrWhiteSpace(dir))
-            throw new ArgumentException("Invalid manifest path.", nameof(manifestPath));
-
-        return InstallFromPathAsync(dir, isSystem: false, hostType: hostType, cancellationToken);
-    }
-
     public async Task<ModuleInstallResult> InstallFromPackageAsync(string packagePath, bool overwrite = false, string? hostType = null, CancellationToken cancellationToken = default)
     {
         // Validate package file exists

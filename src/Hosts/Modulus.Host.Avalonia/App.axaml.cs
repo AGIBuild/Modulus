@@ -96,26 +96,12 @@ public partial class App : Application
             // Module Directories - explicit module installation paths
             var moduleDirectories = new System.Collections.Generic.List<ModuleDirectory>();
 
-#if DEBUG
-            // Development: Load from artifacts/Modules/ (populated by nuke build-module)
-            var solutionRoot = FindSolutionRoot(AppContext.BaseDirectory);
-            if (solutionRoot != null)
-            {
-                var artifactsModules = Path.Combine(solutionRoot, "artifacts", "Modules");
-                if (Directory.Exists(artifactsModules))
-                {
-                    // User modules from artifacts - NOT system modules
-                    moduleDirectories.Add(new ModuleDirectory(artifactsModules, IsSystem: false));
-                }
-            }
-#else
-            // Production: Load from {AppBaseDir}/Modules/ 
+            // Built-in modules: ALWAYS load from {AppBaseDir}/Modules/ (dev/prod consistent)
             var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
             if (Directory.Exists(appModules))
             {
                 moduleDirectories.Add(new ModuleDirectory(appModules, IsSystem: true));
             }
-#endif
 
             // User-installed modules (for runtime installation)
             var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
@@ -179,8 +165,17 @@ public partial class App : Application
             var shellVm = Services.GetRequiredService<ShellViewModel>();
             mainWindow.DataContext = shellVm;
             
-            // Navigate to default view (Home)
-            shellVm.NavigateToRoute("Modulus.Modules.Home.ViewModels.HomeViewModel");
+            // Navigate to default view: first main menu item by Order (typically Home).
+            // Avoid hard-coded legacy NavigationKey.
+            var menuRegistry = Services.GetRequiredService<IMenuRegistry>();
+            var defaultMenu = menuRegistry.GetItems(MenuLocation.Main)
+                .OrderBy(m => m.Order)
+                .FirstOrDefault();
+
+            if (defaultMenu != null && !string.IsNullOrWhiteSpace(defaultMenu.NavigationKey))
+            {
+                shellVm.NavigateToRoute(defaultMenu.NavigationKey);
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -196,20 +191,4 @@ public partial class App : Application
         var current = RequestedThemeVariant;
         RequestedThemeVariant = current == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     }
-    
-#if DEBUG
-    private static string? FindSolutionRoot(string startPath)
-    {
-        var dir = new DirectoryInfo(startPath);
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Modulus.sln")))
-            {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
-        }
-        return null;
-    }
-#endif
 }

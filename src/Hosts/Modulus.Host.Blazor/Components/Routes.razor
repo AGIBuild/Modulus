@@ -1,14 +1,30 @@
 ﻿@using System.Reflection
+@using System.Reflection.Metadata
+@using System.Reflection.PortableExecutable
+@using System.IO
+@using System.Text
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.Extensions.Logging
+@using Modulus.UI.Abstractions
+@using BlazorNavContext = Microsoft.AspNetCore.Components.Routing.NavigationContext
 @using Modulus.Core.Runtime
+@using Modulus.Host.Blazor.Components.Diagnostics
 @inject IModulusApplication ModulusApp
+@inject ILogger<Routes> Logger
+@inject NavigationManager NavigationManager
+@inject IMenuRegistry MenuRegistry
+@inject RuntimeContext RuntimeContext
 
-<Router AppAssembly="typeof(MauiProgram).Assembly" AdditionalAssemblies="@_additionalAssemblies">
+<Router AppAssembly="typeof(MauiProgram).Assembly" AdditionalAssemblies="@_additionalAssemblies" OnNavigateAsync="OnNavigateAsync">
     <Found Context="routeData">
+        <RouteDiagnostics RouteData="routeData" />
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>
         <LayoutView Layout="typeof(Layout.MainLayout)">
+             <NotFoundDiagnostics />
              <p>Sorry, there's nothing at this address.</p>
         </LayoutView>
     </NotFound>
@@ -16,25 +32,262 @@
 
 @code {
     private IEnumerable<Assembly> _additionalAssemblies = Enumerable.Empty<Assembly>();
+    private string? _additionalAssembliesSignature;
 
     protected override void OnInitialized()
     {
-        // Get all loaded module assemblies that contain Blazor routable components
-        _additionalAssemblies = ModulusApp.LoadedModuleAssemblies
-            .Where(HasRoutableComponents)
-            .ToList();
+        UpdateAdditionalAssembliesIfChanged(logDetails: true);
+
+        // No logs for normal startup; warnings will be emitted for abnormal states only.
     }
 
-    private static bool HasRoutableComponents(Assembly assembly)
+    private void UpdateAdditionalAssembliesIfChanged(bool logDetails)
     {
+        var current = ModulusApp.LoadedModuleAssemblies
+            .Where(a => GetRoutesFromAssembly(a).Count > 0)
+            .ToList();
+
+        var signature = string.Join("|", current.Select(a => a.FullName).OrderBy(x => x, StringComparer.Ordinal));
+        if (string.Equals(_additionalAssembliesSignature, signature, StringComparison.Ordinal))
+            return;
+
+        _additionalAssembliesSignature = signature;
+        _additionalAssemblies = current;
+
+        // No logs for normal assembly updates; warnings will be emitted for abnormal states only.
+
+        // Log per-assembly route inventory for diagnosis.
+        // Includes host assembly routes as baseline (AppAssembly) and module routes (AdditionalAssemblies).
+        var allAssemblies = new List<Assembly> { typeof(MauiProgram).Assembly };
+        allAssemblies.AddRange(_additionalAssemblies);
+
+        var allRouteTemplates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var asm in allAssemblies.Distinct())
+        {
+            var routes = GetRoutesFromAssembly(asm);
+            foreach (var (template, _) in routes)
+            {
+                allRouteTemplates.Add(template);
+            }
+        }
+
+        // Compare projected menu routes against known routable templates to highlight missing content pages.
+        var menuItems = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .ToList();
+
+        foreach (var item in menuItems)
+        {
+            var route = item.NavigationKey;
+            if (string.IsNullOrWhiteSpace(route)) continue;
+
+            if (!allRouteTemplates.Contains(route))
+            {
+                var moduleId = item.ModuleId;
+                string moduleState = "(unknown)";
+                string moduleAssemblies = "(none)";
+                string routerAssemblies = "(none)";
+
+                if (!string.IsNullOrWhiteSpace(moduleId))
+                {
+                    if (RuntimeContext.TryGetModule(moduleId, out var runtimeModule) && runtimeModule != null)
+                    {
+                        moduleState = runtimeModule.State.ToString();
+                    }
+
+                    if (RuntimeContext.TryGetModuleHandle(moduleId, out var handle) && handle != null)
+                    {
+                        moduleAssemblies = string.Join(
+                            ", ",
+                            handle.Assemblies.Select(a => a.GetName().Name).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct());
+                    }
+
+                    routerAssemblies = string.Join(
+                        ", ",
+                        _additionalAssemblies.Select(a => a.GetName().Name).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct());
+                }
+
+                Logger.LogWarning(
+                    "Menu route has no matching @page route: {Route}. MenuId={MenuId} ModuleId={ModuleId} ModuleState={ModuleState} ModuleAssemblies=[{ModuleAssemblies}] RouterAdditionalAssemblies=[{RouterAssemblies}]",
+                    route,
+                    item.Id,
+                    item.ModuleId ?? "(none)",
+                    moduleState,
+                    moduleAssemblies,
+                    routerAssemblies);
+            }
+        }
+    }
+
+    private static string? GetAttributeTypeFullName(MetadataReader reader, CustomAttribute attribute)
+    {
+        var ctor = attribute.Constructor;
+
+        if (ctor.Kind == HandleKind.MemberReference)
+        {
+            var mr = reader.GetMemberReference((MemberReferenceHandle)ctor);
+            return GetTypeFullName(reader, mr.Parent);
+        }
+
+        if (ctor.Kind == HandleKind.MethodDefinition)
+        {
+            var md = reader.GetMethodDefinition((MethodDefinitionHandle)ctor);
+            return GetTypeFullName(reader, md.GetDeclaringType());
+        }
+
+        return null;
+    }
+
+    private static string? GetTypeFullName(MetadataReader reader, EntityHandle handle)
+    {
+        switch (handle.Kind)
+        {
+            case HandleKind.TypeReference:
+            {
+                var tr = reader.GetTypeReference((TypeReferenceHandle)handle);
+                var ns = reader.GetString(tr.Namespace);
+                var name = reader.GetString(tr.Name);
+                return string.IsNullOrEmpty(ns) ? name : $"{ns}.{name}";
+            }
+            case HandleKind.TypeDefinition:
+            {
+                var td = reader.GetTypeDefinition((TypeDefinitionHandle)handle);
+                var ns = reader.GetString(td.Namespace);
+                var name = reader.GetString(td.Name);
+                return string.IsNullOrEmpty(ns) ? name : $"{ns}.{name}";
+            }
+            default:
+                return null;
+        }
+    }
+
+    private Task OnNavigateAsync(BlazorNavContext args)
+    {
+        // If modules were enabled/disabled since last render, refresh AdditionalAssemblies so Router can resolve new routes.
+        UpdateAdditionalAssembliesIfChanged(logDetails: false);
+
+        var path = "/" + (args.Path?.TrimStart('/') ?? string.Empty);
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, path, StringComparison.OrdinalIgnoreCase));
+
+        return Task.CompletedTask;
+    }
+
+    private sealed record RouteEntry(string Template, string PageType);
+
+    private List<(string Template, string PageType)> GetRoutesFromAssembly(Assembly assembly)
+    {
+        var routes = new List<(string Template, string PageType)>();
         try
         {
-            return assembly.GetTypes()
-                .Any(t => t.GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.RouteAttribute), true).Any());
+            if (string.IsNullOrWhiteSpace(assembly.Location))
+                return routes;
+
+            using var stream = File.OpenRead(assembly.Location);
+            using var peReader = new PEReader(stream, PEStreamOptions.LeaveOpen);
+            if (!peReader.HasMetadata) return routes;
+
+            var reader = peReader.GetMetadataReader();
+            foreach (var typeHandle in reader.TypeDefinitions)
+            {
+                var typeDef = reader.GetTypeDefinition(typeHandle);
+                var typeName = GetTypeDisplayName(reader, typeHandle);
+
+                foreach (var caHandle in typeDef.GetCustomAttributes())
+                {
+                    var ca = reader.GetCustomAttribute(caHandle);
+                    var attrType = GetAttributeTypeFullName(reader, ca);
+                    if (!string.Equals(attrType, "Microsoft.AspNetCore.Components.RouteAttribute", StringComparison.Ordinal))
+                        continue;
+
+                    if (TryReadRouteTemplate(reader, ca, out var template) && !string.IsNullOrWhiteSpace(template))
+                    {
+                        routes.Add((template, typeName));
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignore - inventory is best-effort diagnostics
+        }
+
+        return routes;
+    }
+
+    private static string GetTypeDisplayName(MetadataReader reader, TypeDefinitionHandle typeHandle)
+    {
+        var td = reader.GetTypeDefinition(typeHandle);
+        var ns = reader.GetString(td.Namespace);
+        var name = reader.GetString(td.Name);
+        return string.IsNullOrEmpty(ns) ? name : $"{ns}.{name}";
+    }
+
+    private static bool TryReadRouteTemplate(MetadataReader reader, CustomAttribute attribute, out string? template)
+    {
+        template = null;
+        try
+        {
+            var blob = reader.GetBlobBytes(attribute.Value);
+            if (blob.Length < 3) return false;
+
+            // Prolog 0x0001
+            if (blob[0] != 0x01 || blob[1] != 0x00) return false;
+
+            var idx = 2;
+            if (idx >= blob.Length) return false;
+
+            // SerString
+            if (blob[idx] == 0xFF)
+            {
+                template = null;
+                return true;
+            }
+
+            if (!TryReadCompressedUInt32(blob, ref idx, out var byteLen)) return false;
+            if (idx + byteLen > blob.Length) return false;
+
+            template = Encoding.UTF8.GetString(blob, idx, (int)byteLen);
+            return true;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static bool TryReadCompressedUInt32(byte[] data, ref int idx, out uint value)
+    {
+        value = 0;
+        if (idx >= data.Length) return false;
+
+        var b0 = data[idx++];
+        if ((b0 & 0x80) == 0)
+        {
+            value = b0;
+            return true;
+        }
+
+        if ((b0 & 0xC0) == 0x80)
+        {
+            if (idx >= data.Length) return false;
+            var b1 = data[idx++];
+            value = (uint)(((b0 & 0x3F) << 8) | b1);
+            return true;
+        }
+
+        if ((b0 & 0xE0) == 0xC0)
+        {
+            if (idx + 2 >= data.Length) return false;
+            var b1 = data[idx++];
+            var b2 = data[idx++];
+            var b3 = data[idx++];
+            value = (uint)(((b0 & 0x1F) << 24) | (b1 << 16) | (b2 << 8) | b3);
+            return true;
+        }
+
+        return false;
     }
 }

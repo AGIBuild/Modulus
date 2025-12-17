@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EchoPlugin.Core\EchoPlugin.Core.csproj" />
+    <ProjectReference Include="..\..\..\Modulus.Core\Modulus.Core.csproj" />
     <ProjectReference Include="..\..\..\Modulus.Sdk\Modulus.Sdk.csproj" />
     <ProjectReference Include="..\..\..\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
   </ItemGroup>

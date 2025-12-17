@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -37,9 +38,6 @@ public partial class ModuleListViewModel : ViewModelBase
     private CancellationTokenSource? _detailLoadCts;
 
     public ObservableCollection<ModuleViewModel> Modules { get; } = new();
-
-    [ObservableProperty]
-    private string _importPath = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FilteredModules))]
@@ -133,6 +131,13 @@ public partial class ModuleListViewModel : ViewModelBase
     [RelayCommand]
     private async Task RefreshModulesAsync()
     {
+        foreach (var vm in Modules)
+        {
+            if (vm is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
         Modules.Clear();
         
         var dbModules = await _moduleRepository.GetAllAsync();
@@ -172,6 +177,13 @@ public partial class ModuleListViewModel : ViewModelBase
     {
         // System modules can be disabled but not uninstalled
         if (moduleVm == null) return;
+        if (moduleVm.IsSystem)
+        {
+            await (_notificationService?.ShowErrorAsync(
+                "Not Supported",
+                $"Built-in module '{moduleVm.Name}' cannot be enabled/disabled.") ?? Task.CompletedTask);
+            return;
+        }
 
         try
         {
@@ -311,40 +323,6 @@ public partial class ModuleListViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    private async Task ImportModuleAsync()
-    {
-        if (string.IsNullOrWhiteSpace(ImportPath)) return;
-        
-        // ImportPath could be a directory or extension.vsixmanifest
-        var path = ImportPath;
-        if (File.Exists(path) && Path.GetFileName(path) == SystemModuleInstaller.VsixManifestFileName)
-        {
-            // ok
-        }
-        else if (Directory.Exists(path))
-        {
-            path = Path.Combine(path, SystemModuleInstaller.VsixManifestFileName);
-        }
-        else
-        {
-            _notificationService?.ShowErrorAsync("Error", "Invalid path.");
-            return;
-        }
-
-        try
-        {
-            await _moduleInstaller.RegisterDevelopmentModuleAsync(path, hostType: _runtimeContext.HostType);
-            ImportPath = string.Empty;
-            await RefreshModulesAsync();
-            _notificationService?.ShowInfoAsync("Success", "Module imported.");
-        }
-        catch (Exception ex)
-        {
-            _notificationService?.ShowErrorAsync("Error", ex.Message);
-        }
-    }
-
     /// <summary>
     /// Installs a module from a .modpkg package file.
     /// Called from View after file picker selection.
@@ -426,7 +404,7 @@ public partial class ModuleListViewModel : ViewModelBase
     }
 }
 
-public partial class ModuleViewModel : ObservableObject
+public partial class ModuleViewModel : ObservableObject, IDisposable
 {
     public ModuleEntity Entity { get; }
     public RuntimeModule? RuntimeModule { get; }
@@ -435,6 +413,10 @@ public partial class ModuleViewModel : ObservableObject
     {
         Entity = entity;
         RuntimeModule = runtimeModule;
+        if (RuntimeModule != null)
+        {
+            RuntimeModule.StateChanged += OnRuntimeModuleStateChanged;
+        }
     }
 
     public string Id => Entity.Id;
@@ -453,7 +435,7 @@ public partial class ModuleViewModel : ObservableObject
     /// <summary>
     /// Whether the module is actually loaded and running in the runtime.
     /// </summary>
-    public bool IsLoaded => RuntimeModule?.State == RuntimeModuleState.Active;
+    public bool IsLoaded => RuntimeModule?.State is RuntimeModuleState.Loaded or RuntimeModuleState.Active;
     
     // Status Logic
     public string StatusText 
@@ -462,8 +444,9 @@ public partial class ModuleViewModel : ObservableObject
         {
             if (Entity.State == DataModuleState.MissingFiles) return "Missing Files";
             if (Entity.State == DataModuleState.Disabled || !Entity.IsEnabled) return "Disabled";
+            if (RuntimeModule?.State == RuntimeModuleState.Error) return "Error";
             if (IsLoaded) return "Running";
-            return "Ready"; // Enabled but not yet loaded
+            return "Ready"; // Enabled but not yet loaded/initialized
         }
     }
 
@@ -480,10 +463,32 @@ public partial class ModuleViewModel : ObservableObject
     /// Whether the toggle button should be shown.
     /// All modules can be toggled (disabled/enabled), including system modules.
     /// </summary>
-    public bool ShowToggle => true;
+    public bool ShowToggle => !IsSystem;
+
+    public bool ShowEnableButton => ShowToggle && !IsEnabled;
+    public bool ShowDisableButton => ShowToggle && IsEnabled;
     
     /// <summary>
     /// Whether this module can be removed (only non-system modules).
     /// </summary>
     public bool CanRemove => !IsSystem;
+
+    private void OnRuntimeModuleStateChanged(object? sender, RuntimeModuleStateChangedEventArgs e)
+    {
+        // Runtime transitions can happen off the UI thread (e.g., during initialization).
+        Dispatcher.UIThread.Post(() =>
+        {
+            OnPropertyChanged(nameof(IsLoaded));
+            OnPropertyChanged(nameof(StatusText));
+            OnPropertyChanged(nameof(StatusColor));
+        });
+    }
+
+    public void Dispose()
+    {
+        if (RuntimeModule != null)
+        {
+            RuntimeModule.StateChanged -= OnRuntimeModuleStateChanged;
+        }
+    }
 }

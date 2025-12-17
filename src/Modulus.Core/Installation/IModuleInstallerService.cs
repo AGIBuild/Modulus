@@ -16,13 +16,6 @@ public interface IModuleInstallerService
     Task InstallFromPathAsync(string packagePath, bool isSystem = false, string? hostType = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Registers a development module that exists on disk but is not in the database.
-    /// </summary>
-    /// <param name="manifestPath">Path to extension.vsixmanifest or its containing directory.</param>
-    /// <param name="hostType">Current host type for host-aware validation and menu projection.</param>
-    Task RegisterDevelopmentModuleAsync(string manifestPath, string? hostType = null, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Installs a module from a .modpkg package file.
     /// Extracts the package, copies to user modules directory, and registers in database.
     /// </summary>

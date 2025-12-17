@@ -1,0 +1,45 @@
+@using System
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.Extensions.Logging
+@using Modulus.UI.Abstractions
+@inject ILogger<RouteDiagnostics> Logger
+@inject NavigationManager NavigationManager
+@inject IMenuRegistry MenuRegistry
+
+@code {
+    [Parameter, EditorRequired]
+    public RouteData RouteData { get; set; } = default!;
+
+    private string? _lastKey;
+
+    protected override void OnParametersSet()
+    {
+        var path = new Uri(NavigationManager.Uri).AbsolutePath;
+        // "/" is an expected redirect entry route in this host; it is not part of the menu mapping.
+        if (string.Equals(path, "/", StringComparison.Ordinal))
+            return;
+
+        var pageType = RouteData?.PageType;
+        var key = $"{path}|{pageType?.AssemblyQualifiedName}";
+        if (string.Equals(_lastKey, key, StringComparison.Ordinal))
+            return;
+        _lastKey = key;
+
+        var menu = MenuRegistry.GetItems(MenuLocation.Main)
+            .Concat(MenuRegistry.GetItems(MenuLocation.Bottom))
+            .FirstOrDefault(i => string.Equals(i.NavigationKey, path, StringComparison.OrdinalIgnoreCase));
+
+        // Only log non-expected/abnormal cases. Normal route resolution is intentionally silent.
+        if (menu == null)
+        {
+            Logger.LogWarning(
+                "Route resolved but no menu mapping found: {Path} => {PageType} (Assembly={Assembly})",
+                path,
+                pageType?.FullName ?? "(null)",
+                pageType?.Assembly.GetName().Name ?? "(null)");
+        }
+    }
+}
+
+
