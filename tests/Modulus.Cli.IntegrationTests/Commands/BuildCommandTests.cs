@@ -20,7 +20,7 @@ public class BuildCommandTests : IDisposable
     public async Task Build_ValidModule_Succeeds()
     {
         // Arrange - Create a new module first
-        var newResult = await _runner.NewAsync("BuildTest", "avalonia");
+        var newResult = await _runner.NewAsync("BuildTest", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "BuildTest");
@@ -37,7 +37,7 @@ public class BuildCommandTests : IDisposable
     public async Task Build_Debug_Configuration_Succeeds()
     {
         // Arrange
-        var newResult = await _runner.NewAsync("DebugBuild", "avalonia");
+        var newResult = await _runner.NewAsync("DebugBuild", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "DebugBuild");
@@ -82,7 +82,7 @@ public class BuildCommandTests : IDisposable
     public async Task Build_Verbose_ShowsDetails()
     {
         // Arrange
-        var newResult = await _runner.NewAsync("VerboseBuild", "avalonia");
+        var newResult = await _runner.NewAsync("VerboseBuild", force: true);
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "VerboseBuild");

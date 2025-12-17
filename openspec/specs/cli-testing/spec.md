@@ -2,9 +2,7 @@
 
 ## Purpose
 CLI 集成测试规范，定义 CLI 命令的测试环境隔离、数据库一致性和全生命周期验证。本规范同时规定测试目录布局、数据清理策略与失败诊断输出要求，以确保测试可重复与可追溯。
-
 ## Requirements
-
 ### Requirement: CLI Test Environment Isolation
 
 CLI 集成测试 SHALL 在隔离环境中运行，不影响真实用户数据。
@@ -39,38 +37,32 @@ CLI 集成测试 SHALL 在隔离环境中运行，不影响真实用户数据。
 CLI 集成测试 SHALL 覆盖所有 CLI 命令的基本功能。
 
 #### Scenario: New command creates module
-
-- **WHEN** 执行 `modulus new TestModule -t avalonia --force`
+- **WHEN** 执行 `modulus new -n TestModule --force`
 - **THEN** 创建包含正确结构的模块目录
 - **AND** 生成 `.sln`、`.csproj`、`extension.vsixmanifest` 等文件
 
 #### Scenario: Build command compiles module
-
 - **WHEN** 在模块目录执行 `modulus build`
 - **THEN** 编译成功并生成 DLL 文件
 - **AND** 返回退出码 0
 
 #### Scenario: Pack command creates package
-
 - **WHEN** 在模块目录执行 `modulus pack`
 - **THEN** 生成 `.modpkg` 文件
 - **AND** 包内包含 `extension.vsixmanifest` 和模块 DLL
 
 #### Scenario: Install command registers module
-
 - **WHEN** 执行 `modulus install <path>.modpkg`
 - **THEN** 解压包到模块目录
 - **AND** 在数据库中注册模块
 - **AND** `modulus list` 显示已安装模块
 
 #### Scenario: Uninstall command removes module
-
 - **WHEN** 执行 `modulus uninstall <name> --force`
 - **THEN** 从数据库中删除模块记录
 - **AND** `modulus list` 不再显示该模块
 
 #### Scenario: List command shows installed modules
-
 - **WHEN** 已安装模块后执行 `modulus list`
 - **THEN** 显示模块名称和版本
 - **WHEN** 执行 `modulus list --verbose`

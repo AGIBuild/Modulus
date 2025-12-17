@@ -72,7 +72,7 @@ dotnet new install Agibuild.Modulus.Templates
 
 ```bash
 # 创建新模块
-modulus new MyModule -t avalonia
+modulus new -n MyModule
 
 # 或使用 dotnet new
 dotnet new modulus-avalonia -n MyModule
@@ -108,7 +108,7 @@ Modulus 提供全面的命令行工具用于模块开发和管理。
 
 | 命令 | 描述 |
 |------|------|
-| `modulus new <name>` | 创建新模块项目 |
+| `modulus new` | 创建新模块项目 |
 | `modulus build` | 在当前目录编译模块 |
 | `modulus pack` | 编译并打包为 .modpkg |
 | `modulus install <source>` | 安装模块 |
@@ -118,13 +118,11 @@ Modulus 提供全面的命令行工具用于模块开发和管理。
 ### 创建模块
 
 ```bash
-modulus new MyModule [options]
+modulus new [<template>] -n MyModule [options]
 
 选项:
-  -t, --target <avalonia|blazor>  目标主机平台
-  -d, --display-name <name>       菜单中显示的名称
-  -p, --publisher <name>          发布者名称
-  -i, --icon <icon>               菜单图标
+  -n, --name <name>               模块名称 (PascalCase)
+  -o, --output <dir>              输出目录
   --force                         覆盖已有文件
 ```
 
@@ -165,7 +163,7 @@ modulus list --verbose
 ### 1. 创建项目
 
 ```bash
-modulus new MyExtension -t avalonia
+modulus new -n MyExtension
 ```
 
 这将创建：

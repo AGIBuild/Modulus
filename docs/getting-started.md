@@ -60,7 +60,7 @@ dotnet run --project src/Hosts/Modulus.Host.Avalonia
 Using the CLI:
 
 ```bash
-modulus new MyFirstModule -t avalonia
+modulus new -n MyFirstModule
 cd MyFirstModule
 ```
 

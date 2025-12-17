@@ -20,7 +20,7 @@ public class NewCommandTests : IDisposable
     public async Task New_Avalonia_CreatesModuleSuccessfully()
     {
         // Act
-        var result = await _runner.NewAsync("TestModule", "avalonia");
+        var result = await _runner.NewAsync("TestModule");
         
         // Assert
         Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
@@ -41,7 +41,7 @@ public class NewCommandTests : IDisposable
     public async Task New_Blazor_CreatesModuleSuccessfully()
     {
         // Act
-        var result = await _runner.NewAsync("BlazorModule", "blazor");
+        var result = await _runner.NewAsync("BlazorModule", template: "module-blazor");
         
         // Assert
         Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
@@ -63,7 +63,7 @@ public class NewCommandTests : IDisposable
         var outputDir = _context.CreateSubDirectory("custom-output");
         
         // Act
-        var result = await _runner.NewAsync("CustomModule", "avalonia", outputPath: outputDir);
+        var result = await _runner.NewAsync("CustomModule", outputPath: outputDir);
         
         // Assert
         Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
@@ -82,7 +82,7 @@ public class NewCommandTests : IDisposable
         _context.CreateFile("ExistingModule/old-file.txt", "old content");
         
         // Act
-        var result = await _runner.NewAsync("ExistingModule", "avalonia", force: true);
+        var result = await _runner.NewAsync("ExistingModule", force: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
@@ -96,24 +96,22 @@ public class NewCommandTests : IDisposable
     public async Task New_InvalidName_Fails()
     {
         // Act - lowercase name is invalid
-        var result = await _runner.NewAsync("invalidname", "avalonia");
+        var result = await _runner.NewAsync("invalidname");
         
         // Assert
-        // The CLI currently doesn't return non-zero exit code for this,
-        // so we check for error message in output
+        Assert.False(result.IsSuccess, "Command should fail for invalid module name");
         Assert.Contains("PascalCase", result.CombinedOutput);
     }
     
     [Fact]
-    public async Task New_InvalidTarget_Fails()
+    public async Task New_InvalidTemplate_Fails()
     {
         // Act
-        var result = await _runner.NewAsync("TestModule", "invalid-target");
+        var result = await _runner.NewAsync("TestModule", template: "invalid-template");
         
         // Assert
-        // The CLI currently doesn't return non-zero exit code for this,
-        // so we check for error message in output
-        Assert.Contains("Invalid target", result.CombinedOutput);
+        Assert.False(result.IsSuccess, "Command should fail for invalid template");
+        Assert.Contains("module-avalonia", result.CombinedOutput);
     }
     
     public void Dispose()

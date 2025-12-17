@@ -72,7 +72,7 @@ dotnet new install Agibuild.Modulus.Templates
 
 ```bash
 # Create a new module
-modulus new MyModule -t avalonia
+modulus new -n MyModule
 
 # Or use dotnet new
 dotnet new modulus-avalonia -n MyModule
@@ -108,7 +108,7 @@ Modulus provides a comprehensive command-line tool for module development and ma
 
 | Command | Description |
 |---------|-------------|
-| `modulus new <name>` | Create a new module project |
+| `modulus new` | Create a new module project |
 | `modulus build` | Build the module in current directory |
 | `modulus pack` | Build and package as .modpkg |
 | `modulus install <source>` | Install a module |
@@ -118,13 +118,11 @@ Modulus provides a comprehensive command-line tool for module development and ma
 ### Create Module
 
 ```bash
-modulus new MyModule [options]
+modulus new [<template>] -n MyModule [options]
 
 Options:
-  -t, --target <avalonia|blazor>  Target host platform
-  -d, --display-name <name>       Display name in menus
-  -p, --publisher <name>          Publisher name
-  -i, --icon <icon>               Menu icon
+  -n, --name <name>               Module name (PascalCase)
+  -o, --output <dir>              Output directory
   --force                         Overwrite existing
 ```
 
@@ -165,7 +163,7 @@ modulus list --verbose
 ### 1. Create Projects
 
 ```bash
-modulus new MyExtension -t avalonia
+modulus new -n MyExtension
 ```
 
 This creates:

@@ -7,7 +7,7 @@
             <controls:CliTerminal Title="Terminal — Quick Start">
                 <controls:CliTerminal.Commands>
                     <x:Array Type="{x:Type x:String}">
-                        <x:String>modulus new MyModule -t avalonia</x:String>
+                        <x:String>modulus new -n MyModule</x:String>
                         <x:String>modulus build</x:String>
                     </x:Array>
                 </controls:CliTerminal.Commands>

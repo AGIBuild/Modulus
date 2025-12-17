@@ -95,11 +95,16 @@ public class CliRunner
     /// </summary>
     public Task<CliResult> NewAsync(
         string moduleName, 
-        string target, 
+        string? template = null,
         string? outputPath = null,
         bool force = false)
     {
-        var args = $"new {moduleName} --target {target}";
+        var args = "new";
+        if (!string.IsNullOrWhiteSpace(template))
+        {
+            args += $" {template}";
+        }
+        args += $" --name {moduleName}";
         if (!string.IsNullOrEmpty(outputPath))
         {
             args += $" --output \"{outputPath}\"";
