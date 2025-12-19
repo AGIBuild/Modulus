@@ -404,7 +404,7 @@ public partial class ModuleListViewModel : ViewModelBase
     }
 }
 
-public partial class ModuleViewModel : ObservableObject, IDisposable
+public partial class ModuleViewModel : ViewModelBase, IDisposable
 {
     public ModuleEntity Entity { get; }
     public RuntimeModule? RuntimeModule { get; }
@@ -413,6 +413,7 @@ public partial class ModuleViewModel : ObservableObject, IDisposable
     {
         Entity = entity;
         RuntimeModule = runtimeModule;
+        Title = Entity.DisplayName;
         if (RuntimeModule != null)
         {
             RuntimeModule.StateChanged += OnRuntimeModuleStateChanged;

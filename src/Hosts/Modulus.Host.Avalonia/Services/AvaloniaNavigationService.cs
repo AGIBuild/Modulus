@@ -65,6 +65,11 @@ public class AvaloniaNavigationService : INavigationService
         {
             return await NavigateToAsyncCore(navigationKey, options);
         }
+        catch (ViewModelConventionViolationException)
+        {
+            // Hard convention: do not swallow; fail fast so module developers fix their ViewModels.
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "NavigateToAsync threw exception for {NavigationKey}", navigationKey);
@@ -76,10 +81,14 @@ public class AvaloniaNavigationService : INavigationService
     {
         options ??= new NavigationOptions();
 
+        // Find the MenuItem by stable id (preferred) or by legacy target (back-compat)
+        var menuItem = FindMenuItemById(navigationKey) ?? FindMenuItemByTarget(navigationKey);
+        var stableKey = menuItem?.Id ?? navigationKey;
+
         var context = new NavigationContext
         {
             FromKey = _currentNavigationKey,
-            ToKey = navigationKey,
+            ToKey = stableKey,
             Options = options
         };
 
@@ -90,8 +99,21 @@ public class AvaloniaNavigationService : INavigationService
             return false;
         }
 
-        // Find the MenuItem to determine instance mode and module ID
-        var menuItem = FindMenuItem(navigationKey);
+        // ViewModel-level interception (current)
+        ViewModelBase? fromVm = null;
+        if (_currentViewModel != null)
+        {
+            fromVm = _currentViewModel as ViewModelBase
+                ?? throw ViewModelConventionViolationException.ForType("Current ViewModel", _currentViewModel.GetType());
+        }
+
+        var canLeave = fromVm == null ? true : await fromVm.CanNavigateFromAsync(context);
+        if (!canLeave)
+        {
+            _logger.LogWarning("Navigation blocked by current ViewModel: {NavigationKey}", navigationKey);
+            return false;
+        }
+
         var instanceMode = menuItem?.InstanceMode ?? PageInstanceMode.Default;
 
         // Lazy load module if needed
@@ -105,7 +127,7 @@ public class AvaloniaNavigationService : INavigationService
         }
 
         // Resolve ViewModel type
-        var vmType = ResolveViewModelType(navigationKey);
+        var vmType = menuItem != null ? ResolveViewModelType(menuItem) : null;
         if (vmType == null)
         {
             _logger.LogWarning("Navigation failed: Could not resolve ViewModel type for key '{NavigationKey}'", navigationKey);
@@ -124,7 +146,7 @@ public class AvaloniaNavigationService : INavigationService
         }
 
         // Get or create ViewModel based on instance mode
-        var viewModel = GetOrCreateViewModel(vmType, navigationKey, instanceMode, options.ForceNewInstance);
+        var viewModel = GetOrCreateViewModel(vmType, stableKey, instanceMode, options.ForceNewInstance);
         if (viewModel == null)
         {
             _logger.LogWarning(
@@ -133,10 +155,15 @@ public class AvaloniaNavigationService : INavigationService
             return false;
         }
 
-        // Apply parameters if provided
-        if (options.Parameters != null && viewModel is INavigationAware navAware)
+        // ViewModel-level interception (target)
+        var toVm = viewModel as ViewModelBase
+            ?? throw ViewModelConventionViolationException.ForType("Target ViewModel", viewModel.GetType());
+
+        var canEnter = await toVm.CanNavigateToAsync(context);
+        if (!canEnter)
         {
-            navAware.OnNavigatedTo(options.Parameters);
+            _logger.LogWarning("Navigation blocked by target ViewModel: {NavigationKey}", navigationKey);
+            return false;
         }
 
         // Create view
@@ -161,18 +188,24 @@ public class AvaloniaNavigationService : INavigationService
         
         // Update state
         var previousKey = _currentNavigationKey;
-        _currentNavigationKey = navigationKey;
+        var previousViewModel = _currentViewModel;
+        _currentNavigationKey = stableKey;
         _currentView = view;
         _currentViewModel = viewModel;
 
         // Notify shell
-        OnViewChanged?.Invoke(view, menuItem?.DisplayName ?? ExtractDisplayName(navigationKey));
+        OnViewChanged?.Invoke(view, menuItem?.DisplayName ?? ExtractDisplayName(stableKey));
+
+        // Navigation lifecycle callbacks (only after successful switch)
+        if (previousViewModel is ViewModelBase previousVm)
+            await previousVm.OnNavigatedFromAsync(context);
+        await toVm.OnNavigatedToAsync(context);
 
         // Raise event
         Navigated?.Invoke(this, new NavigationEventArgs
         {
             FromKey = previousKey,
-            ToKey = navigationKey,
+            ToKey = stableKey,
             View = view,
             ViewModel = viewModel
         });
@@ -180,9 +213,24 @@ public class AvaloniaNavigationService : INavigationService
         return true;
     }
 
+    // Intentionally no helper here: convention violations should be explicit at call sites.
+
     public Task<bool> NavigateToAsync<TViewModel>(NavigationOptions? options = null) where TViewModel : class
     {
-        return NavigateToAsync(typeof(TViewModel).FullName!, options);
+        var vmFullName = typeof(TViewModel).FullName;
+        if (string.IsNullOrWhiteSpace(vmFullName))
+        {
+            return Task.FromResult(false);
+        }
+
+        var item = FindMenuItemByTarget(vmFullName);
+        if (item == null)
+        {
+            _logger.LogWarning("NavigateToAsync<{ViewModel}>: no menu item found for ViewModel '{ViewModelType}'.", typeof(TViewModel).Name, vmFullName);
+            return Task.FromResult(false);
+        }
+
+        return NavigateToAsync(item.Id, options);
     }
 
     public void RegisterNavigationGuard(INavigationGuard guard)
@@ -235,14 +283,14 @@ public class AvaloniaNavigationService : INavigationService
         return true;
     }
 
-    private MenuItem? FindMenuItem(string navigationKey)
+    private MenuItem? FindMenuItemById(string menuId)
     {
         var allItems = _menuRegistry.GetItems(MenuLocation.Main)
             .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
 
         foreach (var item in allItems)
         {
-            if (item.NavigationKey == navigationKey)
+            if (string.Equals(item.Id, menuId, StringComparison.OrdinalIgnoreCase))
             {
                 return item;
             }
@@ -250,7 +298,7 @@ public class AvaloniaNavigationService : INavigationService
             // Check children
             if (item.Children != null)
             {
-                var child = item.Children.FirstOrDefault(c => c.NavigationKey == navigationKey);
+                var child = item.Children.FirstOrDefault(c => string.Equals(c.Id, menuId, StringComparison.OrdinalIgnoreCase));
                 if (child != null)
                 {
                     return child;
@@ -261,70 +309,50 @@ public class AvaloniaNavigationService : INavigationService
         return null;
     }
 
-    private Type? ResolveViewModelType(string navigationKey)
+    private MenuItem? FindMenuItemByTarget(string target)
     {
-        // Try direct type resolution
-        var vmType = Type.GetType(navigationKey);
-        if (vmType != null)
+        if (string.IsNullOrWhiteSpace(target)) return null;
+
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
         {
-            return vmType;
+            if (string.Equals(item.NavigationKey, target, StringComparison.Ordinal))
+                return item;
+
+            if (item.Children == null) continue;
+            var child = item.Children.FirstOrDefault(c => string.Equals(c.NavigationKey, target, StringComparison.Ordinal));
+            if (child != null) return child;
         }
 
-        // Search host assemblies
-        vmType = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(a =>
-            {
-                try { return a.GetTypes(); }
-                catch { return Array.Empty<Type>(); }
-            })
-            .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
+        return null;
+    }
 
-        if (vmType != null)
-        {
-            return vmType;
-        }
+    private Type? ResolveViewModelType(MenuItem menuItem)
+    {
+        var typeName = menuItem.NavigationKey;
+        if (string.IsNullOrWhiteSpace(typeName)) return null;
 
-        // Search module assemblies (loaded in separate AssemblyLoadContexts)
-        foreach (var runtimeModule in _runtimeContext.RuntimeModules)
+        // Module types: resolve from the module handle assemblies without enumerating all types.
+        if (!string.IsNullOrWhiteSpace(menuItem.ModuleId) &&
+            _runtimeContext.TryGetModuleHandle(menuItem.ModuleId, out var handle) &&
+            handle != null)
         {
-            // Also search RuntimeModuleHandle assemblies (more complete list)
-            if (_runtimeContext.TryGetModuleHandle(runtimeModule.Descriptor.Id, out var handle) && handle != null)
+            foreach (var asm in handle.Assemblies)
             {
-                foreach (var assembly in handle.Assemblies)
-                {
-                    try
-                    {
-                        vmType = assembly.GetTypes()
-                            .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
-                        if (vmType != null)
-                        {
-                            return vmType;
-                        }
-                    }
-                    catch
-                    {
-                        // Skip assemblies that fail to enumerate types
-                    }
-                }
-            }
-            // Fallback to LoadContext.Assemblies
-            foreach (var assembly in runtimeModule.LoadContext.Assemblies)
-            {
-                try
-                {
-                    vmType = assembly.GetTypes()
-                        .FirstOrDefault(t => t.FullName == navigationKey || t.Name == navigationKey);
-                    if (vmType != null)
-                    {
-                        return vmType;
-                    }
-                }
-                catch
-                {
-                    // Skip assemblies that fail to enumerate types
-                }
+                var t = asm.GetType(typeName, throwOnError: false, ignoreCase: false);
+                if (t != null) return t;
             }
         }
+
+        // Host types: resolve from known host assemblies without global scans.
+        var hostType = typeof(AvaloniaHostModule).Assembly.GetType(typeName, throwOnError: false, ignoreCase: false);
+        if (hostType != null) return hostType;
+
+        var entry = System.Reflection.Assembly.GetEntryAssembly();
+        var entryType = entry?.GetType(typeName, throwOnError: false, ignoreCase: false);
+        if (entryType != null) return entryType;
 
         return null;
     }
@@ -434,14 +462,14 @@ public class AvaloniaNavigationService : INavigationService
         {
             if (item.ModuleId == moduleId)
             {
-                keysToRemove.Add(item.NavigationKey);
+                keysToRemove.Add(item.Id);
             }
 
             if (item.Children != null)
             {
                 keysToRemove.AddRange(item.Children
                     .Where(c => c.ModuleId == moduleId)
-                    .Select(c => c.NavigationKey));
+                    .Select(c => c.Id));
             }
         }
 
@@ -485,14 +513,5 @@ public class AvaloniaNavigationService : INavigationService
             }
         }
     }
-}
-
-/// <summary>
-/// Optional interface for ViewModels that want to receive navigation parameters.
-/// </summary>
-public interface INavigationAware
-{
-    void OnNavigatedTo(IDictionary<string, object> parameters);
-    void OnNavigatedFrom();
 }
 

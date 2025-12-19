@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
 using Modulus.UI.Avalonia.Infrastructure;
@@ -13,12 +12,5 @@ namespace Modulus.Modules.{{ModuleName}}.UI.Avalonia;
 [AvaloniaMenu("{{ModuleNameLower}}", "{{DisplayName}}", typeof(MainViewModel), Icon = IconKind.{{Icon}}, Order = {{Order}})]
 public class {{ModuleName}}AvaloniaModule : AvaloniaModuleBase
 {
-    public override async Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
-    {
-        await base.OnApplicationInitializationAsync(context, cancellationToken);
-
-        var viewRegistry = context.ServiceProvider.GetRequiredService<IViewRegistry>();
-        viewRegistry.Register<MainViewModel, MainView>();
-    }
 }
 

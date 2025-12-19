@@ -80,6 +80,31 @@ public class NavigationViewTests
 
         Assert.Equal(items, nav.ItemsSource);
     }
+
+    [AvaloniaFact]
+    public void NavigationView_GroupClick_TogglesExpansion_AndDoesNotSelect()
+    {
+        var nav = new NavigationView();
+        var group = MenuItem.CreateGroup(
+            "parent",
+            "Parent",
+            IconKind.Home,
+            new List<MenuItem> { new MenuItem("child", "Child", IconKind.Grid, "/child") });
+
+        var navItem = new NavigationViewItem { Item = group };
+
+        // Invoke internal click handler via reflection (headless test).
+        var method = typeof(NavigationView).GetMethod("OnItemClicked", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        Assert.False(group.IsExpanded);
+        Assert.Null(nav.SelectedItem);
+
+        method!.Invoke(nav, new object[] { navItem, group });
+
+        Assert.True(group.IsExpanded);
+        Assert.Null(nav.SelectedItem);
+    }
 }
 
 /// <summary>

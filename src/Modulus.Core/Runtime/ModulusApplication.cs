@@ -165,38 +165,18 @@ public class ModulusApplication : IModulusApplication
         
         // Only load enabled menus
         var menus = await menuRepo.GetAllEnabledAsync();
-        
-        foreach (var menu in menus)
+
+        var roots = MenuTreeBuilder.Build(menus, _logger);
+
+        foreach (var root in roots)
         {
-            IconKind iconKind = IconKind.Grid; // Default
-            if (Enum.TryParse<IconKind>(menu.Icon, true, out var parsedIcon))
-            {
-                iconKind = parsedIcon;
-            }
-
-            var isSystemModule = menu.Module?.IsSystem ?? false;
-            var location = isSystemModule ? menu.Location : MenuLocation.Main;
-
-            if (!isSystemModule && menu.Location == MenuLocation.Bottom)
-            {
-                _logger.LogWarning("Module {ModuleId} is not system-managed but has Bottom menu location. Forcing to Main.", menu.ModuleId);
-            }
-
-            var item = new MenuItem(
-                menu.Id, 
-                menu.DisplayName,
-                iconKind,
-                menu.Route ?? menu.Id, 
-                location,
-                menu.Order
-            );
-            
-            item.ModuleId = menu.ModuleId;
-
-            menuRegistry.Register(item);
+            menuRegistry.Register(root);
         }
-        
-        _logger.LogInformation("Registered {Count} menu items from database.", menus.Count);
+
+        _logger.LogInformation(
+            "Registered {RootCount} menu root items from database ({TotalCount} total entries).",
+            roots.Count,
+            menus.Count);
     }
 
     private async Task LoadModuleMetadataAsync()

@@ -186,7 +186,7 @@ public partial class ShellViewModel : ViewModelBase,
             return;
         }
 
-        // Skip groups without navigation key
+        // Skip groups without navigation target
         if (string.IsNullOrEmpty(item.NavigationKey))
         {
             // Toggle expansion for groups
@@ -194,10 +194,11 @@ public partial class ShellViewModel : ViewModelBase,
             return;
         }
 
-        var result = await _navigationService.NavigateToAsync(item.NavigationKey);
+        // Use stable menu id as navigation key; resolve targets via registry/index in navigation service.
+        var result = await _navigationService.NavigateToAsync(item.Id);
         if (!result)
         {
-            _logger.LogWarning("Navigation failed or blocked: NavigationKey={NavKey}", item.NavigationKey);
+            _logger.LogWarning("Navigation failed or blocked: MenuId={MenuId}", item.Id);
         }
     }
 
@@ -220,8 +221,8 @@ public partial class ShellViewModel : ViewModelBase,
             _ = _navigationService.NavigateToAsync<TViewModel>();
 
             // Find and select corresponding menu item
-            var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
-            var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == vmName);
+            var mainItem = FindMenuItemByTarget(MainMenuItems, vmName);
+            var bottomItem = FindMenuItemByTarget(BottomMenuItems, vmName);
             
             if (mainItem == null && bottomItem == null && !string.IsNullOrWhiteSpace(vmName))
             {
@@ -230,11 +231,13 @@ public partial class ShellViewModel : ViewModelBase,
 
             if (mainItem != null)
             {
+                ExpandParents(MainMenuItems, mainItem);
                 SelectedMainMenuItem = mainItem;
                 SelectedBottomMenuItem = null;
             }
             else if (bottomItem != null)
             {
+                ExpandParents(BottomMenuItems, bottomItem);
                 SelectedBottomMenuItem = bottomItem;
                 SelectedMainMenuItem = null;
             }
@@ -253,11 +256,12 @@ public partial class ShellViewModel : ViewModelBase,
         _isNavigating = true;
         try
         {
+            // For Avalonia host, navigationKey is a stable menu id.
             _ = _navigationService.NavigateToAsync(navigationKey);
 
             // Find and select corresponding menu item
-            var mainItem = MainMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
-            var bottomItem = BottomMenuItems.FirstOrDefault(m => m.NavigationKey == navigationKey);
+            var mainItem = FindMenuItemById(MainMenuItems, navigationKey);
+            var bottomItem = FindMenuItemById(BottomMenuItems, navigationKey);
             
             if (mainItem == null && bottomItem == null && !string.IsNullOrWhiteSpace(navigationKey))
             {
@@ -266,11 +270,13 @@ public partial class ShellViewModel : ViewModelBase,
 
             if (mainItem != null)
             {
+                ExpandParents(MainMenuItems, mainItem);
                 SelectedMainMenuItem = mainItem;
                 SelectedBottomMenuItem = null;
             }
             else if (bottomItem != null)
             {
+                ExpandParents(BottomMenuItems, bottomItem);
                 SelectedBottomMenuItem = bottomItem;
                 SelectedMainMenuItem = null;
             }
@@ -278,6 +284,59 @@ public partial class ShellViewModel : ViewModelBase,
         finally
         {
             _isNavigating = false;
+        }
+    }
+
+    private static MenuItem? FindMenuItemByTarget(ObservableCollection<MenuItem> roots, string? target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return null;
+
+        foreach (var root in roots)
+        {
+            if (string.Equals(root.NavigationKey, target, StringComparison.Ordinal))
+                return root;
+
+            if (root.Children == null) continue;
+            foreach (var child in root.Children)
+            {
+                if (string.Equals(child.NavigationKey, target, StringComparison.Ordinal))
+                    return child;
+            }
+        }
+
+        return null;
+    }
+
+    private static MenuItem? FindMenuItemById(ObservableCollection<MenuItem> roots, string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+
+        foreach (var root in roots)
+        {
+            if (string.Equals(root.Id, id, StringComparison.OrdinalIgnoreCase))
+                return root;
+
+            if (root.Children == null) continue;
+            foreach (var child in root.Children)
+            {
+                if (string.Equals(child.Id, id, StringComparison.OrdinalIgnoreCase))
+                    return child;
+            }
+        }
+
+        return null;
+    }
+
+    private static void ExpandParents(ObservableCollection<MenuItem> roots, MenuItem selected)
+    {
+        foreach (var root in roots)
+        {
+            if (root.Children == null) continue;
+            if (root.Children.Any(c => c.Id == selected.Id))
+            {
+                root.IsExpanded = true;
+                return;
+            }
         }
     }
 

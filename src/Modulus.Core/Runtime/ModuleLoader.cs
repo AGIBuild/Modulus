@@ -280,6 +280,10 @@ public sealed class ModuleLoader : IModuleLoader, IHostAwareModuleLoader
             loadedAssemblies.AddRange(alc.Assemblies);
         }
 
+        // Hard convention: all module ViewModels MUST inherit ViewModelBase.
+        // This is enforced at module load time so both Avalonia and Blazor hosts are covered consistently.
+        ViewModelConventionsEnforcer.Enforce(identity.Id, loadedAssemblies, _logger);
+
         var componentTypes = loadedAssemblies
             .SelectMany(SafeGetTypes)
             // Only ModulusPackage entry points are supported (no legacy ModulusComponent-only entry points).

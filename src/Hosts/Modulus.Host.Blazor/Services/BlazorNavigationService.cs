@@ -10,6 +10,7 @@ using UiNavigationEventArgs = Modulus.UI.Abstractions.NavigationEventArgs;
 using UiNavigationOptions = Modulus.UI.Abstractions.NavigationOptions;
 using UiNavigationContext = Modulus.UI.Abstractions.NavigationContext;
 using Modulus.UI.Abstractions;
+using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Host.Blazor.Services;
 
@@ -24,6 +25,7 @@ public class BlazorNavigationService : INavigationService
     private readonly List<INavigationGuard> _guards = new();
     private readonly ConcurrentDictionary<string, object> _singletonViewModels = new();
     private readonly object _guardsLock = new();
+    private IDisposable? _locationChangingRegistration;
 
     private string? _currentNavigationKey;
 
@@ -42,13 +44,55 @@ public class BlazorNavigationService : INavigationService
 
         // Track navigation changes
         _navigationManager.LocationChanged += OnLocationChanged;
+
+        // Intercept browser-driven navigations so guards still apply when user clicks links.
+        try
+        {
+            _locationChangingRegistration = _navigationManager.RegisterLocationChangingHandler(OnLocationChangingAsync);
+        }
+        catch
+        {
+            // Some NavigationManager implementations may not support LocationChanging; programmatic navigation still uses guards.
+            _locationChangingRegistration = null;
+        }
+    }
+
+    private async ValueTask OnLocationChangingAsync(LocationChangingContext context)
+    {
+        try
+        {
+            var uri = new Uri(context.TargetLocation);
+            var route = uri.AbsolutePath;
+
+            var targetMenu = FindMenuItemByRoute(route);
+            var toKey = targetMenu?.Id ?? route;
+
+            var navContext = new UiNavigationContext
+            {
+                FromKey = _currentNavigationKey,
+                ToKey = toKey,
+                Options = new UiNavigationOptions()
+            };
+
+            if (!await EvaluateGuardsAsync(navContext))
+            {
+                context.PreventNavigation();
+            }
+        }
+        catch
+        {
+            // If guard evaluation fails, do not block navigation (keep browser behavior).
+        }
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         var uri = new Uri(e.Location);
+        var route = uri.AbsolutePath;
+
         var previousKey = _currentNavigationKey;
-        _currentNavigationKey = uri.AbsolutePath;
+        var currentMenu = FindMenuItemByRoute(route);
+        _currentNavigationKey = currentMenu?.Id ?? route;
 
         // Intentionally no logs for normal navigation; only Warning/Error logs for abnormal behavior are emitted elsewhere.
 
@@ -82,21 +126,43 @@ public class BlazorNavigationService : INavigationService
             return false;
         }
 
-        // For Blazor, navigationKey is typically a route (e.g., "/modules", "/settings")
-        // Perform the navigation
-        _navigationManager.NavigateTo(navigationKey);
+        // For Blazor, navigationKey is a stable menu id (preferred) or a raw route (back-compat).
+        var route = ResolveRoute(navigationKey);
+        if (string.IsNullOrWhiteSpace(route))
+        {
+            _logger.LogWarning("Navigation failed: could not resolve route for key '{NavigationKey}'", navigationKey);
+            return false;
+        }
+
+        _navigationManager.NavigateTo(route);
 
         return true;
     }
 
     public Task<bool> NavigateToAsync<TViewModel>(UiNavigationOptions? options = null) where TViewModel : class
     {
-        // For Blazor, we need to map ViewModel types to routes
-        // This is a simplified implementation - in practice, you'd have a route registry
-        var vmName = typeof(TViewModel).Name;
-        var route = MapViewModelToRoute(vmName);
+        // For Blazor host, typed navigation is supported only for known host ViewModels.
+        // Modules SHOULD navigate via stable menu ids (NavigateToAsync(string)).
+        var route = MapHostViewModelToRoute(typeof(TViewModel));
+        if (string.IsNullOrWhiteSpace(route))
+            return Task.FromResult(false);
 
-        return NavigateToAsync(route, options);
+        var item = FindMenuItemByRoute(route);
+        if (item == null)
+            return Task.FromResult(false);
+
+        return NavigateToAsync(item.Id, options);
+    }
+
+    private static string? MapHostViewModelToRoute(Type viewModelType)
+    {
+        var name = viewModelType.Name;
+        return name switch
+        {
+            "ModuleListViewModel" => "/modules",
+            "SettingsViewModel" => "/settings",
+            _ => null
+        };
     }
 
     public void RegisterNavigationGuard(INavigationGuard guard)
@@ -149,16 +215,79 @@ public class BlazorNavigationService : INavigationService
         return true;
     }
 
-    private string MapViewModelToRoute(string viewModelName)
+    private UiMenuItem? FindMenuItemById(string id)
     {
-        // Map common ViewModel names to routes
-        return viewModelName.Replace("ViewModel", "") switch
+        if (string.IsNullOrWhiteSpace(id)) return null;
+
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
         {
-            "ModuleList" or "Modules" => "/modules",
-            "Settings" => "/settings",
-            "Home" => "/",
-            _ => "/" + viewModelName.Replace("ViewModel", "").ToLowerInvariant()
-        };
+            if (string.Equals(item.Id, id, StringComparison.OrdinalIgnoreCase))
+                return item;
+
+            if (item.Children == null) continue;
+            var child = item.Children.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase));
+            if (child != null) return child;
+        }
+
+        return null;
+    }
+
+    private UiMenuItem? FindMenuItemByRoute(string route)
+    {
+        if (string.IsNullOrWhiteSpace(route)) return null;
+
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
+        {
+            if (string.Equals(item.NavigationKey, route, StringComparison.OrdinalIgnoreCase))
+                return item;
+
+            if (item.Children == null) continue;
+            var child = item.Children.FirstOrDefault(c => string.Equals(c.NavigationKey, route, StringComparison.OrdinalIgnoreCase));
+            if (child != null) return child;
+        }
+
+        return null;
+    }
+
+    private UiMenuItem? FindMenuItemByTarget(string target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return null;
+
+        var allItems = _menuRegistry.GetItems(MenuLocation.Main)
+            .Concat(_menuRegistry.GetItems(MenuLocation.Bottom));
+
+        foreach (var item in allItems)
+        {
+            // For Blazor view-level menus, NavigationKey is the route; target ViewModel mapping is not used.
+            // This hook is kept for consistency across hosts.
+            if (string.Equals(item.NavigationKey, target, StringComparison.Ordinal))
+                return item;
+
+            if (item.Children == null) continue;
+            var child = item.Children.FirstOrDefault(c => string.Equals(c.NavigationKey, target, StringComparison.Ordinal));
+            if (child != null) return child;
+        }
+
+        return null;
+    }
+
+    private string? ResolveRoute(string navigationKey)
+    {
+        if (string.IsNullOrWhiteSpace(navigationKey)) return null;
+
+        // Back-compat: raw routes
+        if (navigationKey.StartsWith("/", StringComparison.Ordinal))
+            return navigationKey;
+
+        // Preferred: stable menu id
+        var item = FindMenuItemById(navigationKey);
+        return item?.NavigationKey;
     }
 
     /// <summary>
@@ -193,14 +322,14 @@ public class BlazorNavigationService : INavigationService
         {
             if (item.ModuleId == moduleId)
             {
-                keysToRemove.Add(item.NavigationKey);
+                keysToRemove.Add(item.Id);
             }
 
             if (item.Children != null)
             {
                 keysToRemove.AddRange(item.Children
                     .Where(c => c.ModuleId == moduleId)
-                    .Select(c => c.NavigationKey));
+                    .Select(c => c.Id));
             }
         }
 

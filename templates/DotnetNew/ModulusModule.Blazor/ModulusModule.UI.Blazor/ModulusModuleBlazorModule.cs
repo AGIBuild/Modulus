@@ -1,21 +1,14 @@
-using Microsoft.Extensions.DependencyInjection;
 using Modulus.Sdk;
 using Modulus.UI.Abstractions;
-using Modulus.Modules.ModulusModule.ViewModels;
 
 namespace Modulus.Modules.ModulusModule.UI.Blazor;
 
 /// <summary>
 /// ModulusModule Blazor UI Module.
 /// </summary>
-[BlazorMenu("{{DisplayNameComputed}}", "/modulusmodule", Icon = IconKind.Folder, Order = 100)]
+[DependsOn(typeof(ModulusModuleModule))]
+[BlazorMenu("modulusmodule", "{{DisplayNameComputed}}", "/modulusmodule", Icon = IconKind.Folder, Order = 100)]
 public class ModulusModuleBlazorModule : ModulusPackage
 {
-    public override Task OnApplicationInitializationAsync(IModuleInitializationContext context, CancellationToken cancellationToken = default)
-    {
-        var viewRegistry = context.ServiceProvider.GetService<IViewRegistry>();
-        viewRegistry?.Register<MainViewModel, MainView>();
-        return Task.CompletedTask;
-    }
 }
 

@@ -67,6 +67,54 @@ public class ModuleInstallerServiceMenuProjectionTests
     }
 
     [Fact]
+    public async Task InstallFromPathAsync_AvaloniaHost_ProjectsViewLevelMenus_AsChildren_WithParentId()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ModulusTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
+        try
+        {
+            var moduleId = Guid.NewGuid().ToString();
+            var moduleDir = Path.Combine(tempRoot, "TestModule");
+            Directory.CreateDirectory(moduleDir);
+
+            // Copy this test assembly as the host-specific UI package to parse menu attributes.
+            var asmPath = Assembly.GetExecutingAssembly().Location;
+            var uiDllName = "Test.UI.Avalonia.dll";
+            File.Copy(asmPath, Path.Combine(moduleDir, uiDllName));
+
+            // Write minimal manifest
+            WriteManifest(moduleDir, moduleId, uiDllName, ModulusHostIds.Avalonia);
+
+            var moduleRepo = Substitute.For<IModuleRepository>();
+            var menuRepo = Substitute.For<IMenuRepository>();
+            var validator = Substitute.For<IManifestValidator>();
+            var cleanup = Substitute.For<IModuleCleanupService>();
+            var logger = Substitute.For<ILogger<ModuleInstallerService>>();
+
+            validator.ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<VsixManifest>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(ManifestValidationResult.Success()));
+
+            var sut = new ModuleInstallerService(moduleRepo, menuRepo, validator, cleanup, logger);
+
+            await sut.InstallFromPathAsync(moduleDir, isSystem: true, hostType: ModulusHostIds.Avalonia);
+
+            var parentId = $"{moduleId}.{ModulusHostIds.Avalonia}.test-avalonia.0";
+
+            await menuRepo.Received(1).ReplaceModuleMenusAsync(
+                moduleId,
+                Arg.Is<IEnumerable<MenuEntity>>(menus =>
+                    menus.Any(me => me.Id == parentId && me.ParentId == null && me.Route == null) &&
+                    menus.Any(me => me.Id == $"{moduleId}.{ModulusHostIds.Avalonia}.view-a.0" && me.ParentId == parentId && me.Route != null && me.Route.EndsWith("DummyAvaloniaViewModelA")) &&
+                    menus.Any(me => me.Id == $"{moduleId}.{ModulusHostIds.Avalonia}.view-b.0" && me.ParentId == parentId && me.Route != null && me.Route.EndsWith("DummyAvaloniaViewModelB"))),
+                Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            try { Directory.Delete(tempRoot, true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact]
     public async Task InstallFromPathAsync_BlazorHost_SelectsHostSpecificPackage_NotCorePackage()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), "ModulusTests", Guid.NewGuid().ToString("N"));

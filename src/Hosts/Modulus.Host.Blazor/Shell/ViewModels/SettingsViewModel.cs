@@ -4,7 +4,7 @@ using UiAppTheme = Modulus.UI.Abstractions.AppTheme;
 
 namespace Modulus.Host.Blazor.Shell.ViewModels;
 
-public partial class SettingsViewModel : ObservableObject
+public partial class SettingsViewModel : ViewModelBase
 {
     private readonly IThemeService? _themeService;
 
@@ -14,6 +14,7 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(IThemeService? themeService = null)
     {
         _themeService = themeService;
+        Title = "Settings";
 
         if (_themeService != null)
         {

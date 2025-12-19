@@ -34,6 +34,7 @@
     <ProjectReference Include="..\..\src\Modulus.Core\Modulus.Core.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Sdk\Modulus.Sdk.csproj" />
     <ProjectReference Include="..\..\src\Modulus.UI.Abstractions\Modulus.UI.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Hosts\Modulus.Host.Avalonia\Modulus.Host.Avalonia.csproj" />
   </ItemGroup>
 
   <ItemGroup>
