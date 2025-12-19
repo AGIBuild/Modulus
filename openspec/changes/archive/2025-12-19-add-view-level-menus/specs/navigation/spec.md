@@ -31,6 +31,7 @@ The framework SHALL support registration of navigation guards that can intercept
 - **AND** 任一 guard 的 `CanNavigateToAsync` 返回 false
 - **THEN** 导航取消，当前视图保持不变
 
+## ADDED Requirements
 ### Requirement: ViewModel Navigation Lifecycle
 The framework SHALL provide ViewModel-level navigation interception and lifecycle hooks that can be overridden without extra registration code.
 

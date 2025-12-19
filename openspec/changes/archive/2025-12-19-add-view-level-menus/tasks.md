@@ -13,6 +13,6 @@
   - [x] 1.9.2 新增/扩展运行时菜单树组装测试（建议新增 `tests/Modulus.Core.Tests/Runtime/MenuTreeTests.cs`）：覆盖从 DB 菜单组装 `MenuItem.Children`，以及多 View 父菜单 `NavigationKey` 为空（仅展开不导航）
   - [x] 1.9.3 新增导航生命周期与拦截顺序测试（建议 `tests/Modulus.Hosts.Tests/NavigationViewModelLifecycleTests.cs`）：覆盖 guards → 当前 VM `CanNavigateFrom` → 目标 VM `CanNavigateTo` → `OnNavigatedFrom/To` 的调用顺序与短路行为
   - [x] 1.9.4 新增 Avalonia 控件层级菜单行为测试（建议扩展 `tests/Modulus.UI.Avalonia.Tests/NavigationViewTests.cs`）：覆盖父节点无 `NavigationKey` 时点击仅切换展开态、不触发导航命令
-- [ ] 1.10 增加“完整导航机制”回归测试（可选但推荐）：在 `tests/Modulus.Hosts.Tests/ModulusApplicationIntegrationTests.cs` 基础上构造最小模块样例（单 View/多 View），验证从安装投影 → 运行时注册 → 导航解析的端到端链路（未实现）
+- [x] 1.10 增加“完整导航机制”回归测试（可选但推荐）：在 `tests/Modulus.Hosts.Tests/ModulusApplicationIntegrationTests.cs` 基础上构造最小模块样例（单 View/多 View），验证从安装投影 → 运行时注册 → 导航解析的端到端链路
 
 
