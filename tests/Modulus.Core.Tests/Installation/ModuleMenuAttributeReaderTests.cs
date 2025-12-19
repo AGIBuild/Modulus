@@ -29,6 +29,27 @@ public class ModuleMenuAttributeReaderTests
         Assert.Contains(menus, m => m.Key == "test-avalonia" && m.DisplayName == "Test Avalonia" && m.Route.EndsWith(nameof(DummyAvaloniaViewModel)));
     }
 
+    [Fact]
+    public void ReadViewMenus_BlazorHost_ReadsBlazorViewMenuAttributes_AndRouteFromRouteAttribute()
+    {
+        var assemblyPath = Assembly.GetExecutingAssembly().Location;
+
+        var menus = ModuleMenuAttributeReader.ReadViewMenus(assemblyPath, ModulusHostIds.Blazor);
+
+        Assert.Contains(menus, m => m.Key == "view-1" && m.DisplayName == "View 1" && m.Route == "/view-1");
+    }
+
+    [Fact]
+    public void ReadViewMenus_AvaloniaHost_ReadsAvaloniaViewMenuAttributes()
+    {
+        var assemblyPath = Assembly.GetExecutingAssembly().Location;
+
+        var menus = ModuleMenuAttributeReader.ReadViewMenus(assemblyPath, ModulusHostIds.Avalonia);
+
+        Assert.Contains(menus, m => m.Key == "view-a" && m.DisplayName == "View A" && m.Route.EndsWith(nameof(DummyAvaloniaViewModelA)));
+        Assert.Contains(menus, m => m.Key == "view-b" && m.DisplayName == "View B" && m.Route.EndsWith(nameof(DummyAvaloniaViewModelB)));
+    }
+
     [BlazorMenu("test-blazor", "Test Blazor", "/test-blazor", Icon = IconKind.Home, Order = 10, Location = MenuLocation.Main)]
     [BlazorMenu("dup", "Dup 1", "/dup-1", Order = 20)]
     [BlazorMenu("dup", "Dup 2", "/dup-2", Order = 21)]
@@ -38,6 +59,16 @@ public class ModuleMenuAttributeReaderTests
     private sealed class DummyAvaloniaModule : ModulusPackage { }
 
     private sealed class DummyAvaloniaViewModel { }
+
+    [Microsoft.AspNetCore.Components.RouteAttribute("/view-1")]
+    [BlazorViewMenu("view-1", "View 1", Icon = IconKind.Home, Order = 10)]
+    private sealed class DummyBlazorPage { }
+
+    [AvaloniaViewMenu("view-a", "View A", Icon = IconKind.Home, Order = 10)]
+    private sealed class DummyAvaloniaViewModelA { }
+
+    [AvaloniaViewMenu("view-b", "View B", Icon = IconKind.Grid, Order = 11)]
+    private sealed class DummyAvaloniaViewModelB { }
 }
 
 

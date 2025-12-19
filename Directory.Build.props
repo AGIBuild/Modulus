@@ -17,13 +17,14 @@
     <Authors>Modulus Team</Authors>
     <Company>Agibuild</Company>
     <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) Agibuild. All rights reserved.</Copyright>
-    <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AGIBuild/Modulus</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>modulus;plugin;module;extensibility;avalonia;blazor;desktop;web</PackageTags>
-    <RepositoryUrl>https://github.com/user/Modulus</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AGIBuild/Modulus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     
     <!-- Build Properties -->
     <LangVersion>latest</LangVersion>

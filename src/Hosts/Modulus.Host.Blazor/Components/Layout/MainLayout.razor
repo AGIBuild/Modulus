@@ -54,27 +54,50 @@
                     <!-- Main Menu Items -->
                     @foreach (var item in _mainMenuItems)
                     {
-                        <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
-                            <MudNavLink Href="@item.NavigationKey" 
-                                        Icon="@GetIcon(item.Icon.ToString())" 
-                                        Match="NavLinkMatch.Prefix"
-                                        Disabled="@(!item.IsEnabled)">
-                                @if (_drawerOpen)
+                        @if (item.Children != null && item.Children.Count > 0)
+                        {
+                            <MudNavGroup Title="@item.DisplayName"
+                                        Icon="@GetIcon(item.Icon.ToString())"
+                                        Expanded="@item.IsExpanded"
+                                        ExpandedChanged="@(expanded => item.IsExpanded = expanded)">
+                                @foreach (var child in item.Children)
                                 {
-                                    <div class="d-flex align-center" style="gap: 8px;">
-                                        <span style="flex: 1;">@item.DisplayName</span>
-                                        @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                    <MudNavLink Href="@child.NavigationKey"
+                                                Icon="@GetIcon(child.Icon.ToString())"
+                                                Match="NavLinkMatch.Prefix"
+                                                Disabled="@(!child.IsEnabled)">
+                                        @if (_drawerOpen)
                                         {
-                                            <MudBadge Content="@item.BadgeCount" Color="Color.Error" Overlap="false" Bordered="true" />
+                                            <span>@child.DisplayName</span>
                                         }
-                                    </div>
+                                    </MudNavLink>
                                 }
-                                else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
-                                {
-                                    <MudBadge Dot="true" Color="Color.Error" Overlap="true" />
-                                }
-                            </MudNavLink>
-                        </MudTooltip>
+                            </MudNavGroup>
+                        }
+                        else
+                        {
+                            <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
+                                <MudNavLink Href="@item.NavigationKey" 
+                                            Icon="@GetIcon(item.Icon.ToString())" 
+                                            Match="NavLinkMatch.Prefix"
+                                            Disabled="@(!item.IsEnabled)">
+                                    @if (_drawerOpen)
+                                    {
+                                        <div class="d-flex align-center" style="gap: 8px;">
+                                            <span style="flex: 1;">@item.DisplayName</span>
+                                            @if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                            {
+                                                <MudBadge Content="@item.BadgeCount" Color="Color.Error" Overlap="false" Bordered="true" />
+                                            }
+                                        </div>
+                                    }
+                                    else if (item.BadgeCount.HasValue && item.BadgeCount > 0)
+                                    {
+                                        <MudBadge Dot="true" Color="Color.Error" Overlap="true" />
+                                    }
+                                </MudNavLink>
+                            </MudTooltip>
+                        }
                     }
                 </MudNavMenu>
             </div>
@@ -84,14 +107,34 @@
                 <MudNavMenu Bordered="true" Color="Color.Primary" Style="width: 100%">
                     @foreach (var item in _bottomMenuItems)
                     {
-                        <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
-                            <MudNavLink Href="@item.NavigationKey" 
-                                        Icon="@GetIcon(item.Icon.ToString())" 
-                                        Match="NavLinkMatch.Prefix"
-                                        Disabled="@(!item.IsEnabled)">
-                                @if (_drawerOpen) { <span>@item.DisplayName</span> }
-                            </MudNavLink>
-                        </MudTooltip>
+                        @if (item.Children != null && item.Children.Count > 0)
+                        {
+                            <MudNavGroup Title="@item.DisplayName"
+                                        Icon="@GetIcon(item.Icon.ToString())"
+                                        Expanded="@item.IsExpanded"
+                                        ExpandedChanged="@(expanded => item.IsExpanded = expanded)">
+                                @foreach (var child in item.Children)
+                                {
+                                    <MudNavLink Href="@child.NavigationKey"
+                                                Icon="@GetIcon(child.Icon.ToString())"
+                                                Match="NavLinkMatch.Prefix"
+                                                Disabled="@(!child.IsEnabled)">
+                                        @if (_drawerOpen) { <span>@child.DisplayName</span> }
+                                    </MudNavLink>
+                                }
+                            </MudNavGroup>
+                        }
+                        else
+                        {
+                            <MudTooltip Text="@item.DisplayName" Placement="Placement.Right" Disabled="@_drawerOpen">
+                                <MudNavLink Href="@item.NavigationKey" 
+                                            Icon="@GetIcon(item.Icon.ToString())" 
+                                            Match="NavLinkMatch.Prefix"
+                                            Disabled="@(!item.IsEnabled)">
+                                    @if (_drawerOpen) { <span>@item.DisplayName</span> }
+                                </MudNavLink>
+                            </MudTooltip>
+                        }
                     }
                 </MudNavMenu>
             </div>

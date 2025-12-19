@@ -1,6 +1,10 @@
+@page "/modulusmodule"
+@using Modulus.Sdk
+@using Modulus.UI.Abstractions
 @using Modulus.Modules.ModulusModule.ViewModels
-@using MudBlazor 
-@inherits ComponentBase
+@using MudBlazor
+@attribute [BlazorViewMenu("main", "Main", Icon = IconKind.Folder, Order = 100)]
+@inject MainViewModel ViewModel
 
 <MudCard Class="ma-4">
     <MudCardHeader>
@@ -15,9 +19,3 @@
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ViewModel.SayHelloCommand.Execute(null))">Say Hello</MudButton>
     </MudCardActions>
 </MudCard>
-
-@code {
-    [Parameter]
-    public MainViewModel ViewModel { get; set; } = default!;
-}
-

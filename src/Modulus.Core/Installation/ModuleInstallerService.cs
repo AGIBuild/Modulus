@@ -67,7 +67,8 @@ public class ModuleInstallerService : IModuleInstallerService
         }
 
         // Extract menus from module assembly attributes (metadata-only parsing)
-        var menus = new List<MenuInfo>();
+        var moduleMenus = new List<MenuInfo>();
+        var viewMenus = new List<MenuInfo>();
         var moduleLocation = MenuLocation.Main;
         var requestedBottom = false;
 
@@ -89,10 +90,11 @@ public class ModuleInstallerService : IModuleInstallerService
                 {
                     try
                     {
-                        menus = ModuleMenuAttributeReader.ReadMenus(assemblyPath, hostType).ToList();
+                        moduleMenus = ModuleMenuAttributeReader.ReadMenus(assemblyPath, hostType).ToList();
+                        viewMenus = ModuleMenuAttributeReader.ReadViewMenus(assemblyPath, hostType).ToList();
                         
                         // Determine module location from menu attributes
-                        requestedBottom = menus.Any(m => m.Location == MenuLocation.Bottom);
+                        requestedBottom = moduleMenus.Any(m => m.Location == MenuLocation.Bottom);
                         moduleLocation = (isSystem && requestedBottom) ? MenuLocation.Bottom : MenuLocation.Main;
 
                         if (!isSystem && requestedBottom)
@@ -105,7 +107,7 @@ public class ModuleInstallerService : IModuleInstallerService
                         _logger.LogError(ex, "Failed to read menu attributes from {AssemblyPath} for module {ModuleId}.", assemblyPath, identity.Id);
                         throw new InvalidOperationException(
                             $"Invalid menu metadata in '{assemblyPath}' for module '{identity.Id}'. " +
-                            "Fix [BlazorMenu]/[AvaloniaMenu] declarations and reinstall.",
+                            "Fix [BlazorMenu]/[AvaloniaMenu]/[BlazorViewMenu]/[AvaloniaViewMenu] declarations and reinstall.",
                             ex);
                     }
                 }
@@ -164,7 +166,8 @@ public class ModuleInstallerService : IModuleInstallerService
         var menuEntities = new List<MenuEntity>();
         if (!string.IsNullOrWhiteSpace(hostType))
         {
-            foreach (var group in menus.GroupBy(m => m.Key))
+            // 1) Project module-level menus as top-level entries (ParentId = null).
+            foreach (var group in moduleMenus.GroupBy(m => m.Key))
             {
                 var idx = 0;
                 foreach (var menu in group)
@@ -186,6 +189,53 @@ public class ModuleInstallerService : IModuleInstallerService
                     });
 
                     idx++;
+                }
+            }
+
+            // 2) Project view-level menus as children (ParentId = <module-menu-id>) only when module has multiple views.
+            //    Single-view rule: ignore view-level menus to avoid duplicates/noise.
+            var distinctViewCount = viewMenus
+                .Select(m => m.DeclaringType)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Distinct(StringComparer.Ordinal)
+                .Count();
+
+            if (distinctViewCount > 1)
+            {
+                var parent = menuEntities
+                    .Where(m => m.ParentId == null)
+                    .OrderBy(m => m.Order)
+                    .ThenBy(m => m.Id, StringComparer.Ordinal)
+                    .FirstOrDefault();
+
+                if (parent == null)
+                    throw new InvalidOperationException(
+                        $"Module '{identity.Id}' declares view-level menus but no module-level menu was found. " +
+                        "Declare [BlazorMenu]/[AvaloniaMenu] on the host-specific module entry type.");
+
+                // Multi-view parent menus expand only (no navigation).
+                parent.Route = null;
+
+                foreach (var group in viewMenus.GroupBy(m => m.Key))
+                {
+                    var idx = 0;
+                    foreach (var menu in group)
+                    {
+                        // Children MUST follow the parent location (Main/Bottom) to keep rendering consistent.
+                        menuEntities.Add(new MenuEntity
+                        {
+                            Id = $"{identity.Id}.{hostType}.{menu.Key}.{idx}",
+                            ModuleId = identity.Id,
+                            DisplayName = menu.DisplayName,
+                            Icon = menu.Icon,
+                            Route = menu.Route,
+                            Location = parent.Location,
+                            Order = menu.Order,
+                            ParentId = parent.Id
+                        });
+
+                        idx++;
+                    }
                 }
             }
         }

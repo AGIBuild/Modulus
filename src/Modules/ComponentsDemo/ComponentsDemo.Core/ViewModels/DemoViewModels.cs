@@ -1,11 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Modulus.UI.Abstractions;
 
 namespace Modulus.Modules.ComponentsDemo.ViewModels;
 
 /// <summary>
 /// ViewModel for navigation feature demonstration.
 /// </summary>
-public class NavigationDemoViewModel : ObservableObject
+public class NavigationDemoViewModel : ViewModelBase
 {
     public string Description => "This demo showcases all navigation features including:\n" +
         "• Collapsible navigation panel\n" +
@@ -17,7 +18,7 @@ public class NavigationDemoViewModel : ObservableObject
 /// <summary>
 /// ViewModel for badge demonstration.
 /// </summary>
-public class BadgeDemoViewModel : ObservableObject
+public class BadgeDemoViewModel : ViewModelBase
 {
     public string Description => "Badges can display notification counts on menu items.\n" +
         "• BadgeCount: The number to display\n" +
@@ -39,7 +40,7 @@ public record BadgeExample(string Name, int? Count, string? Color);
 /// <summary>
 /// ViewModel for disabled state demonstration.
 /// </summary>
-public class DisabledDemoViewModel : ObservableObject
+public class DisabledDemoViewModel : ViewModelBase
 {
     public string Description => "Menu items can be disabled to prevent interaction.\n" +
         "• IsEnabled = false makes item grayed out\n" +
@@ -50,7 +51,7 @@ public class DisabledDemoViewModel : ObservableObject
 /// <summary>
 /// ViewModel for hierarchy/sub-item demonstration.
 /// </summary>
-public class HierarchyDemoViewModel : ObservableObject
+public class HierarchyDemoViewModel : ViewModelBase
 {
     public string ItemId { get; set; } = "";
     public string Description => $"This is a sub-item of the hierarchical menu.\nItem ID: {ItemId}";
@@ -59,7 +60,7 @@ public class HierarchyDemoViewModel : ObservableObject
 /// <summary>
 /// ViewModel for context menu demonstration.
 /// </summary>
-public partial class ContextMenuDemoViewModel : ObservableObject
+public partial class ContextMenuDemoViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string _lastAction = "Right-click on 'Context Menu Demo' in the navigation to see the context menu.";
@@ -78,7 +79,7 @@ public partial class ContextMenuDemoViewModel : ObservableObject
 /// <summary>
 /// ViewModel for keyboard navigation demonstration.
 /// </summary>
-public class KeyboardDemoViewModel : ObservableObject
+public class KeyboardDemoViewModel : ViewModelBase
 {
     public string Description => "Full keyboard navigation support:\n" +
         "• Arrow Up/Down: Move selection\n" +
@@ -105,7 +106,7 @@ public record KeyboardShortcut(string Key, string Action);
 /// <summary>
 /// ViewModel for page lifecycle demonstration.
 /// </summary>
-public partial class LifecycleDemoViewModel : ObservableObject
+public partial class LifecycleDemoViewModel : ViewModelBase
 {
     private static int _instanceCounter;
 

@@ -8,7 +8,7 @@ using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Host.Blazor.Shell.ViewModels;
 
-public partial class ShellViewModel : ObservableObject, 
+public partial class ShellViewModel : ViewModelBase, 
     IRecipient<MenuRefreshMessage>,
     IRecipient<MenuItemsAddedMessage>,
     IRecipient<MenuItemsRemovedMessage>
@@ -27,6 +27,7 @@ public partial class ShellViewModel : ObservableObject,
     public ShellViewModel(IMenuRegistry menuRegistry)
     {
         _menuRegistry = menuRegistry;
+        Title = "Modulus";
         
         // Subscribe to menu messages
         WeakReferenceMessenger.Default.RegisterAll(this);

@@ -43,7 +43,7 @@ Modulus Module (Blazor)      modulus-blazor    [C#]      Modulus/Module/Plugin/B
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/Modulus.git
+git clone https://github.com/AGIBuild/Modulus.git
 cd Modulus
 
 # Build the solution
@@ -281,6 +281,6 @@ Menus are read from the database at render time. If you upgraded from an older b
 
 ## Getting Help
 
-- GitHub Issues: [Report bugs or request features](https://github.com/user/Modulus/issues)
-- Discussions: [Ask questions](https://github.com/user/Modulus/discussions)
+- GitHub Issues: [Report bugs or request features](https://github.com/AGIBuild/Modulus/issues)
+- Discussions: [Ask questions](https://github.com/AGIBuild/Modulus/discussions)
 

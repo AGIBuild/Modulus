@@ -22,7 +22,7 @@ using UiMenuItem = Modulus.UI.Abstractions.MenuItem;
 
 namespace Modulus.Host.Blazor.Shell.ViewModels;
 
-public partial class ModuleListViewModel : ObservableObject
+public partial class ModuleListViewModel : ViewModelBase
 {
     private readonly RuntimeContext _runtimeContext;
     private readonly IModuleLoader _moduleLoader;
@@ -83,6 +83,7 @@ public partial class ModuleListViewModel : ObservableObject
         _cleanupService = cleanupService;
         _logger = loggerFactory.CreateLogger<ModuleListViewModel>();
         _detailLoader = new ModuleDetailLoader(loggerFactory.CreateLogger<ModuleDetailLoader>());
+        Title = "Module Management";
     }
 
     partial void OnSelectedModuleChanged(ModuleViewModel? value)
@@ -415,7 +416,7 @@ public partial class ModuleListViewModel : ObservableObject
     }
 }
 
-public partial class ModuleViewModel : ObservableObject, IDisposable
+public partial class ModuleViewModel : ViewModelBase, IDisposable
 {
     public ModuleEntity Entity { get; }
     public RuntimeModule? RuntimeModule { get; }
@@ -424,6 +425,7 @@ public partial class ModuleViewModel : ObservableObject, IDisposable
     {
         Entity = entity;
         RuntimeModule = runtimeModule;
+        Title = Entity.DisplayName;
         if (RuntimeModule != null)
         {
             RuntimeModule.StateChanged += OnRuntimeModuleStateChanged;

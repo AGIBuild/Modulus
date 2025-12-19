@@ -22,73 +22,48 @@ public class AvaloniaUIFactory : IUIFactory
 
     public object CreateView(object viewModel)
     {
+        if (viewModel is not ViewModelBase)
+            throw ViewModelConventionViolationException.ForType("ViewModel", viewModel.GetType());
+
         var vmType = viewModel.GetType();
+        var moduleHandle = _runtimeContext.ModuleHandles.FirstOrDefault(h => h.Assemblies.Any(a => a == vmType.Assembly));
 
         // 1. Try Registry
         var registeredViewType = _viewRegistry.GetViewType(vmType);
         if (registeredViewType != null)
         {
-             return CreateViewInstance(registeredViewType, viewModel);
+             return CreateViewInstance(moduleHandle, registeredViewType, viewModel);
         }
 
-        // 2. Try RuntimeModuleHandle assemblies (more reliable)
-        var viewName = vmType.Name.Replace("ViewModel", "View");
-        foreach (var module in _runtimeContext.RuntimeModules)
+        // 2. Convention: derive view type name without enumerating all types (avoid runtime scans).
+        var viewType = ResolveViewTypeByConvention(vmType, moduleHandle);
+        if (viewType != null)
         {
-            if (module.State != ModuleState.Active && module.State != ModuleState.Loaded) continue;
-
-            if (_runtimeContext.TryGetModuleHandle(module.Descriptor.Id, out var handle) && handle != null)
-            {
-                foreach (var asm in handle.Assemblies)
-                {
-                    Type? type = null;
-                    try { type = asm.GetTypes().FirstOrDefault(t => t.Name == viewName); }
-                    catch { continue; }
-
-                    if (type != null && typeof(Control).IsAssignableFrom(type))
-                    {
-                        _viewRegistry.Register(vmType, type);
-                        return CreateViewInstance(type, viewModel);
-                    }
-                }
-            }
-        }
-
-        // 3. Try LoadContext.Assemblies (Fallback)
-
-        foreach (var module in _runtimeContext.RuntimeModules)
-        {
-            if (module.State != ModuleState.Active && module.State != ModuleState.Loaded) continue;
-
-            foreach (var asm in module.LoadContext.Assemblies)
-            {
-                Type? type = null;
-                try
-                {
-                    type = asm.GetTypes().FirstOrDefault(t => t.Name == viewName);
-                }
-                catch
-                {
-                    // Ignore loader exceptions
-                    continue;
-                }
-
-                if (type != null && typeof(Control).IsAssignableFrom(type))
-                {
-                    // Cache it for future?
-                    _viewRegistry.Register(vmType, type);
-                    return CreateViewInstance(type, viewModel);
-                }
-            }
+            _viewRegistry.Register(vmType, viewType);
+            return CreateViewInstance(moduleHandle, viewType, viewModel);
         }
         
         return new TextBlock { Text = $"View not found for {vmType.Name}" };
     }
 
-    private object CreateViewInstance(Type viewType, object viewModel)
+    private object CreateViewInstance(RuntimeModuleHandle? moduleHandle, Type viewType, object viewModel)
     {
-        // Try DI first (if registered), else Activator
-        var view = (Control)(ActivatorUtilities.CreateInstance(_serviceProvider, viewType) ?? Activator.CreateInstance(viewType)!);
+        // Module types MUST be created via CompositeServiceProvider to keep ALC isolation and support both module+host deps.
+        var provider = moduleHandle?.CompositeServiceProvider ?? _serviceProvider;
+
+        Control view;
+
+        // Prefer DI constructor: MyView(MyViewModel vm)
+        try
+        {
+            view = (Control)ActivatorUtilities.CreateInstance(provider, viewType, viewModel);
+        }
+        catch
+        {
+            // Back-compat for existing views without VM constructor.
+            view = (Control)(ActivatorUtilities.CreateInstance(provider, viewType) ?? Activator.CreateInstance(viewType)!);
+        }
+
         view.DataContext = viewModel;
         return view;
     }
@@ -96,5 +71,41 @@ public class AvaloniaUIFactory : IUIFactory
     public object CreateView(string viewKey)
     {
         throw new NotImplementedException();
+    }
+
+    private static Type? ResolveViewTypeByConvention(Type viewModelType, RuntimeModuleHandle? moduleHandle)
+    {
+        var vmFullName = viewModelType.FullName;
+        if (string.IsNullOrWhiteSpace(vmFullName)) return null;
+
+        var candidates = new List<string>();
+
+        // Common convention: *.ViewModels.*ViewModel -> *.UI.Avalonia.*View
+        if (vmFullName.Contains(".ViewModels.", StringComparison.Ordinal))
+        {
+            candidates.Add(
+                vmFullName
+                    .Replace(".ViewModels.", ".UI.Avalonia.", StringComparison.Ordinal)
+                    .Replace("ViewModel", "View", StringComparison.Ordinal));
+        }
+
+        // Fallback: suffix replace only (same namespace)
+        candidates.Add(vmFullName.Replace("ViewModel", "View", StringComparison.Ordinal));
+
+        var assemblies = moduleHandle != null
+            ? moduleHandle.Assemblies
+            : new[] { viewModelType.Assembly };
+
+        foreach (var asm in assemblies)
+        {
+            foreach (var candidate in candidates.Distinct(StringComparer.Ordinal))
+            {
+                var t = asm.GetType(candidate, throwOnError: false, ignoreCase: false);
+                if (t != null && typeof(Control).IsAssignableFrom(t))
+                    return t;
+            }
+        }
+
+        return null;
     }
 }

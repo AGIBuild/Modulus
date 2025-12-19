@@ -9,7 +9,7 @@ namespace Modulus.Modules.ComponentsDemo.ViewModels;
 /// <summary>
 /// Main ViewModel for the Components Demo page with internal navigation.
 /// </summary>
-public partial class ComponentsMainViewModel : ObservableObject
+public partial class ComponentsMainViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string _currentDemoName = "Basic Navigation";
@@ -27,6 +27,7 @@ public partial class ComponentsMainViewModel : ObservableObject
 
     public ComponentsMainViewModel()
     {
+        Title = "Components Demo";
         NavigateCommand = new RelayCommand<MenuItem>(OnNavigate);
         ToggleGroupCommand = new RelayCommand<MenuItem>(OnToggleGroup);
         InitializeDemoItems();

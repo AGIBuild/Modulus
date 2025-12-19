@@ -24,9 +24,10 @@ public class BuildCommandTests : IDisposable
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "BuildTest");
+        var buildDir = FindBuildProjectDirectory(moduleDir);
         
         // Act
-        var result = await _runner.BuildAsync(path: moduleDir, configuration: "Release");
+        var result = await _runner.BuildAsync(path: buildDir, configuration: "Release");
         
         // Assert
         Assert.True(result.IsSuccess, $"Build failed: {result.CombinedOutput}");
@@ -41,9 +42,10 @@ public class BuildCommandTests : IDisposable
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "DebugBuild");
+        var buildDir = FindBuildProjectDirectory(moduleDir);
         
         // Act
-        var result = await _runner.BuildAsync(path: moduleDir, configuration: "Debug");
+        var result = await _runner.BuildAsync(path: buildDir, configuration: "Debug");
         
         // Assert
         Assert.True(result.IsSuccess, $"Build failed: {result.CombinedOutput}");
@@ -86,14 +88,34 @@ public class BuildCommandTests : IDisposable
         Assert.True(newResult.IsSuccess, $"Failed to create module: {newResult.CombinedOutput}");
         
         var moduleDir = Path.Combine(_context.WorkingDirectory, "VerboseBuild");
+        var buildDir = FindBuildProjectDirectory(moduleDir);
         
         // Act
-        var result = await _runner.BuildAsync(path: moduleDir, verbose: true);
+        var result = await _runner.BuildAsync(path: buildDir, verbose: true);
         
         // Assert
         Assert.True(result.IsSuccess, $"Build failed: {result.CombinedOutput}");
         // Verbose output should contain more details
         Assert.Contains("Build succeeded", result.StandardOutput);
+    }
+
+    private static string FindBuildProjectDirectory(string moduleDir)
+    {
+        // The module root often contains a .sln (multi-project build, slower).
+        // For CLI integration tests we intentionally build a single project to keep runtime stable and fast.
+        var csproj = Directory.EnumerateFiles(moduleDir, "*.csproj", SearchOption.AllDirectories)
+            .Where(p =>
+                !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) &&
+                !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) &&
+                !p.Contains($"{Path.DirectorySeparatorChar}artifacts{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.EndsWith(".Core.csproj", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+
+        Assert.False(string.IsNullOrWhiteSpace(csproj), $"No .csproj found under '{moduleDir}'.");
+        var dir = Path.GetDirectoryName(csproj!);
+        Assert.False(string.IsNullOrWhiteSpace(dir));
+        return dir!;
     }
     
     public void Dispose()
