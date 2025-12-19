@@ -8,7 +8,10 @@
     <Authors>Agibuild</Authors>
     <PackageTags>modulus;module;plugin;template;avalonia;blazor</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/user/Modulus</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AGIBuild/Modulus</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AGIBuild/Modulus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     
     <TargetFramework>net10.0</TargetFramework>
     <IncludeContentInPack>true</IncludeContentInPack>

@@ -43,7 +43,7 @@ Modulus Module (Blazor)      modulus-blazor    [C#]      Modulus/Module/Plugin/B
 
 ```bash
 # 克隆仓库
-git clone https://github.com/user/Modulus.git
+git clone https://github.com/AGIBuild/Modulus.git
 cd Modulus
 
 # 构建解决方案
@@ -281,6 +281,6 @@ dotnet restore
 
 ## 获取帮助
 
-- GitHub Issues: [报告 bug 或请求功能](https://github.com/user/Modulus/issues)
-- Discussions: [提问](https://github.com/user/Modulus/discussions)
+- GitHub Issues: [报告 bug 或请求功能](https://github.com/AGIBuild/Modulus/issues)
+- Discussions: [提问](https://github.com/AGIBuild/Modulus/discussions)
 
