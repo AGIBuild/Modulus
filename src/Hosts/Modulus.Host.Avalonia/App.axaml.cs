@@ -10,6 +10,8 @@ using Modulus.Core.Data;
 using Modulus.Core.Installation;
 using Modulus.Core.Logging;
 using Modulus.Core.Runtime;
+using Modulus.HostSdk.Abstractions;
+using Modulus.HostSdk.Runtime;
 using Modulus.Host.Avalonia.Services;
 using Modulus.Host.Avalonia.Shell.Services;
 using Modulus.Host.Avalonia.Shell.ViewModels;
@@ -93,44 +95,26 @@ public partial class App : Application
             var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Avalonia);
             ModulusLogging.AddLoggerFactory(services, loggerFactory);
 
-            // Module Directories - explicit module installation paths
-            var moduleDirectories = new System.Collections.Generic.List<ModuleDirectory>();
-
-            // Built-in modules: ALWAYS load from {AppBaseDir}/Modules/ (dev/prod consistent)
-            var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
-            if (Directory.Exists(appModules))
-            {
-                moduleDirectories.Add(new ModuleDirectory(appModules, IsSystem: true));
-            }
-
-            // User-installed modules (for runtime installation)
-            var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
-            if (Directory.Exists(userModules))
-            {
-                moduleDirectories.Add(new ModuleDirectory(userModules, IsSystem: false));
-            }
-
             // Database (configurable name; defaults to framework/solution name)
             var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
             var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath(dbName);
-            services.AddModulusDatabase(dbPath);
-
-            // Repositories & installers (needed at runtime for menu registration)
-            services.AddScoped<IModuleRepository, ModuleRepository>();
-            services.AddScoped<IMenuRepository, MenuRepository>();
-            services.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
-            services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
-            services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
-            services.AddScoped<SystemModuleInstaller>();
-            services.AddScoped<ModuleIntegrityChecker>();
-            services.AddSingleton<ILazyModuleLoader, LazyModuleLoader>();
 
             // Get host version from assembly
             var hostVersion = typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0);
 
-            // Bootstrap Modulus
-            var appTask = Task.Run(async () => 
-                await ModulusApplicationFactory.CreateAsync<AvaloniaHostModule>(services, moduleDirectories, ModulusHostIds.Avalonia, dbPath, configuration, loggerFactory, hostVersion)
+            var hostSdkOptions = new ModulusHostSdkOptions
+            {
+                HostId = ModulusHostIds.Avalonia,
+                HostVersion = hostVersion,
+                DatabasePath = dbPath
+            };
+            var hostSdkBuilder = new ModulusHostSdkBuilder(services, configuration, hostSdkOptions)
+                .AddDefaultModuleDirectories()
+                .AddDefaultRuntimeServices();
+
+            // Bootstrap Modulus via Host SDK
+            var appTask = Task.Run(async () =>
+                await hostSdkBuilder.BuildAsync<AvaloniaHostModule>(loggerFactory)
             );
             _modulusApp = appTask.GetAwaiter().GetResult();
             

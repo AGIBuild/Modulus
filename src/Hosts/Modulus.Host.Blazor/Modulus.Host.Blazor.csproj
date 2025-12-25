@@ -93,5 +93,8 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\Modulus.HostSdk.Runtime\Modulus.HostSdk.Runtime.csproj" />
+    </ItemGroup>
 
 </Project>

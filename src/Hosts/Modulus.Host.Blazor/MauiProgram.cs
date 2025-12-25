@@ -6,6 +6,8 @@ using Modulus.Core.Data;
 using Modulus.Core.Installation;
 using Modulus.Core.Logging;
 using Modulus.Core.Runtime;
+using Modulus.HostSdk.Abstractions;
+using Modulus.HostSdk.Runtime;
 using Modulus.Host.Blazor.Services;
 using Modulus.Host.Blazor.Shell.Services;
 using Modulus.Host.Blazor.Shell.ViewModels;
@@ -83,41 +85,26 @@ public static class MauiProgram
         ModulusLogging.AddLoggerFactory(builder.Services, loggerFactory);
 
         // Module Directories - explicit module installation paths
-        var moduleDirectories = new List<ModuleDirectory>();
-
-        // App Modules: {AppBaseDir}/Modules/ (populated by nuke build)
-        var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
-        if (Directory.Exists(appModules))
-        {
-            moduleDirectories.Add(new ModuleDirectory(appModules, IsSystem: true));
-        }
-
-        // User-installed modules (for runtime installation)
-        var userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Modulus", "Modules");
-        if (Directory.Exists(userModules))
-        {
-            moduleDirectories.Add(new ModuleDirectory(userModules, IsSystem: false));
-        }
-
         // Database (configurable name; defaults to framework/solution name)
         var dbName = configuration["Modulus:DatabaseName"] ?? "Modulus";
         var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath(dbName);
-        builder.Services.AddModulusDatabase(dbPath);
-
-        // Repositories & installers
-        builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
-        builder.Services.AddScoped<IMenuRepository, MenuRepository>();
-        builder.Services.AddScoped<IPendingCleanupRepository, PendingCleanupRepository>();
-        builder.Services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
-        builder.Services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
-        builder.Services.AddScoped<SystemModuleInstaller>();
 
         // Get host version from assembly
         var hostVersion = typeof(BlazorHostModule).Assembly.GetName().Version ?? new Version(1, 0, 0);
 
-        // Create Modulus App (use Task.Run to avoid deadlock in UI sync context)
-        var modulusApp = Task.Run(async () => 
-            await ModulusApplicationFactory.CreateAsync<BlazorHostModule>(builder.Services, moduleDirectories, ModulusHostIds.Blazor, dbPath, configuration, loggerFactory, hostVersion)
+        // Create Modulus App via Host SDK (use Task.Run to avoid deadlock in UI sync context)
+        var hostSdkOptions = new ModulusHostSdkOptions
+        {
+            HostId = ModulusHostIds.Blazor,
+            HostVersion = hostVersion,
+            DatabasePath = dbPath
+        };
+        var hostSdkBuilder = new ModulusHostSdkBuilder(builder.Services, configuration, hostSdkOptions)
+            .AddDefaultModuleDirectories()
+            .AddDefaultRuntimeServices();
+
+        var modulusApp = Task.Run(async () =>
+            await hostSdkBuilder.BuildAsync<BlazorHostModule>(loggerFactory)
         ).GetAwaiter().GetResult();
 
         // Register the app as IModulusApplication so it can be injected

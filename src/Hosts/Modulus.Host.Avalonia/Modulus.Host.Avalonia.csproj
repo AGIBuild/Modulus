@@ -62,6 +62,7 @@
     <ProjectReference Include="..\..\Modules\EchoPlugin\EchoPlugin.UI.Avalonia\EchoPlugin.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Modules\ComponentsDemo\ComponentsDemo.UI.Avalonia\ComponentsDemo.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Modules\SimpleNotes\SimpleNotes.UI.Avalonia\SimpleNotes.UI.Avalonia.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Modulus.HostSdk.Runtime\Modulus.HostSdk.Runtime.csproj" />
   </ItemGroup>
   
   <ItemGroup>
