@@ -3,17 +3,17 @@
 ## ADDED Requirements
 
 ### Requirement: Host SDK Package Layout
-The system SHALL provide Host SDK packages that allow third-party applications to build a Modulus plugin host without copying repository host code.
+The system SHALL provide Host SDK packages that allow third-party applications to build a Modulus plugin host without copying repository host code, by reusing the canonical runtime composition centered on `ModulusApplicationFactory`.
 
 #### Scenario: Avalonia host references Host SDK
 - **WHEN** 应用选择 Avalonia 作为宿主
-- **THEN** 应用仅需引用 Host SDK 包即可获得默认的模块运行时集成与 UI Shell
-- **AND** 应用不需要直接复制或修改 `Modulus.Host.Avalonia` 的源码
+- **THEN** 应用仅需引用 Host SDK（composition layer + 可选 Avalonia 默认 Shell）即可完成宿主启动与模块运行时集成
+- **AND** 应用不需要直接复制或修改 `Modulus.Host.Avalonia` 的源码（参考实现可作为示例）
 
 #### Scenario: MAUI Blazor host references Host SDK
-- **WHEN** 应用选择 MAUI Blazor 作为宿主
-- **THEN** 应用仅需引用 MAUI Blazor Host SDK 包即可获得默认的模块运行时集成与 UI Shell
-- **AND** Host SDK 明确其 MAUI 工具链前置要求（workload/平台）
+- **WHEN** 应用选择 Blazor Hybrid(MAUI) 作为宿主
+- **THEN** 应用仅需引用 Host SDK（composition layer + 可选 Blazor Hybrid 默认 Shell）即可完成宿主启动与模块运行时集成
+- **AND** Host SDK 明确其 MAUI 工具链前置要求与可分离构建策略（避免无 MAUI 平台被全仓阻塞）
 
 ### Requirement: Host SDK Public API Boundary
 Host SDK SHALL expose a minimal, stable public API surface based on builder/options and explicit extension points, and SHALL keep internal implementation details non-public.
@@ -33,27 +33,18 @@ All Host SDK assemblies MUST be declared as Shared-domain assemblies and MUST be
 - **THEN** 这些程序集应从默认上下文（Host shared context）解析
 - **AND** 不允许模块加载 Host SDK 的私有副本（避免类型不相等）
 
-### Requirement: Shared Assembly Policy for UI Framework Dependencies
-The system SHALL define a single authoritative shared-assembly policy that covers both runtime shared resolution and packaging-time shared exclusions for UI framework dependencies.
-
-#### Scenario: Shared policy prevents duplicate UI framework assemblies
-- **WHEN** 模块 UI 程序集依赖 Avalonia 或 MAUI Blazor 相关程序集
-- **THEN** 打包时不应将这些共享框架程序集打入 `.modpkg`
-- **AND** 运行时解析应确保模块不加载这些程序集的私有副本
-- **AND** 系统应提供诊断以定位共享策略缺失或冲突
-
-### Requirement: Version Strategy (Release Train + SemVer Range)
-Host SDK and Modulus core packages SHALL follow a release-train versioning strategy and SHALL enforce module compatibility via SemVer ranges.
+### Requirement: Host Version & Compatibility via SemVer Range
+Host SDK and the runtime SHALL enforce module compatibility via `InstallationTarget/@Version` SemVer ranges, and the host MUST provide a version that is parseable by the runtime.
 
 #### Scenario: Module declares compatible host version range
-- **WHEN** Host 版本为 `1.4.2`
-- **AND** 模块清单声明 `InstallationTarget Version="[1.4,1.5)"`
+- **WHEN** Host SDK 启动时提供 Host 版本
+- **AND** 模块清单声明 `InstallationTarget Version="[1.0,2.0)"`
 - **THEN** 模块加载通过版本校验
 - **AND** 诊断信息应包含 Host 版本与模块声明范围
 
 #### Scenario: Incompatible range blocks load with actionable diagnostics
-- **WHEN** Host 版本为 `1.4.2`
-- **AND** 模块清单声明 `InstallationTarget Version="[1.5,2.0)"`
+- **WHEN** Host 版本不满足模块声明的版本范围
+- **AND** 模块清单声明了 `InstallationTarget/@Version`
 - **THEN** 模块加载被阻止
 - **AND** 错误信息应提示用户升级 Host 或安装兼容版本的模块
 

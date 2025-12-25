@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Canonical Shared Assembly Policy
-The runtime SHALL define a single authoritative shared-assembly policy used for (1) module AssemblyLoadContext shared resolution and (2) packaging-time shared exclusions, and SHALL provide diagnostics for mismatches.
+The runtime SHALL define a single authoritative shared-assembly policy (based on exact assembly simple names) used for (1) module AssemblyLoadContext shared resolution and (2) packaging-time shared exclusions, and SHALL provide diagnostics for mismatches.
 
 #### Scenario: Policy derived from domain metadata and host configuration
 - **WHEN** Host 启动并初始化 shared assembly catalog
@@ -12,17 +12,17 @@ The runtime SHALL define a single authoritative shared-assembly policy used for 
   - host configuration（`Modulus:Runtime:SharedAssemblies`）
 - **AND** 系统应记录来源（domain/config/manifest hint）以便诊断
 
-#### Scenario: Prefix-based policy supported for framework families
-- **WHEN** Host 需要将一组框架程序集视为共享（如 `Avalonia*`, `Microsoft.Maui.*`, `MudBlazor*`）
-- **THEN** 系统应支持“前缀/模式”级别的共享策略，避免维护超长的显式程序集名列表
-- **AND** 诊断输出应显示哪些程序集由前缀规则匹配
+#### Scenario: Packaging uses the same canonical policy
+- **WHEN** 执行模块打包（CLI 或 Nuke）
+- **THEN** 打包流程用于剔除共享程序集的规则必须与 runtime shared-assembly policy 一致
+- **AND** 打包诊断应能输出“本次剔除的 shared assemblies 列表”以及其来源（domain/config）
 
 ### Requirement: Host SDK Assemblies MUST be Shared
 Host SDK assemblies MUST be in Shared domain and MUST be treated as shared during module loading.
 
 #### Scenario: Host SDK assemblies present in shared catalog
 - **WHEN** Host 引用并加载 Host SDK 程序集
-- **THEN** shared assembly catalog 应包含这些程序集
+- **THEN** shared assembly catalog 应包含这些程序集（来自 domain metadata 或 host config）
 - **AND** 若发现 Host SDK 程序集被标记为 Module-domain，应输出明确诊断
 
 

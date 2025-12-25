@@ -1,17 +1,17 @@
 ## 1. Specification
 
-- [ ] 1.1 添加 `host-sdk` delta spec（定义包结构、API 边界、Shared Domain、版本策略、MAUI Blazor 约束）
-- [ ] 1.2 更新 `runtime` delta spec：Shared Assembly Policy（权威来源、诊断、Host SDK 纳入共享域）
-- [ ] 1.3 更新 `module-packaging` delta spec：打包剔除共享程序集与运行时策略一致
-- [ ] 1.4 更新 `module-template` delta spec：模板版本引用策略（同一 release train）
+- [ ] 1.1 更新 `host-sdk` delta spec（定义 composition layer、公共 API 边界、可选默认 Shell、Shared domain、Host version 供给）
+- [ ] 1.2 更新 `runtime` delta spec：canonical shared-assembly policy（权威来源、诊断、供 runtime+packaging 复用）
+- [ ] 1.3 更新 `module-packaging` delta spec：packaging shared exclusion 与 runtime policy 对齐
+- [ ] 1.4 删除 `module-template` delta（本 change 不涉及模板版本策略；模板当前通过 `ModulusCliLibDir` 引用 CLI 随附 dll）
 
 ## 2. Implementation (后续在 proposal 批准后执行)
 
-- [ ] 2.1 新增/拆分 Host SDK 项目（Abstractions/Core/Avalonia/BlazorMaui），并声明 Shared Domain
-- [ ] 2.2 引入 Host SDK builder API（最小 public surface + options + extensibility）
-- [ ] 2.3 统一 Shared Assembly Policy（运行时 + CLI/Nuke 打包复用）
-- [ ] 2.4 更新现有 Host（Avalonia/Blazor）迁移到 Host SDK（参考实现）
-- [ ] 2.5 增强诊断：输出共享程序集快照与 mismatch，提供可视化/日志
-- [ ] 2.6 CI/构建目标分离：支持在无 MAUI 工具链的平台上不阻塞主流程（同时保持 MAUI 路线可构建）
+- [ ] 2.1 新增 Host SDK 项目（Abstractions/Runtime + 可选 Shell），并声明 Shared Domain
+- [ ] 2.2 引入 Host SDK composition builder/options（围绕 `ModulusApplicationFactory`，最小 public surface）
+- [ ] 2.3 将现有 Host（Avalonia/Blazor Hybrid(MAUI)）迁移为“使用 Host SDK 的参考实现”
+- [ ] 2.4 统一 shared-assembly 策略：让 `modulus pack` 与 `nuke pack-module` 复用 runtime 的 canonical policy（移除硬编码前缀分叉）
+- [ ] 2.5 增强 diagnostics：packaging 输出“被剔除的 shared assemblies 列表”与来源，便于排障
+- [ ] 2.6 MAUI 构建目标分离：支持在无 MAUI 工具链的平台上不阻塞主流程（同时保持 MAUI 路线可构建）
 
 
