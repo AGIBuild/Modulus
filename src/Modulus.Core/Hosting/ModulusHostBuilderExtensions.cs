@@ -34,7 +34,11 @@ public static class ModulusHostBuilderExtensions
 
             // Core Runtime
             services.AddSingleton<RuntimeContext>();
-            services.AddSingleton<ISharedAssemblyCatalog>(sp => SharedAssemblyCatalog.FromAssemblies(AppDomain.CurrentDomain.GetAssemblies(), null, sp.GetService<ILogger<SharedAssemblyCatalog>>()));
+            services.AddSingleton<ISharedAssemblyCatalog>(sp =>
+                SharedAssemblyCatalog.FromAssemblies(
+                    AppDomain.CurrentDomain.GetAssemblies(),
+                    SharedAssemblyPolicy.MergeWithConfiguredAssemblies(null),
+                    sp.GetService<ILogger<SharedAssemblyCatalog>>()));
             services.AddSingleton<IModuleExecutionGuard, ModuleExecutionGuard>();
             services.AddSingleton<IModuleLoader, ModuleLoader>();
             services.AddSingleton<IManifestValidator, DefaultManifestValidator>();

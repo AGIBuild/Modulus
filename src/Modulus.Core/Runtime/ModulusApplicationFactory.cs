@@ -66,11 +66,12 @@ public static class ModulusApplicationFactory
 
         var manifestValidator = new DefaultManifestValidator(loggerFactory.CreateLogger<DefaultManifestValidator>(), runtimeContext);
         
-        // Build shared assembly catalog from domain metadata + host configuration
+        // Build shared assembly catalog from domain metadata + host configuration + built-in shared policy
         var configuredSharedAssemblies = effectiveConfig.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();
+        var mergedSharedAssemblies = SharedAssemblyPolicy.MergeWithConfiguredAssemblies(configuredSharedAssemblies);
         var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(
             AppDomain.CurrentDomain.GetAssemblies(),
-            configuredSharedAssemblies,
+            mergedSharedAssemblies,
             loggerFactory.CreateLogger<SharedAssemblyCatalog>());
         
         // Create resolution reporter for diagnostics

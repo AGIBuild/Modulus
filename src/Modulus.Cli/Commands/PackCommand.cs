@@ -2,6 +2,9 @@ using System.CommandLine;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Xml.Linq;
+using System.Text.Json;
+using Modulus.Core.Architecture;
+using Modulus.Sdk;
 
 namespace Modulus.Cli.Commands;
 
@@ -11,29 +14,19 @@ namespace Modulus.Cli.Commands;
 /// </summary>
 public static class PackCommand
 {
-    /// <summary>
-    /// Shared assemblies that should NOT be included in module packages.
-    /// These are provided by the host runtime.
-    /// </summary>
-    private static readonly HashSet<string> SharedAssemblyPrefixes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Modulus.Core",
-        "Modulus.Sdk",
-        "Modulus.UI.Abstractions",
-        "Modulus.UI.Avalonia",
-        "Modulus.UI.Blazor",
-        "Agibuild.Modulus.Core",
-        "Agibuild.Modulus.Sdk",
-        "Agibuild.Modulus.UI.Abstractions",
-        "Agibuild.Modulus.UI.Avalonia",
-        "Agibuild.Modulus.UI.Blazor",
-        // Common framework assemblies
-        "Microsoft.Extensions.DependencyInjection.Abstractions",
-        "Microsoft.Extensions.Logging.Abstractions",
+    private static readonly HashSet<string> BuiltInSharedAssemblies =
+        new(SharedAssemblyPolicy.GetBuiltInSharedAssemblies(), StringComparer.OrdinalIgnoreCase);
+
+    private static readonly string[] FrameworkAssemblyPrefixes =
+    [
         "System.",
+        "Microsoft.Extensions.",
+        "Microsoft.EntityFrameworkCore.",
+        "Microsoft.AspNetCore.",
         "Microsoft.CSharp",
+        "mscorlib",
         "netstandard",
-    };
+    ];
 
     public static Command Create()
     {
@@ -164,7 +157,13 @@ public static class PackCommand
         Console.WriteLine($"  Version: {version}");
 
         // Step 5: Collect files for packaging
-        var filesToPack = CollectFilesForPackaging(projectDir, buildOutputDir, manifestPath, verbose);
+        var installationTargets = ReadInstallationTargetHostIds(manifestPath);
+        var hostConfigSharedAssemblies = TryLoadHostSharedAssembliesFromRepo(projectDir, installationTargets);
+        var sharedAssemblyNames = new HashSet<string>(
+            SharedAssemblyPolicy.MergeWithConfiguredAssemblies(hostConfigSharedAssemblies),
+            StringComparer.OrdinalIgnoreCase);
+
+        var filesToPack = CollectFilesForPackaging(projectDir, buildOutputDir, manifestPath, sharedAssemblyNames, hostConfigSharedAssemblies, verbose);
         Console.WriteLine($"  Files collected: {filesToPack.Count}");
 
         // Step 6: Create .modpkg
@@ -332,10 +331,13 @@ public static class PackCommand
         string projectDir, 
         string buildOutputDir, 
         string manifestPath,
+        HashSet<string> sharedAssemblyNames,
+        IReadOnlyCollection<string>? hostConfigSharedAssemblies,
         bool verbose)
     {
         var files = new List<(string, string)>();
         var addedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var skippedShared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // 1. Add manifest
         files.Add((manifestPath, "extension.vsixmanifest"));
@@ -368,8 +370,9 @@ public static class PackCommand
                 var fileName = Path.GetFileName(dll);
                 
                 // Skip shared assemblies
-                if (IsSharedAssembly(fileName))
+                if (IsSharedAssembly(fileName, sharedAssemblyNames))
                 {
+                    skippedShared.Add(fileName);
                     if (verbose)
                     {
                         Console.WriteLine($"    Skipping shared: {fileName}");
@@ -397,15 +400,35 @@ public static class PackCommand
             }
         }
 
+        if (verbose && skippedShared.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("  Shared assemblies excluded:");
+            foreach (var name in skippedShared
+                         .OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
+            {
+                var simpleName = Path.GetFileNameWithoutExtension(name);
+                var source = BuiltInSharedAssemblies.Contains(simpleName)
+                    ? "built-in"
+                    : (hostConfigSharedAssemblies?.Contains(simpleName, StringComparer.OrdinalIgnoreCase) == true ? "host-config" : "framework");
+                Console.WriteLine($"    - {name} ({source})");
+            }
+        }
+
         return files;
     }
 
-    private static bool IsSharedAssembly(string fileName)
+    private static bool IsSharedAssembly(string fileName, HashSet<string> sharedAssemblyNames)
     {
         // Remove .dll extension for comparison
         var name = Path.GetFileNameWithoutExtension(fileName);
-        
-        foreach (var prefix in SharedAssemblyPrefixes)
+
+        if (sharedAssemblyNames.Contains(name))
+        {
+            return true;
+        }
+
+        foreach (var prefix in FrameworkAssemblyPrefixes)
         {
             if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             {
@@ -414,6 +437,121 @@ public static class PackCommand
         }
 
         return false;
+    }
+
+    private static IReadOnlyList<string> ReadInstallationTargetHostIds(string manifestPath)
+    {
+        try
+        {
+            var doc = XDocument.Load(manifestPath);
+            var ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+            return doc.Descendants(ns + "InstallationTarget")
+                .Select(e => e.Attribute("Id")?.Value)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private static IReadOnlyCollection<string>? TryLoadHostSharedAssembliesFromRepo(string projectDir, IReadOnlyList<string> installationTargetHostIds)
+    {
+        // This is a repo-local optimization: when packing modules within the Modulus repository,
+        // we can read host appsettings.json to align packaging exclusions with runtime shared policy.
+        var repoRoot = TryFindRepoRoot(projectDir);
+        if (repoRoot == null)
+        {
+            return null;
+        }
+
+        var shared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var hostId in installationTargetHostIds)
+        {
+            var appsettingsPath = GetHostAppSettingsPath(repoRoot, hostId);
+            if (appsettingsPath == null || !File.Exists(appsettingsPath))
+            {
+                continue;
+            }
+
+            foreach (var name in ReadSharedAssembliesFromAppSettings(appsettingsPath))
+            {
+                shared.Add(name);
+            }
+        }
+
+        return shared.Count == 0 ? null : shared.ToList();
+    }
+
+    private static string? TryFindRepoRoot(string startDir)
+    {
+        var dir = new DirectoryInfo(startDir);
+        while (dir != null)
+        {
+            var sln = Path.Combine(dir.FullName, "Modulus.sln");
+            if (File.Exists(sln))
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
+        }
+        return null;
+    }
+
+    private static string? GetHostAppSettingsPath(string repoRoot, string hostId)
+    {
+        if (string.Equals(hostId, ModulusHostIds.Avalonia, StringComparison.OrdinalIgnoreCase))
+        {
+            return Path.Combine(repoRoot, "src", "Hosts", "Modulus.Host.Avalonia", "appsettings.json");
+        }
+
+        if (string.Equals(hostId, ModulusHostIds.Blazor, StringComparison.OrdinalIgnoreCase))
+        {
+            return Path.Combine(repoRoot, "src", "Hosts", "Modulus.Host.Blazor", "appsettings.json");
+        }
+
+        return null;
+    }
+
+    private static IReadOnlyList<string> ReadSharedAssembliesFromAppSettings(string appsettingsPath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(appsettingsPath);
+            using var doc = JsonDocument.Parse(stream);
+
+            if (!doc.RootElement.TryGetProperty("Modulus", out var modulus))
+                return Array.Empty<string>();
+
+            if (!modulus.TryGetProperty("Runtime", out var runtime))
+                return Array.Empty<string>();
+
+            if (!runtime.TryGetProperty("SharedAssemblies", out var sharedAssemblies))
+                return Array.Empty<string>();
+
+            if (sharedAssemblies.ValueKind != JsonValueKind.Array)
+                return Array.Empty<string>();
+
+            var list = new List<string>();
+            foreach (var item in sharedAssemblies.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String) continue;
+                var name = item.GetString();
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                list.Add(name.Trim());
+            }
+
+            return list;
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private static string FormatFileSize(long bytes)

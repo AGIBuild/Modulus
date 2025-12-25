@@ -10,10 +10,16 @@
     <NukeScriptDirectory></NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <IsPackable>false</IsPackable>
-  </PropertyGroup>  <ItemGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
     <PackageReference Include="Nuke.Common" Version="10.1.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\Modulus.Core\Modulus.Core.csproj" />
   </ItemGroup>
 
 </Project>

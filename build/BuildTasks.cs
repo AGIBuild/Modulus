@@ -12,6 +12,7 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using static Nuke.Common.EnvironmentInfo;
 using Nuke.Common.Tools.DotNet;
+using Modulus.Core.Architecture;
 
 class BuildTasks : NukeBuild
 {
@@ -339,16 +340,14 @@ class BuildTasks : NukeBuild
 
     AbsolutePath PackagesDirectory => ArtifactsDirectory / "packages";
 
-    // Shared assemblies that should NOT be included in module packages
-    private static readonly HashSet<string> SharedAssemblyPrefixes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Modulus.Core",
-        "Modulus.Sdk",
-        "Modulus.UI.Abstractions",
-        "Modulus.UI.Avalonia",
-        "Modulus.UI.Blazor",
-        "Modulus.Infrastructure.Data"
-    };
+    // Shared assemblies that should NOT be included in module packages (canonical policy + repo shared libs)
+    private static readonly HashSet<string> SharedAssemblyNames = new(
+        SharedAssemblyPolicy.MergeWithConfiguredAssemblies(new[]
+        {
+            "Modulus.Infrastructure.Data",
+            "Agibuild.Modulus.Infrastructure.Data"
+        }),
+        StringComparer.OrdinalIgnoreCase);
 
     private static readonly HashSet<string> FrameworkPrefixes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -369,7 +368,7 @@ class BuildTasks : NukeBuild
         var name = Path.GetFileNameWithoutExtension(fileName);
         
         // Check exact matches for shared assemblies
-        if (SharedAssemblyPrefixes.Contains(name))
+        if (SharedAssemblyNames.Contains(name))
             return true;
         
         // Check framework prefixes
@@ -462,6 +461,7 @@ class BuildTasks : NukeBuild
                         // Find and publish all module projects
                         var moduleProjects = Directory.GetFiles(moduleDir, "*.csproj", SearchOption.AllDirectories);
                         var publishedDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        var skippedShared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                         foreach (var projectPath in moduleProjects)
                         {
@@ -491,6 +491,7 @@ class BuildTasks : NukeBuild
                                 if (IsSharedAssembly(fileName))
                                 {
                                     Log.Debug($"Skipping shared assembly: {fileName}");
+                                    skippedShared.Add(fileName);
                                     continue;
                                 }
 
@@ -522,6 +523,11 @@ class BuildTasks : NukeBuild
                         var publishSubDir = Path.Combine(tempDir, "publish");
                         if (Directory.Exists(publishSubDir))
                             Directory.Delete(publishSubDir, true);
+
+                        if (skippedShared.Count > 0)
+                        {
+                            Log.Information("Excluded {Count} shared assemblies for {ModuleName}", skippedShared.Count, moduleName);
+                        }
 
                         // Create ZIP package
                         if (File.Exists(packagePath))
