@@ -16,18 +16,14 @@ namespace Modulus.Cli.Services;
 public static class CliServiceProvider
 {
     /// <summary>
-    /// Creates a configured service provider for CLI operations.
+    /// Registers CLI services into an existing <see cref="IServiceCollection"/>.
     /// </summary>
-    /// <param name="verbose">Whether to enable verbose logging.</param>
-    /// <param name="databasePath">Custom database path. If null, uses default location.</param>
-    /// <param name="modulesDirectory">Custom modules directory. If null, uses default location.</param>
-    public static ServiceProvider Build(
+    public static IServiceCollection AddCliServices(
+        this IServiceCollection services,
         bool verbose = false,
         string? databasePath = null,
         string? modulesDirectory = null)
     {
-        var services = new ServiceCollection();
-
         // Logging
         services.AddLogging(builder =>
         {
@@ -59,13 +55,29 @@ public static class CliServiceProvider
         services.AddSingleton<IModuleCleanupService, ModuleCleanupService>();
         services.AddScoped<IModuleInstallerService, ModuleInstallerService>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Creates a configured service provider for CLI operations.
+    /// </summary>
+    /// <param name="verbose">Whether to enable verbose logging.</param>
+    /// <param name="databasePath">Custom database path. If null, uses default location.</param>
+    /// <param name="modulesDirectory">Custom modules directory. If null, uses default location.</param>
+    public static ServiceProvider Build(
+        bool verbose = false,
+        string? databasePath = null,
+        string? modulesDirectory = null)
+    {
+        var services = new ServiceCollection();
+        services.AddCliServices(verbose, databasePath, modulesDirectory);
         return services.BuildServiceProvider();
     }
 
     /// <summary>
     /// Ensures the database is migrated to the latest version.
     /// </summary>
-    public static async Task EnsureMigratedAsync(ServiceProvider provider)
+    public static async Task EnsureMigratedAsync(IServiceProvider provider)
     {
         var dbContext = provider.GetRequiredService<ModulusDbContext>();
         await dbContext.Database.MigrateAsync();

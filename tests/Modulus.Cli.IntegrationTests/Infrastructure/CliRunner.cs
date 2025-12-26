@@ -1,145 +1,135 @@
-using System.Diagnostics;
-using Modulus.Cli.Commands.Handlers;
 using Modulus.Cli.Services;
 
 namespace Modulus.Cli.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// Executes CLI commands for integration testing.
-/// - Commands without database (new/build/pack): Process execution
-/// - Commands with database (install/uninstall/list): Direct handler invocation with injected ServiceProvider
+/// Executes CLI commands for integration testing (in-process).
 /// </summary>
-public class CliRunner
+public sealed class CliRunner
 {
     private readonly CliTestContext _context;
-    private readonly string _cliPath;
-    
+
     /// <summary>
     /// Default timeout for CLI commands.
     /// </summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
-    
+
     public CliRunner(CliTestContext context)
     {
         _context = context;
-        _cliPath = FindCliExecutable();
     }
-    
-    /// <summary>
-    /// Runs a CLI command via process execution.
-    /// Used for commands that don't require database access.
-    /// </summary>
-    public async Task<CliResult> RunProcessAsync(string arguments, string? workingDirectory = null)
+
+    public async Task<CliResult> RunAsync(IReadOnlyList<string> args, string? workingDirectory = null, string? standardInput = null)
     {
         var effectiveWorkingDir = workingDirectory ?? _context.WorkingDirectory;
-        
+
+        var oldCwd = Directory.GetCurrentDirectory();
+        var oldDb = Environment.GetEnvironmentVariable(CliEnvironmentVariables.DatabasePath);
+        var oldModules = Environment.GetEnvironmentVariable(CliEnvironmentVariables.ModulesDirectory);
+
+        var oldOut = Console.Out;
+        var oldErr = Console.Error;
+        var oldIn = Console.In;
+
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        using var stdin = new StringReader(standardInput ?? "");
+
         try
         {
-            var psi = new ProcessStartInfo
+            Directory.SetCurrentDirectory(effectiveWorkingDir);
+
+            Environment.SetEnvironmentVariable(CliEnvironmentVariables.DatabasePath, _context.DatabasePath);
+            Environment.SetEnvironmentVariable(CliEnvironmentVariables.ModulesDirectory, _context.ModulesDirectory);
+
+            Console.SetOut(stdout);
+            Console.SetError(stderr);
+            Console.SetIn(stdin);
+
+            var exitCode = await Modulus.Cli.Program.Main(args.ToArray());
+
+            return new CliResult
             {
-                FileName = "dotnet",
-                Arguments = $"\"{_cliPath}\" {arguments}",
-                WorkingDirectory = effectiveWorkingDir,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
+                ExitCode = exitCode,
+                StandardOutput = stdout.ToString(),
+                StandardError = stderr.ToString()
             };
-            
-            using var process = new Process { StartInfo = psi };
-            process.Start();
-            
-            using var cts = new CancellationTokenSource(Timeout);
-            try
-            {
-                // Read output streams concurrently to avoid deadlocks on large/verbose output.
-                var stdoutTask = process.StandardOutput.ReadToEndAsync(cts.Token);
-                var stderrTask = process.StandardError.ReadToEndAsync(cts.Token);
-                await Task.WhenAll(process.WaitForExitAsync(cts.Token), stdoutTask, stderrTask);
-                
-                var stdout = await stdoutTask;
-                var stderr = await stderrTask;
-                
-                return new CliResult
-                {
-                    ExitCode = process.ExitCode,
-                    StandardOutput = stdout,
-                    StandardError = stderr
-                };
-            }
-            catch (OperationCanceledException)
-            {
-                process.Kill(entireProcessTree: true);
-                return new CliResult
-                {
-                    ExitCode = -1,
-                    StandardOutput = "",
-                    StandardError = $"Command timed out after {Timeout.TotalSeconds}s",
-                    Exception = new TimeoutException($"CLI command timed out: {arguments}")
-                };
-            }
         }
         catch (Exception ex)
         {
             return new CliResult
             {
-                ExitCode = -1,
-                StandardError = ex.Message,
+                ExitCode = 1,
+                StandardOutput = stdout.ToString(),
+                StandardError = stderr.ToString(),
                 Exception = ex
             };
         }
+        finally
+        {
+            Console.SetOut(oldOut);
+            Console.SetError(oldErr);
+            Console.SetIn(oldIn);
+
+            Environment.SetEnvironmentVariable(CliEnvironmentVariables.DatabasePath, oldDb);
+            Environment.SetEnvironmentVariable(CliEnvironmentVariables.ModulesDirectory, oldModules);
+
+            Directory.SetCurrentDirectory(oldCwd);
+        }
     }
-    
-    /// <summary>
-    /// Runs 'modulus new' command to create a new module.
-    /// </summary>
+
     public Task<CliResult> NewAsync(
-        string moduleName, 
+        string moduleName,
         string? template = null,
         string? outputPath = null,
         bool force = false)
     {
-        var args = "new";
+        var args = new List<string> { "new" };
         if (!string.IsNullOrWhiteSpace(template))
         {
-            args += $" {template}";
+            args.Add(template);
         }
-        args += $" --name {moduleName}";
+
+        args.Add("--name");
+        args.Add(moduleName);
+
         if (!string.IsNullOrEmpty(outputPath))
         {
-            args += $" --output \"{outputPath}\"";
+            args.Add("--output");
+            args.Add(outputPath);
         }
+
         if (force)
         {
-            args += " --force";
+            args.Add("--force");
         }
-        return RunProcessAsync(args);
+
+        return RunAsync(args);
     }
-    
-    /// <summary>
-    /// Runs 'modulus build' command.
-    /// </summary>
+
     public Task<CliResult> BuildAsync(
-        string? path = null, 
+        string? path = null,
         string configuration = "Release",
         bool verbose = false)
     {
-        var args = "build";
+        var args = new List<string> { "build" };
         if (!string.IsNullOrEmpty(path))
         {
-            args += $" --path \"{path}\"";
+            args.Add("--path");
+            args.Add(path);
         }
-        args += $" --configuration {configuration}";
+
+        args.Add("--configuration");
+        args.Add(configuration);
+
         if (verbose)
         {
-            args += " --verbose";
+            args.Add("--verbose");
         }
-        return RunProcessAsync(args);
+
+        return RunAsync(args);
     }
-    
-    /// <summary>
-    /// Runs 'modulus pack' command.
-    /// </summary>
+
     public Task<CliResult> PackAsync(
         string? path = null,
         string? output = null,
@@ -147,174 +137,57 @@ public class CliRunner
         bool noBuild = false,
         bool verbose = false)
     {
-        var args = "pack";
+        var args = new List<string> { "pack" };
         if (!string.IsNullOrEmpty(path))
         {
-            args += $" --path \"{path}\"";
+            args.Add("--path");
+            args.Add(path);
         }
+
         if (!string.IsNullOrEmpty(output))
         {
-            args += $" --output \"{output}\"";
+            args.Add("--output");
+            args.Add(output);
         }
-        args += $" --configuration {configuration}";
+
+        args.Add("--configuration");
+        args.Add(configuration);
+
         if (noBuild)
         {
-            args += " --no-build";
+            args.Add("--no-build");
         }
+
         if (verbose)
         {
-            args += " --verbose";
+            args.Add("--verbose");
         }
-        return RunProcessAsync(args);
+
+        return RunAsync(args);
     }
-    
-    /// <summary>
-    /// Runs 'modulus install' command using direct handler invocation.
-    /// This ensures test database isolation.
-    /// </summary>
-    public async Task<CliResult> InstallAsync(string source, bool force = false, bool verbose = false)
+
+    public Task<CliResult> InstallAsync(string source, bool force = false, bool verbose = false)
     {
-        try
-        {
-            var provider = await _context.GetServiceProviderAsync();
-            var handler = new InstallHandler(provider, _context.ModulesDirectory);
-            
-            using var outputWriter = new StringWriter();
-            var result = await handler.ExecuteAsync(source, force, outputWriter);
-            
-            return new CliResult
-            {
-                ExitCode = result.Success ? 0 : 1,
-                StandardOutput = outputWriter.ToString(),
-                StandardError = result.Success ? "" : result.Message
-            };
-        }
-        catch (Exception ex)
-        {
-            return new CliResult
-            {
-                ExitCode = 1,
-                StandardError = ex.Message,
-                Exception = ex
-            };
-        }
+        var args = new List<string> { "install", source };
+        if (force) args.Add("--force");
+        if (verbose) args.Add("--verbose");
+        return RunAsync(args);
     }
-    
-    /// <summary>
-    /// Runs 'modulus uninstall' command using direct handler invocation.
-    /// </summary>
-    public async Task<CliResult> UninstallAsync(string module, bool force = false, bool verbose = false)
+
+    public Task<CliResult> UninstallAsync(string module, bool force = false, bool verbose = false)
     {
-        try
-        {
-            var provider = await _context.GetServiceProviderAsync();
-            var handler = new UninstallHandler(provider, _context.ModulesDirectory);
-            
-            using var outputWriter = new StringWriter();
-            var result = await handler.ExecuteAsync(module, force, outputWriter);
-            
-            return new CliResult
-            {
-                ExitCode = result.Success ? 0 : 1,
-                StandardOutput = outputWriter.ToString(),
-                StandardError = result.Success ? "" : result.Message
-            };
-        }
-        catch (Exception ex)
-        {
-            return new CliResult
-            {
-                ExitCode = 1,
-                StandardError = ex.Message,
-                Exception = ex
-            };
-        }
+        var args = new List<string> { "uninstall", module };
+        if (force) args.Add("--force");
+        if (verbose) args.Add("--verbose");
+        return RunAsync(args);
     }
-    
-    /// <summary>
-    /// Runs 'modulus list' command using direct handler invocation.
-    /// </summary>
-    public async Task<CliResult> ListAsync(bool verbose = false)
+
+    public Task<CliResult> ListAsync(bool verbose = false)
     {
-        try
-        {
-            var provider = await _context.GetServiceProviderAsync();
-            var handler = new ListHandler(provider);
-            
-            using var outputWriter = new StringWriter();
-            var result = await handler.ExecuteAsync(verbose, outputWriter);
-            
-            return new CliResult
-            {
-                ExitCode = result.Success ? 0 : 1,
-                StandardOutput = outputWriter.ToString(),
-                StandardError = result.Success ? "" : result.Message
-            };
-        }
-        catch (Exception ex)
-        {
-            return new CliResult
-            {
-                ExitCode = 1,
-                StandardError = ex.Message,
-                Exception = ex
-            };
-        }
-    }
-    
-    /// <summary>
-    /// Finds the CLI executable path.
-    /// </summary>
-    private static string FindCliExecutable()
-    {
-        // Look for the CLI in artifacts/cli directory
-        var solutionRoot = FindSolutionRoot();
-        var cliPath = Path.Combine(solutionRoot, "artifacts", "cli", "modulus.dll");
-        
-        if (File.Exists(cliPath))
-        {
-            return cliPath;
-        }
-        
-        // Fallback: try to find it relative to test assembly
-        var assemblyDir = Path.GetDirectoryName(typeof(CliRunner).Assembly.Location) ?? ".";
-        var fallbackPath = Path.Combine(assemblyDir, "..", "..", "..", "..", "cli", "modulus.dll");
-        if (File.Exists(fallbackPath))
-        {
-            return Path.GetFullPath(fallbackPath);
-        }
-        
-        throw new FileNotFoundException(
-            $"CLI executable not found. Expected at: {cliPath}. " +
-            "Run 'nuke compile' first to build the CLI.");
-    }
-    
-    /// <summary>
-    /// Finds the solution root directory.
-    /// </summary>
-    private static string FindSolutionRoot()
-    {
-        var current = Directory.GetCurrentDirectory();
-        while (!string.IsNullOrEmpty(current))
-        {
-            if (File.Exists(Path.Combine(current, "Modulus.sln")))
-            {
-                return current;
-            }
-            current = Path.GetDirectoryName(current);
-        }
-        
-        // Try from assembly location
-        current = Path.GetDirectoryName(typeof(CliRunner).Assembly.Location);
-        while (!string.IsNullOrEmpty(current))
-        {
-            if (File.Exists(Path.Combine(current, "Modulus.sln")))
-            {
-                return current;
-            }
-            current = Path.GetDirectoryName(current);
-        }
-        
-        throw new DirectoryNotFoundException("Could not find Modulus.sln in parent directories");
+        var args = new List<string> { "list" };
+        if (verbose) args.Add("--verbose");
+        return RunAsync(args);
     }
 }
+
+

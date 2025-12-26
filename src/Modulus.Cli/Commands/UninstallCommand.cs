@@ -1,10 +1,7 @@
 using System.CommandLine;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Modulus.Cli.Commands.Handlers;
 using Modulus.Cli.Services;
-using Modulus.Core.Paths;
-using Modulus.Infrastructure.Data;
 
 namespace Modulus.Cli.Commands;
 
@@ -13,7 +10,7 @@ namespace Modulus.Cli.Commands;
 /// </summary>
 public static class UninstallCommand
 {
-    public static Command Create()
+    public static Command Create(IServiceProvider services)
     {
         var moduleArg = new Argument<string>("module") { Description = "Module name or ID (GUID) to uninstall" };
         var forceOption = new Option<bool>("--force", "-f") { Description = "Skip confirmation prompt" };
@@ -29,105 +26,32 @@ public static class UninstallCommand
             var module = parseResult.GetValue(moduleArg)!;
             var force = parseResult.GetValue(forceOption);
             var verbose = parseResult.GetValue(verboseOption);
-            await HandleAsync(module, force, verbose);
+
+            await CliServiceProvider.EnsureMigratedAsync(services);
+
+            var console = services.GetRequiredService<ICliConsole>();
+            var config = services.GetRequiredService<CliConfiguration>();
+            var handler = new UninstallHandler(services, config.ModulesDirectory);
+
+            var result = await handler.ExecuteAsync(module, force, console.Out);
+            if (!result.Success)
+            {
+                console.Error.WriteLine($"Error: {result.Message}");
+                return 1;
+            }
+
+            if (verbose)
+            {
+                // Keep verbose flag for future extensions.
+            }
+
+            console.Out.WriteLine();
+            console.Out.WriteLine("Note: Restart the Modulus host application to complete the removal.");
+            return 0;
         });
-        
+
         return command;
     }
-
-    private static async Task HandleAsync(string module, bool force, bool verbose)
-    {
-        using var provider = CliServiceProvider.Build(verbose);
-        var logger = provider.GetRequiredService<ILogger<Program>>();
-
-        try
-        {
-            // Ensure database is migrated
-            await CliServiceProvider.EnsureMigratedAsync(provider);
-
-            var dbContext = provider.GetRequiredService<ModulusDbContext>();
-
-            // Find module by name or ID
-            var moduleEntity = await dbContext.Modules
-                .FirstOrDefaultAsync(m => 
-                    m.Id == module || 
-                    m.DisplayName.ToLower() == module.ToLower());
-
-            if (moduleEntity == null)
-            {
-                Console.WriteLine($"Error: Module '{module}' not found");
-                return;
-            }
-
-            // Prevent uninstalling system modules
-            if (moduleEntity.IsSystem)
-            {
-                Console.WriteLine($"Error: Cannot uninstall system module '{moduleEntity.DisplayName}'");
-                return;
-            }
-
-            Console.WriteLine($"Module: {moduleEntity.DisplayName}");
-            Console.WriteLine($"  Version: {moduleEntity.Version}");
-            Console.WriteLine($"  ID: {moduleEntity.Id}");
-
-            // Confirm uninstall
-            if (!force)
-            {
-                Console.Write($"Are you sure you want to uninstall '{moduleEntity.DisplayName}'? [y/N]: ");
-                var response = Console.ReadLine()?.Trim().ToLowerInvariant();
-                if (response != "y" && response != "yes")
-                {
-                    Console.WriteLine("Uninstallation cancelled.");
-                    return;
-                }
-            }
-
-            // Determine module directory
-            var modulesRoot = Path.Combine(LocalStorage.GetUserRoot(), "Modules");
-            var moduleDir = Path.Combine(modulesRoot, moduleEntity.Id);
-
-            // Delete from database
-            Console.WriteLine("Removing module from database...");
-            
-            // Remove associated menus first
-            var menus = await dbContext.Menus
-                .Where(m => m.ModuleId == moduleEntity.Id)
-                .ToListAsync();
-            dbContext.Menus.RemoveRange(menus);
-            
-            // Remove module
-            dbContext.Modules.Remove(moduleEntity);
-            await dbContext.SaveChangesAsync();
-
-            // Delete files
-            if (Directory.Exists(moduleDir))
-            {
-                Console.WriteLine($"Deleting files: {moduleDir}");
-                Directory.Delete(moduleDir, true);
-            }
-            else
-            {
-                // Try to find the module directory from the stored path
-                if (!string.IsNullOrEmpty(moduleEntity.Path))
-                {
-                    var manifestDir = Path.GetDirectoryName(moduleEntity.Path);
-                    if (!string.IsNullOrEmpty(manifestDir) && Directory.Exists(manifestDir))
-                    {
-                        Console.WriteLine($"Deleting files: {manifestDir}");
-                        Directory.Delete(manifestDir, true);
-                    }
-                }
-            }
-
-            Console.WriteLine();
-            Console.WriteLine($"✓ Module '{moduleEntity.DisplayName}' uninstalled successfully!");
-            Console.WriteLine();
-            Console.WriteLine("Note: Restart the Modulus host application to complete the removal.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Uninstallation failed");
-            Console.WriteLine($"Error: {ex.Message}");
-        }
-    }
 }
+
+

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
-using Modulus.Cli.Templates;
+using Microsoft.Extensions.DependencyInjection;
+using Modulus.Cli.Commands.Handlers;
 
 namespace Modulus.Cli.Commands;
 
@@ -9,17 +10,15 @@ namespace Modulus.Cli.Commands;
 /// </summary>
 public static class NewCommand
 {
-    private const string DefaultTemplate = "module-avalonia";
-
-    private static readonly (string Name, string Description)[] Templates =
+    private static readonly string[] Templates =
     [
-        ("avaloniaapp", "Modulus host app (Avalonia)"),
-        ("blazorapp", "Modulus host app (Blazor Hybrid / MAUI)"),
-        ("module-avalonia", "Modulus module (Avalonia)"),
-        ("module-blazor", "Modulus module (Blazor)"),
+        "avaloniaapp",
+        "blazorapp",
+        "module-avalonia",
+        "module-blazor",
     ];
 
-    public static Command Create()
+    public static Command Create(IServiceProvider services)
     {
         var templateArg = new Argument<string?>("template")
         {
@@ -48,7 +47,7 @@ public static class NewCommand
                 return;
             }
 
-            if (!Templates.Any(t => string.Equals(t.Name, template, StringComparison.OrdinalIgnoreCase)))
+            if (!Templates.Any(t => string.Equals(t, template, StringComparison.OrdinalIgnoreCase)))
             {
                 argumentResult.AddError($"Unknown template '{template}'. Use --list to see available templates.");
             }
@@ -89,144 +88,12 @@ public static class NewCommand
             var force = parseResult.GetValue(forceOption);
             var list = parseResult.GetValue(listOption);
 
-            await HandleAsync(template, name, output, force, list);
+            var handler = services.GetRequiredService<NewHandler>();
+            var exitCode = await handler.ExecuteAsync(template, name, output, force, list, cancellationToken);
+            return exitCode;
         });
 
         return command;
-    }
-
-    private static async Task HandleAsync(
-        string? template,
-        string? name,
-        string? output,
-        bool force,
-        bool list)
-    {
-        if (list)
-        {
-            PrintTemplates();
-            return;
-        }
-
-        // Command validator guarantees name is present and valid unless --list is specified.
-        name ??= "";
-
-        // Determine template/target
-        var effectiveTemplate = string.IsNullOrWhiteSpace(template) ? DefaultTemplate : template;
-        TargetHostType targetHost;
-        var isHostApp = false;
-        switch (effectiveTemplate)
-        {
-            case "avaloniaapp":
-                targetHost = TargetHostType.Avalonia;
-                isHostApp = true;
-                break;
-            case "blazorapp":
-                targetHost = TargetHostType.Blazor;
-                isHostApp = true;
-                break;
-            case "module-avalonia":
-                targetHost = TargetHostType.Avalonia;
-                break;
-            case "module-blazor":
-                targetHost = TargetHostType.Blazor;
-                break;
-            default:
-                // Should be unreachable due to FromAmong validator.
-                Console.Error.WriteLine($"Error: Unknown template '{effectiveTemplate}'.");
-                return;
-        }
-
-        // Resolve output directory
-        output = string.IsNullOrWhiteSpace(output) ? Directory.GetCurrentDirectory() : output;
-        output = Path.GetFullPath(output);
-
-        // Check output directory
-        var moduleDir = Path.Combine(output, name);
-        if (Directory.Exists(moduleDir) && Directory.GetFileSystemEntries(moduleDir).Length > 0)
-        {
-            if (!force)
-            {
-                if (Console.IsInputRedirected)
-                {
-                    Console.Error.WriteLine($"Error: Directory '{moduleDir}' already exists. Use --force to overwrite in non-interactive mode.");
-                    return;
-                }
-
-                Console.Write($"Directory '{moduleDir}' already exists. Overwrite? [y/N]: ");
-                var response = Console.ReadLine()?.Trim().ToLowerInvariant();
-                if (response != "y" && response != "yes")
-                {
-                    Console.WriteLine("Cancelled.");
-                    return;
-                }
-            }
-            Directory.Delete(moduleDir, true);
-        }
-
-        if (isHostApp)
-        {
-            var context = new HostAppTemplateContext
-            {
-                AppName = name,
-                TargetHost = targetHost
-            };
-
-            Console.WriteLine();
-            Console.WriteLine($"Creating Modulus host app '{name}' ({effectiveTemplate})...");
-            Console.WriteLine();
-
-            var engine = new HostAppTemplateEngine(context);
-            await engine.GenerateAsync(output);
-
-            Console.WriteLine($"✓ Created {name}.sln");
-            Console.WriteLine($"✓ Created {name}.Host.{targetHost}/");
-            Console.WriteLine($"✓ Created appsettings.json");
-            Console.WriteLine($"✓ Created .gitignore");
-            Console.WriteLine();
-            Console.WriteLine($"Host app created successfully at: {moduleDir}");
-            Console.WriteLine();
-            Console.WriteLine("Next steps:");
-            Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
-            Console.WriteLine($"  2. Or: cd {name} && dotnet build");
-            Console.WriteLine($"  3. Run the host app and install modules via 'modulus install'");
-        }
-        else
-        {
-            // Create context
-            var context = new ModuleTemplateContext
-            {
-                ModuleName = name,
-                DisplayName = name,
-                Description = "A Modulus module.",
-                Publisher = "Modulus Team",
-                ModuleId = Guid.NewGuid().ToString("D"),
-                Icon = "Folder",
-                Order = 100,
-                TargetHost = targetHost
-            };
-
-            // Generate project
-            Console.WriteLine();
-            Console.WriteLine($"Creating Modulus module '{name}' ({effectiveTemplate})...");
-            Console.WriteLine();
-
-            var engine = new TemplateEngine(context);
-            await engine.GenerateAsync(output);
-
-            Console.WriteLine($"✓ Created {name}.sln");
-            Console.WriteLine($"✓ Created {name}.Core/");
-            Console.WriteLine($"✓ Created {name}.UI.{targetHost}/");
-            Console.WriteLine($"✓ Created extension.vsixmanifest");
-            Console.WriteLine($"✓ Created .gitignore");
-            Console.WriteLine();
-            Console.WriteLine($"Module created successfully at: {moduleDir}");
-            Console.WriteLine();
-            Console.WriteLine("Next steps:");
-            Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
-            Console.WriteLine($"  2. Or: cd {name} && dotnet build");
-            Console.WriteLine($"  3. Copy output to Modulus Modules directory");
-        }
     }
 
     private static bool IsValidModuleName(string name)
@@ -234,14 +101,5 @@ public static class NewCommand
         if (string.IsNullOrEmpty(name)) return false;
         if (!char.IsUpper(name[0])) return false;
         return name.All(c => char.IsLetterOrDigit(c));
-    }
-
-    private static void PrintTemplates()
-    {
-        Console.WriteLine("Available templates:");
-        foreach (var (name, description) in Templates)
-        {
-            Console.WriteLine($"  {name,-15} {description}");
-        }
     }
 }
