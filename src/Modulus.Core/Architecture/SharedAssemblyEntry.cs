@@ -16,6 +16,16 @@ public sealed record SharedAssemblyEntry
     /// How this assembly was added to the shared catalog.
     /// </summary>
     public required SharedAssemblySource Source { get; init; }
+
+    /// <summary>
+    /// How this assembly matched the shared policy (exact name or prefix rule).
+    /// </summary>
+    public SharedAssemblyMatchKind MatchKind { get; init; } = SharedAssemblyMatchKind.ExactName;
+
+    /// <summary>
+    /// Matched prefix rule when MatchKind is PrefixRule.
+    /// </summary>
+    public string? MatchedPrefix { get; init; }
     
     /// <summary>
     /// The declared domain type from metadata (if available).

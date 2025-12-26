@@ -363,7 +363,7 @@ class BuildTasks : NukeBuild
         "PresentationFramework"
     };
 
-    private static bool IsSharedAssembly(string fileName)
+    private static bool IsSharedAssembly(string fileName, IReadOnlyCollection<string> additionalPrefixes)
     {
         var name = Path.GetFileNameWithoutExtension(fileName);
         
@@ -377,8 +377,43 @@ class BuildTasks : NukeBuild
             if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 return true;
         }
+
+        // Check host preset prefixes (derived from InstallationTarget host set)
+        foreach (var prefix in additionalPrefixes)
+        {
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
         
         return false;
+    }
+
+    private static IReadOnlyCollection<string> ReadInstallationTargetHostIds(string manifestPath)
+    {
+        try
+        {
+            var doc = XDocument.Load(manifestPath);
+            var ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+            return doc.Descendants(ns + "InstallationTarget")
+                .Select(e => (string?)e.Attribute("Id"))
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private static IReadOnlyCollection<string> GetHostPresetPrefixesForManifest(string manifestPath)
+    {
+        var hostIds = ReadInstallationTargetHostIds(manifestPath);
+        var prefixes = hostIds.SelectMany(Modulus.Core.Architecture.SharedAssemblyPolicy.GetBuiltInPrefixPresetsForHost)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return prefixes;
     }
 
     /// <summary>
@@ -447,6 +482,7 @@ class BuildTasks : NukeBuild
                 var version = ReadManifestVersion(manifestPath) ?? "1.0.0";
                 var packageFileName = $"{moduleName}-{version}.modpkg";
                 var packagePath = ModulesInstallerDirectory / packageFileName;
+                var hostPresetPrefixes = GetHostPresetPrefixesForManifest(manifestPath);
 
                 LogHeader($"Packaging Module: {moduleName} v{version}");
 
@@ -488,7 +524,7 @@ class BuildTasks : NukeBuild
                                     continue;
 
                                 // Skip shared assemblies
-                                if (IsSharedAssembly(fileName))
+                                if (IsSharedAssembly(fileName, hostPresetPrefixes))
                                 {
                                     Log.Debug($"Skipping shared assembly: {fileName}");
                                     skippedShared.Add(fileName);

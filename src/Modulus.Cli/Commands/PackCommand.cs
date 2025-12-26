@@ -159,11 +159,24 @@ public static class PackCommand
         // Step 5: Collect files for packaging
         var installationTargets = ReadInstallationTargetHostIds(manifestPath);
         var hostConfigSharedAssemblies = TryLoadHostSharedAssembliesFromRepo(projectDir, installationTargets);
+        var hostConfigSharedPrefixes = TryLoadHostSharedAssemblyPrefixesFromRepo(projectDir, installationTargets);
+        var presetPrefixes = installationTargets.SelectMany(SharedAssemblyPolicy.GetBuiltInPrefixPresetsForHost).ToList();
+        var sharedAssemblyPrefixes = new HashSet<string>(
+            SharedAssemblyPolicy.MergeWithConfiguredPrefixes(hostConfigSharedPrefixes, presetPrefixes),
+            StringComparer.OrdinalIgnoreCase);
         var sharedAssemblyNames = new HashSet<string>(
             SharedAssemblyPolicy.MergeWithConfiguredAssemblies(hostConfigSharedAssemblies),
             StringComparer.OrdinalIgnoreCase);
 
-        var filesToPack = CollectFilesForPackaging(projectDir, buildOutputDir, manifestPath, sharedAssemblyNames, hostConfigSharedAssemblies, verbose);
+        var filesToPack = CollectFilesForPackaging(
+            projectDir,
+            buildOutputDir,
+            manifestPath,
+            sharedAssemblyNames,
+            sharedAssemblyPrefixes,
+            hostConfigSharedAssemblies,
+            hostConfigSharedPrefixes,
+            verbose);
         Console.WriteLine($"  Files collected: {filesToPack.Count}");
 
         // Step 6: Create .modpkg
@@ -332,12 +345,14 @@ public static class PackCommand
         string buildOutputDir, 
         string manifestPath,
         HashSet<string> sharedAssemblyNames,
+        HashSet<string> sharedAssemblyPrefixes,
         IReadOnlyCollection<string>? hostConfigSharedAssemblies,
+        IReadOnlyCollection<string>? hostConfigSharedPrefixes,
         bool verbose)
     {
         var files = new List<(string, string)>();
         var addedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var skippedShared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var skippedShared = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         // 1. Add manifest
         files.Add((manifestPath, "extension.vsixmanifest"));
@@ -370,9 +385,9 @@ public static class PackCommand
                 var fileName = Path.GetFileName(dll);
                 
                 // Skip shared assemblies
-                if (IsSharedAssembly(fileName, sharedAssemblyNames))
+                if (IsSharedAssembly(fileName, sharedAssemblyNames, sharedAssemblyPrefixes, out var reason))
                 {
-                    skippedShared.Add(fileName);
+                    skippedShared[fileName] = reason;
                     if (verbose)
                     {
                         Console.WriteLine($"    Skipping shared: {fileName}");
@@ -404,27 +419,34 @@ public static class PackCommand
         {
             Console.WriteLine();
             Console.WriteLine("  Shared assemblies excluded:");
-            foreach (var name in skippedShared
-                         .OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
+            foreach (var name in skippedShared.Keys.OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
             {
                 var simpleName = Path.GetFileNameWithoutExtension(name);
-                var source = BuiltInSharedAssemblies.Contains(simpleName)
-                    ? "built-in"
-                    : (hostConfigSharedAssemblies?.Contains(simpleName, StringComparer.OrdinalIgnoreCase) == true ? "host-config" : "framework");
-                Console.WriteLine($"    - {name} ({source})");
+                var source =
+                    BuiltInSharedAssemblies.Contains(simpleName) ? "built-in" :
+                    hostConfigSharedAssemblies?.Contains(simpleName, StringComparer.OrdinalIgnoreCase) == true ? "host-config" :
+                    hostConfigSharedPrefixes?.Any(p => simpleName.StartsWith(p, StringComparison.OrdinalIgnoreCase)) == true ? "host-config-prefix" :
+                    sharedAssemblyPrefixes.Any(p => simpleName.StartsWith(p, StringComparison.OrdinalIgnoreCase)) ? "host-prefix" :
+                    "framework";
+                Console.WriteLine($"    - {name} ({source}; {skippedShared[name]})");
             }
         }
 
         return files;
     }
 
-    private static bool IsSharedAssembly(string fileName, HashSet<string> sharedAssemblyNames)
+    private static bool IsSharedAssembly(
+        string fileName,
+        HashSet<string> sharedAssemblyNames,
+        HashSet<string> sharedAssemblyPrefixes,
+        out string reason)
     {
         // Remove .dll extension for comparison
         var name = Path.GetFileNameWithoutExtension(fileName);
 
         if (sharedAssemblyNames.Contains(name))
         {
+            reason = "exact name";
             return true;
         }
 
@@ -432,10 +454,21 @@ public static class PackCommand
         {
             if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             {
+                reason = $"framework prefix '{prefix}'";
                 return true;
             }
         }
 
+        foreach (var prefix in sharedAssemblyPrefixes)
+        {
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                reason = $"shared prefix '{prefix}'";
+                return true;
+            }
+        }
+
+        reason = string.Empty;
         return false;
     }
 
@@ -482,6 +515,33 @@ public static class PackCommand
             foreach (var name in ReadSharedAssembliesFromAppSettings(appsettingsPath))
             {
                 shared.Add(name);
+            }
+        }
+
+        return shared.Count == 0 ? null : shared.ToList();
+    }
+
+    private static IReadOnlyCollection<string>? TryLoadHostSharedAssemblyPrefixesFromRepo(string projectDir, IReadOnlyList<string> installationTargetHostIds)
+    {
+        var repoRoot = TryFindRepoRoot(projectDir);
+        if (repoRoot == null)
+        {
+            return null;
+        }
+
+        var shared = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var hostId in installationTargetHostIds)
+        {
+            var appsettingsPath = GetHostAppSettingsPath(repoRoot, hostId);
+            if (appsettingsPath == null || !File.Exists(appsettingsPath))
+            {
+                continue;
+            }
+
+            foreach (var p in ReadSharedAssemblyPrefixesFromAppSettings(appsettingsPath))
+            {
+                shared.Add(p);
             }
         }
 
@@ -544,6 +604,42 @@ public static class PackCommand
                 var name = item.GetString();
                 if (string.IsNullOrWhiteSpace(name)) continue;
                 list.Add(name.Trim());
+            }
+
+            return list;
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private static IReadOnlyList<string> ReadSharedAssemblyPrefixesFromAppSettings(string appsettingsPath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(appsettingsPath);
+            using var doc = JsonDocument.Parse(stream);
+
+            if (!doc.RootElement.TryGetProperty("Modulus", out var modulus))
+                return Array.Empty<string>();
+
+            if (!modulus.TryGetProperty("Runtime", out var runtime))
+                return Array.Empty<string>();
+
+            if (!runtime.TryGetProperty("SharedAssemblyPrefixes", out var prefixes))
+                return Array.Empty<string>();
+
+            if (prefixes.ValueKind != JsonValueKind.Array)
+                return Array.Empty<string>();
+
+            var list = new List<string>();
+            foreach (var item in prefixes.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String) continue;
+                var p = item.GetString();
+                if (string.IsNullOrWhiteSpace(p)) continue;
+                list.Add(p.Trim());
             }
 
             return list;

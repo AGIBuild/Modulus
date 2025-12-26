@@ -31,6 +31,11 @@ public interface ISharedAssemblyCatalog
     /// Gets all recorded mismatches.
     /// </summary>
     IReadOnlyCollection<SharedAssemblyMismatch> GetMismatches();
+
+    /// <summary>
+    /// Gets configured prefix rules.
+    /// </summary>
+    IReadOnlyCollection<string> GetPrefixRules();
     
     /// <summary>
     /// Adds manifest hints for a specific module load.
@@ -48,6 +53,7 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
     private readonly Dictionary<string, SharedAssemblyEntry> _entries;
     private readonly Dictionary<string, AssemblyDomainType> _domainMap;
     private readonly List<SharedAssemblyMismatch> _mismatches;
+    private readonly List<string> _prefixRules;
     private readonly ILogger<SharedAssemblyCatalog>? _logger;
     private readonly object _lock = new();
 
@@ -55,11 +61,13 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
         Dictionary<string, SharedAssemblyEntry> entries,
         Dictionary<string, AssemblyDomainType> domainMap,
         List<SharedAssemblyMismatch> mismatches,
+        List<string> prefixRules,
         ILogger<SharedAssemblyCatalog>? logger)
     {
         _entries = entries;
         _domainMap = domainMap;
         _mismatches = mismatches;
+        _prefixRules = prefixRules;
         _logger = logger;
     }
 
@@ -69,11 +77,13 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
     public static SharedAssemblyCatalog FromAssemblies(
         IEnumerable<Assembly> assemblies,
         IEnumerable<string>? configuredAssemblies = null,
+        IEnumerable<string>? configuredPrefixes = null,
         ILogger<SharedAssemblyCatalog>? logger = null)
     {
         var entries = new Dictionary<string, SharedAssemblyEntry>(StringComparer.OrdinalIgnoreCase);
         var domainMap = new Dictionary<string, AssemblyDomainType>(StringComparer.OrdinalIgnoreCase);
         var mismatches = new List<SharedAssemblyMismatch>();
+        var prefixes = new List<string>();
 
         // Phase 1: Scan loaded assemblies for domain metadata
         foreach (var assembly in assemblies)
@@ -162,13 +172,25 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
                     {
                         Name = trimmed,
                         Source = SharedAssemblySource.HostConfig,
+                        MatchKind = SharedAssemblyMatchKind.ExactName,
                         DeclaredDomain = domainMap.TryGetValue(trimmed, out var d) ? d : null
                     };
                 }
             }
         }
 
-        return new SharedAssemblyCatalog(entries, domainMap, mismatches, logger);
+        if (configuredPrefixes != null)
+        {
+            foreach (var raw in configuredPrefixes)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+                var p = raw.Trim();
+                if (p.Length == 0) continue;
+                prefixes.Add(p);
+            }
+        }
+
+        return new SharedAssemblyCatalog(entries, domainMap, mismatches, prefixes, logger);
     }
 
     public IReadOnlyCollection<string> Names
@@ -195,7 +217,47 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
                 _logger?.LogWarning("Assembly {Assembly} is marked shared but declared as Module.", assemblyName.Name);
             }
 
-            return isShared;
+            if (isShared) return true;
+
+            // Prefix-based rules
+            var matchedPrefix = _prefixRules.FirstOrDefault(p =>
+                assemblyName.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(matchedPrefix))
+            {
+                // Create an entry for diagnostics (lazy, best-effort).
+                if (!_entries.ContainsKey(assemblyName.Name))
+                {
+                    var declaredDomain = _domainMap.TryGetValue(assemblyName.Name, out var d) ? d : (AssemblyDomainType?)null;
+                    var hasMismatch = declaredDomain == AssemblyDomainType.Module;
+
+                    _entries[assemblyName.Name] = new SharedAssemblyEntry
+                    {
+                        Name = assemblyName.Name,
+                        Source = SharedAssemblySource.HostConfig,
+                        MatchKind = SharedAssemblyMatchKind.PrefixRule,
+                        MatchedPrefix = matchedPrefix,
+                        DeclaredDomain = declaredDomain,
+                        HasMismatch = hasMismatch,
+                        MismatchReason = hasMismatch ? "Declared as Module-domain but matched by shared prefix rule" : null
+                    };
+
+                    if (hasMismatch)
+                    {
+                        _mismatches.Add(new SharedAssemblyMismatch
+                        {
+                            AssemblyName = assemblyName.Name,
+                            RequestSource = SharedAssemblySource.HostConfig,
+                            DeclaredDomain = AssemblyDomainType.Module,
+                            Reason = "Assembly is declared Module-domain but matched by shared prefix rule"
+                        });
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -212,6 +274,14 @@ public sealed class SharedAssemblyCatalog : ISharedAssemblyCatalog
         lock (_lock)
         {
             return _mismatches.ToList();
+        }
+    }
+
+    public IReadOnlyCollection<string> GetPrefixRules()
+    {
+        lock (_lock)
+        {
+            return _prefixRules.ToList();
         }
     }
 

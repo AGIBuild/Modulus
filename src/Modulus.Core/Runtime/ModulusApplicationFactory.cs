@@ -68,10 +68,12 @@ public static class ModulusApplicationFactory
         
         // Build shared assembly catalog from domain metadata + host configuration + built-in shared policy
         var configuredSharedAssemblies = effectiveConfig.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();
+        var configuredSharedPrefixes = effectiveConfig.GetSection(SharedAssemblyOptions.PrefixesSectionPath).Get<List<string>>();
         var mergedSharedAssemblies = SharedAssemblyPolicy.MergeWithConfiguredAssemblies(configuredSharedAssemblies);
         var sharedAssemblies = SharedAssemblyCatalog.FromAssemblies(
             AppDomain.CurrentDomain.GetAssemblies(),
             mergedSharedAssemblies,
+            configuredSharedPrefixes,
             loggerFactory.CreateLogger<SharedAssemblyCatalog>());
         
         // Create resolution reporter for diagnostics

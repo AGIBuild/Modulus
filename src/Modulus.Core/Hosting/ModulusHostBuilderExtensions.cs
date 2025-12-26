@@ -1,5 +1,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,8 +17,12 @@ public static class ModulusHostBuilderExtensions
 {
     public static IHostBuilder UseModulusRuntime(this IHostBuilder builder)
     {
-        return builder.ConfigureServices((_, services) =>
+        return builder.ConfigureServices((context, services) =>
         {
+            var configuredSharedAssemblies = context.Configuration.GetSection(SharedAssemblyOptions.SectionPath).Get<List<string>>();
+            var configuredSharedPrefixes = context.Configuration.GetSection(SharedAssemblyOptions.PrefixesSectionPath).Get<List<string>>();
+            var mergedSharedAssemblies = SharedAssemblyPolicy.MergeWithConfiguredAssemblies(configuredSharedAssemblies);
+
             // Database
             services.AddDbContext<ModulusDbContext>(options => 
                 options.UseSqlite("Data Source=modulus.db"));
@@ -37,7 +42,8 @@ public static class ModulusHostBuilderExtensions
             services.AddSingleton<ISharedAssemblyCatalog>(sp =>
                 SharedAssemblyCatalog.FromAssemblies(
                     AppDomain.CurrentDomain.GetAssemblies(),
-                    SharedAssemblyPolicy.MergeWithConfiguredAssemblies(null),
+                    mergedSharedAssemblies,
+                    configuredSharedPrefixes,
                     sp.GetService<ILogger<SharedAssemblyCatalog>>()));
             services.AddSingleton<IModuleExecutionGuard, ModuleExecutionGuard>();
             services.AddSingleton<IModuleLoader, ModuleLoader>();

@@ -10,6 +10,11 @@ public sealed class SharedAssemblyOptions
     /// Configuration section path.
     /// </summary>
     public const string SectionPath = "Modulus:Runtime:SharedAssemblies";
+
+    /// <summary>
+    /// Configuration section path for prefix-based shared assembly rules.
+    /// </summary>
+    public const string PrefixesSectionPath = "Modulus:Runtime:SharedAssemblyPrefixes";
     
     /// <summary>
     /// Maximum allowed hints from a single module manifest.
@@ -26,5 +31,10 @@ public sealed class SharedAssemblyOptions
     /// These names should be simple assembly names without extension or version.
     /// </summary>
     public List<string> Assemblies { get; set; } = new();
+
+    /// <summary>
+    /// List of prefixes to treat as shared assemblies (simple string prefix match).
+    /// </summary>
+    public List<string> Prefixes { get; set; } = new();
 }
 

@@ -31,6 +31,11 @@ public sealed class SharedAssemblyDiagnostics
     /// All recorded mismatches (assemblies requested as shared but declared differently or missing).
     /// </summary>
     public required IReadOnlyCollection<SharedAssemblyMismatch> Mismatches { get; init; }
+
+    /// <summary>
+    /// Configured prefix rules for shared assemblies.
+    /// </summary>
+    public required IReadOnlyCollection<string> PrefixRules { get; init; }
     
     /// <summary>
     /// Number of entries with mismatch warnings.
@@ -85,6 +90,7 @@ public sealed class SharedAssemblyDiagnosticsService : ISharedAssemblyDiagnostic
     {
         var entries = _catalog.GetEntries();
         var mismatches = _catalog.GetMismatches();
+        var prefixes = _catalog.GetPrefixRules();
         
         return new SharedAssemblyDiagnostics
         {
@@ -93,6 +99,7 @@ public sealed class SharedAssemblyDiagnosticsService : ISharedAssemblyDiagnostic
             ConfigEntries = entries.Where(e => e.Source == SharedAssemblySource.HostConfig).ToList(),
             ManifestEntries = entries.Where(e => e.Source == SharedAssemblySource.ManifestHint).ToList(),
             Mismatches = mismatches,
+            PrefixRules = prefixes,
             MismatchWarningCount = entries.Count(e => e.HasMismatch)
         };
     }
