@@ -127,16 +127,17 @@ The generated templates use `ModulusHostSdkBuilder.AddDefaultModuleDirectories()
 
 - **System modules**: `{AppBaseDir}/Modules`
 - **User modules (Windows)**: `%APPDATA%/Modulus/Modules`
-- **User modules (macOS/Linux)**: `Environment.SpecialFolder.ApplicationData/Modulus/Modules`
+- **User modules (macOS/Linux)**: `~/.modulus/Modules`
 
-### Align the host with the CLI default on macOS/Linux
+### CLI alignment note
 
 The Modulus CLI installs modules under:
 
 - Windows: `%APPDATA%/Modulus/Modules`
 - macOS/Linux: `~/.modulus/Modules`
 
-If you want your host to load modules installed by the CLI on macOS/Linux, add the `.modulus` directory explicitly:
+The default Host App templates are aligned with this location.
+If you are building a custom host and need to add it explicitly:
 
 ```csharp
 using Modulus.Core.Paths;

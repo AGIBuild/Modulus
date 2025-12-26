@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Modulus.Core;
 using Modulus.Core.Data;
 using Modulus.Core.Installation;
+using Modulus.Core.Paths;
 using Modulus.Core.Runtime;
 using Modulus.HostSdk.Abstractions;
 using Modulus.Infrastructure.Data.Repositories;
@@ -37,18 +38,26 @@ public sealed class ModulusHostSdkBuilder
     /// <summary>
     /// Adds default module directories:
     /// - {AppBaseDir}/Modules (system)
-    /// - %APPDATA%/Modulus/Modules (user)
+    /// - {UserRoot}/Modules (user)
     /// </summary>
     public ModulusHostSdkBuilder AddDefaultModuleDirectories()
     {
         var appModules = Path.Combine(AppContext.BaseDirectory, "Modules");
         _moduleDirectories.Add(new HostModuleDirectory(appModules, IsSystem: true));
 
-        var userModules = Path.Combine(
+        // Canonical user modules directory: align with Modulus.Core.Paths.LocalStorage (Windows: %APPDATA%/Modulus; others: $HOME/.modulus).
+        var userModules = Path.Combine(LocalStorage.GetUserRoot(), "Modules");
+        _moduleDirectories.Add(new HostModuleDirectory(userModules, IsSystem: false));
+
+        // Backward compatibility: some hosts may have used ApplicationData directly on non-Windows before LocalStorage aligned paths.
+        var legacyUserModules = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Modulus",
             "Modules");
-        _moduleDirectories.Add(new HostModuleDirectory(userModules, IsSystem: false));
+        if (!IsSameDirectory(userModules, legacyUserModules))
+        {
+            _moduleDirectories.Add(new HostModuleDirectory(legacyUserModules, IsSystem: false));
+        }
 
         return this;
     }
@@ -86,8 +95,12 @@ public sealed class ModulusHostSdkBuilder
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
 
-        // Filter directories that actually exist to avoid noisy warnings.
+        // Filter directories that actually exist (and de-duplicate paths) to avoid noisy warnings and double-scanning.
+        var pathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var dirs = _moduleDirectories
+            .Select(d => new { Dir = d, NormalizedPath = NormalizeDirectoryPath(d.Path) })
+            .GroupBy(x => x.NormalizedPath, pathComparer)
+            .Select(g => g.OrderByDescending(x => x.Dir.IsSystem).First().Dir)
             .Where(d => Directory.Exists(d.Path))
             .Select(d => new ModuleDirectory(d.Path, d.IsSystem))
             .ToList();
@@ -102,6 +115,18 @@ public sealed class ModulusHostSdkBuilder
             Options.HostVersion).ConfigureAwait(false);
 
         return app;
+    }
+
+    private static string NormalizeDirectoryPath(string path)
+    {
+        var full = Path.GetFullPath(path);
+        return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static bool IsSameDirectory(string a, string b)
+    {
+        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        return comparer.Equals(NormalizeDirectoryPath(a), NormalizeDirectoryPath(b));
     }
 }
 

@@ -78,16 +78,15 @@ Host 模板使用：
 
 - 系统模块：`{AppBaseDir}/Modules`
 - 用户模块（Windows）：`%APPDATA%/Modulus/Modules`
-- 用户模块（macOS/Linux）：`Environment.SpecialFolder.ApplicationData/Modulus/Modules`
+- 用户模块（macOS/Linux）：`~/.modulus/Modules`
 
 CLI 默认安装路径为：
 
 - Windows：`%APPDATA%/Modulus/Modules`
 - macOS/Linux：`~/.modulus/Modules`
 
-因此在 macOS/Linux 上，**Host 默认不会自动加载** CLI 安装到 `~/.modulus/Modules` 的模块。
-
-如果你希望 Host 在 macOS/Linux 上也能直接加载 CLI 安装的模块，请在 Host 代码里额外加入 `.modulus` 目录：
+默认 Host App 模板已经与 CLI 安装目录对齐。
+如果你在自定义 Host 中需要显式加入该目录，可以在 Host 代码里添加：
 
 ```csharp
 using Modulus.Core.Paths;
