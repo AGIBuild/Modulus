@@ -10,13 +10,14 @@ Welcome to the Modulus project documentation.
 
 ### Module Development
 - [Module Development Guide](./module-development.md) - In-depth module development guide
+- [Host App Development Guide](./host-app-development.md) - Create and customize plugin-based host apps
 - [CLI Reference](./cli-reference.md) - Complete CLI command reference
 
 ## 🔧 Reference
 
 ### OpenSpec Specifications
 - [Module Packaging](../openspec/specs/module-packaging/spec.md) - Module packaging format
-- [Manifest Format](../openspec/specs/vsixmanifest-format/spec.md) - extension.vsixmanifest format
+- [Module Template](../openspec/specs/module-template/spec.md) - includes extension.vsixmanifest conventions
 
 ### Architecture
 - [Project Context](../openspec/project.md) - Project overview and architecture
@@ -33,6 +34,7 @@ Common images and resources used across documentation are stored in the [Images]
 | Getting Started | [getting-started.md](./getting-started.md) | [getting-started.zh-CN.md](./getting-started.zh-CN.md) |
 | CLI Reference | [cli-reference.md](./cli-reference.md) | - |
 | Module Development | [module-development.md](./module-development.md) | - |
+| Host App Development | [host-app-development.md](./host-app-development.md) | [host-app-development.zh-CN.md](./host-app-development.zh-CN.md) |
 
 ## Contributing to Documentation
 

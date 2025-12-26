@@ -1,6 +1,6 @@
 # Modulus CLI Reference
 
-The Modulus CLI (`modulus`) is a command-line tool for creating, building, packaging, and managing Modulus modules.
+The Modulus CLI (`modulus`) is a command-line tool for creating, building, packaging, and managing Modulus projects (modules and host apps).
 
 ## Installation
 
@@ -19,7 +19,7 @@ dotnet tool uninstall -g Agibuild.Modulus.Cli
 
 | Command | Description |
 |---------|-------------|
-| `modulus new` | Create a new module project |
+| `modulus new` | Create a new project (module or host app) |
 | `modulus build` | Build the module project |
 | `modulus pack` | Package the module for distribution |
 | `modulus install` | Install a module |
@@ -30,7 +30,7 @@ dotnet tool uninstall -g Agibuild.Modulus.Cli
 
 ## modulus new
 
-Create a new Modulus module project with all necessary files and structure.
+Create a new Modulus project with all necessary files and structure.
 
 ### Syntax
 
@@ -42,7 +42,7 @@ modulus new [<template>] -n <name> [options]
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `<template>` | No | Template name: `module-avalonia` or `module-blazor` (default: `module-avalonia`) |
+| `<template>` | No | Template name: `avaloniaapp`, `blazorapp`, `module-avalonia`, `module-blazor` (default: `module-avalonia`) |
 
 ### Options
 
@@ -55,6 +55,8 @@ modulus new [<template>] -n <name> [options]
 
 ### Templates
 
+- `avaloniaapp`: Modulus host app (Avalonia)
+- `blazorapp`: Modulus host app (Blazor Hybrid / MAUI)
 - `module-avalonia`: Modulus module (Avalonia)
 - `module-blazor`: Modulus module (Blazor)
 
@@ -63,6 +65,12 @@ modulus new [<template>] -n <name> [options]
 ```bash
 # List templates
 modulus new --list
+
+# Create an Avalonia host app
+modulus new avaloniaapp -n MyApp
+
+# Create a Blazor Hybrid (MAUI) host app
+modulus new blazorapp -n MyApp
 
 # Create an Avalonia module (default template)
 modulus new -n MyModule
@@ -76,10 +84,13 @@ modulus new -n MyModule --force
 
 ### Generated Structure
 
+#### Module project (module-avalonia / module-blazor)
+
 ```
 MyModule/
 ├── MyModule.sln
 ├── .gitignore
+├── Directory.Build.props
 ├── extension.vsixmanifest
 ├── MyModule.Core/
 │   ├── MyModule.Core.csproj
@@ -92,6 +103,54 @@ MyModule/
     ├── MainView.axaml
     └── MainView.axaml.cs
 ```
+
+#### Host app project (avaloniaapp / blazorapp)
+
+```
+MyApp/
+├── MyApp.sln
+├── .gitignore
+├── Directory.Build.props
+└── MyApp.Host.Avalonia/ (or MyApp.Host.Blazor)
+    ├── appsettings.json
+    └── ... host entrypoint + UI files ...
+```
+
+**Notes:**
+- `blazorapp` is a **MAUI** host template and typically requires **Windows** to build.
+
+#### Host app details
+
+**Avalonia host app (`avaloniaapp`)**
+
+- **Project**: `MyApp.Host.Avalonia/`
+- **Typical entrypoint**: `Program.cs`
+- **Typical UI**: `App.axaml`, `MainWindow.axaml`
+- **Build & run**:
+
+```bash
+cd MyApp
+dotnet build -c Release
+dotnet run --project MyApp.Host.Avalonia -c Release
+```
+
+**Blazor Hybrid (MAUI) host app (`blazorapp`)**
+
+- **Project**: `MyApp.Host.Blazor/`
+- **Typical entrypoint**: `MauiProgram.cs` + platform entry under `Platforms/`
+- **Build prerequisites**:
+  - Windows machine
+  - .NET MAUI workload installed (for example: `dotnet workload install maui`)
+- **Build & run**:
+
+```bash
+cd MyApp
+dotnet build -c Release
+dotnet run --project MyApp.Host.Blazor -c Release
+```
+
+See also:
+- [`docs/host-app-development.md`](./host-app-development.md)
 
 ---
 
@@ -217,8 +276,7 @@ modulus install <source> [options]
 
 Modules are installed to:
 - **Windows**: `%APPDATA%\Modulus\Modules\{ModuleId}\`
-- **macOS**: `~/Library/Application Support/Modulus/Modules/{ModuleId}/`
-- **Linux**: `~/.local/share/Modulus/Modules/{ModuleId}/`
+- **macOS/Linux**: `~/.modulus/Modules/{ModuleId}/`
 
 ### Examples
 
@@ -306,7 +364,7 @@ modulus list --verbose
 # Installed Modules:
 #   MyModule v1.0.0
 #     ID: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
-#     Path: /Users/you/.local/share/Modulus/Modules/MyModule
+#     Path: ~/.modulus/Modules/MyModule
 #     Installed: 2025-12-14 10:30:00
 ```
 
@@ -324,11 +382,11 @@ modulus list --verbose
 
 | Variable | Description |
 |----------|-------------|
-| `MODULUS_HOME` | Override default Modulus data directory |
+| `MODULUS_CLI_DATABASE_PATH` | Override CLI database path (primarily for tests/automation) |
+| `MODULUS_CLI_MODULES_DIR` | Override CLI modules directory (primarily for tests/automation) |
 
 ## See Also
 
 - [Getting Started](./getting-started.md)
 - [Module Development Guide](./module-development.md)
-- [Manifest Format](./manifest-format.md)
 

@@ -4,7 +4,7 @@
 
 ## 环境要求
 
-- **.NET 9 SDK** 或更高版本
+- **.NET 10 SDK** 或更高版本
 - **IDE**: Visual Studio 2022、JetBrains Rider 或 VS Code
 - **Git**（可选，用于克隆仓库）
 
@@ -77,6 +77,8 @@ cd MyFirstModule
 MyFirstModule/
 ├── MyFirstModule.sln              # 解决方案文件
 ├── .gitignore
+├── Directory.Build.props          # 由 CLI 生成，用于从 CLI 安装目录引用 Modulus 程序集
+├── extension.vsixmanifest         # 模块清单
 ├── MyFirstModule.Core/            # 核心逻辑（主机无关）
 │   ├── MyFirstModule.Core.csproj
 │   ├── MyFirstModuleModule.cs     # 模块入口点
@@ -191,26 +193,25 @@ dotnet run --project path/to/Modulus/src/Hosts/Modulus.Host.Avalonia
 
 | 命令 | 描述 |
 |------|------|
-| `modulus new <name>` | 创建新模块项目 |
+| `modulus new` | 创建新项目（模块或 Host App） |
 | `modulus build` | 在当前目录编译模块 |
 | `modulus pack` | 编译并打包为 .modpkg |
 | `modulus install <source>` | 从 .modpkg 或目录安装模块 |
 | `modulus uninstall <name>` | 卸载模块 |
 | `modulus list` | 列出已安装模块 |
 
-### modulus new
+### 创建 Host App（插件式应用）
 
 ```bash
-modulus new MyModule [options]
+# Avalonia 桌面 Host App
+modulus new avaloniaapp -n MyApp
 
-选项:
-  -t, --target <avalonia|blazor>  目标主机平台
-  -d, --display-name <name>       菜单中显示的名称
-  -p, --publisher <name>          发布者名称
-  -i, --icon <icon>               菜单图标（如 Folder, Home, Settings）
-  --output <path>                 输出目录
-  --force                         覆盖已有文件
+# Blazor Hybrid（MAUI）Host App
+modulus new blazorapp -n MyApp
 ```
+
+**注意：**
+- `blazorapp` 是 **MAUI** Host 模板，通常需要 **Windows** 才能稳定构建。
 
 ### modulus build
 
@@ -251,10 +252,9 @@ modulus install <source> [options]
 
 ## 下一步
 
-- [模块开发指南](./module-development.zh-CN.md) - 深入了解模块开发
-- [CLI 参考](./cli-reference.zh-CN.md) - 完整的 CLI 命令参考
-- [清单格式](./manifest-format.zh-CN.md) - 理解 extension.vsixmanifest
-- [UI 组件](./ui-components.zh-CN.md) - 可用的 UI 组件和样式
+- [模块开发指南](./module-development.md) - 深入了解模块开发（英文）
+- [CLI 参考](./cli-reference.md) - 完整的 CLI 命令参考（英文）
+- [Host App 开发指南](./host-app-development.zh-CN.md) - Host App 创建与定制（中文）
 
 ## 故障排除
 

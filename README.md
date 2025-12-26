@@ -115,6 +115,19 @@ Modulus provides a comprehensive command-line tool for module development and ma
 | `modulus uninstall <name>` | Uninstall a module |
 | `modulus list` | List installed modules |
 
+### Create Host App (plugin-based application)
+
+```bash
+# Avalonia desktop host app
+modulus new avaloniaapp -n MyApp
+
+# Blazor Hybrid (MAUI) host app
+modulus new blazorapp -n MyApp
+```
+
+**Notes:**
+- `blazorapp` is a **MAUI** host template and typically requires **Windows** to build.
+
 ### Create Module
 
 ```bash
@@ -236,6 +249,7 @@ modulus install ./output/MyExtension-1.0.0.modpkg
 - [Getting Started Guide](./docs/getting-started.md)
 - [CLI Reference](./docs/cli-reference.md)
 - [Module Development Guide](./docs/module-development.md)
+- [Host App Development Guide](./docs/host-app-development.md)
 - [OpenSpec Specifications](./openspec/specs/)
 - [Contributing Guide](./CONTRIBUTING.md)
 

@@ -115,6 +115,19 @@ Modulus 提供全面的命令行工具用于模块开发和管理。
 | `modulus uninstall <name>` | 卸载模块 |
 | `modulus list` | 列出已安装模块 |
 
+### 创建 Host App（插件式应用）
+
+```bash
+# Avalonia 桌面 Host App
+modulus new avaloniaapp -n MyApp
+
+# Blazor Hybrid（MAUI）Host App
+modulus new blazorapp -n MyApp
+```
+
+**注意：**
+- `blazorapp` 是 **MAUI** Host 模板，通常需要 **Windows** 才能稳定构建。
+
 ### 创建模块
 
 ```bash
@@ -236,6 +249,7 @@ modulus install ./output/MyExtension-1.0.0.modpkg
 - [快速入门指南](./docs/getting-started.zh-CN.md)
 - [CLI 参考](./docs/cli-reference.md)
 - [模块开发指南](./docs/module-development.md)
+- [Host App 开发指南](./docs/host-app-development.zh-CN.md)
 - [OpenSpec 规格说明](./openspec/specs/)
 - [贡献指南](./CONTRIBUTING.zh-CN.md)
 

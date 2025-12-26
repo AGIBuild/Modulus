@@ -441,6 +441,4 @@ modulus pack
 
 - [Getting Started](./getting-started.md)
 - [CLI Reference](./cli-reference.md)
-- [Manifest Format](./manifest-format.md)
-- [UI Components](./ui-components.md)
 

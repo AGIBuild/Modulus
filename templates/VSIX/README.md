@@ -59,6 +59,16 @@ VSIXInstaller.exe Modulus.Templates.vsix
 After installation, in Visual Studio:
 1. File → New → Project
 2. Search for "Modulus"
-3. Select "Modulus Module (Avalonia)" or "Modulus Module (Blazor)"
+3. Select one of:
+   - "Modulus Module (Avalonia)"
+   - "Modulus Module (Blazor)"
+   - "Modulus Host App (Avalonia)"
+   - "Modulus Host App (Blazor Hybrid)"
 4. Enter project name and create
+
+Notes:
+- The Host App templates are equivalent to:
+  - `modulus new avaloniaapp -n MyApp`
+  - `modulus new blazorapp -n MyApp`
+- "Modulus Host App (Blazor Hybrid)" is a **MAUI** template and typically requires **Windows** to build.
 
