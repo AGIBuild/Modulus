@@ -1,0 +1,21 @@
+{
+  "Modulus": {
+    "DatabaseName": "{{AppName}}",
+    "Runtime": {
+      "SharedAssemblies": [
+        "Modulus.Core",
+        "Modulus.Sdk",
+        "Modulus.UI.Abstractions",
+        "Modulus.UI.Blazor",
+        "Modulus.HostSdk.Abstractions",
+        "Modulus.HostSdk.Runtime"
+      ],
+      "SharedAssemblyPrefixes": [
+        "Microsoft.Maui.",
+        "MudBlazor"
+      ]
+    }
+  }
+}
+
+

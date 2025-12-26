@@ -1,0 +1,23 @@
+{
+  "Modulus": {
+    "DatabaseName": "{{AppName}}",
+    "Runtime": {
+      "SharedAssemblies": [
+        "Modulus.Core",
+        "Modulus.Sdk",
+        "Modulus.UI.Abstractions",
+        "Modulus.UI.Avalonia",
+        "Modulus.HostSdk.Abstractions",
+        "Modulus.HostSdk.Runtime"
+      ],
+      "SharedAssemblyPrefixes": [
+        "Avalonia",
+        "AvaloniaUI.",
+        "SkiaSharp",
+        "HarfBuzzSharp"
+      ]
+    }
+  }
+}
+
+

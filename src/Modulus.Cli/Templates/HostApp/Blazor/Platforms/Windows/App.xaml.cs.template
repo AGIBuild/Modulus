@@ -1,0 +1,15 @@
+using Microsoft.UI.Xaml;
+
+namespace {{AppName}}.Host.Blazor.WinUI;
+
+public partial class App : MauiWinUIApplication
+{
+    public App()
+    {
+        InitializeComponent();
+    }
+
+    protected override MauiApp CreateMauiApp() => {{AppName}}.Host.Blazor.MauiProgram.CreateMauiApp();
+}
+
+

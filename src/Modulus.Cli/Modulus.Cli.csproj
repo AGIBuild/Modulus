@@ -35,6 +35,9 @@
     <!-- Required so `modulus new` generated projects can build against the same Modulus UI assemblies without external NuGet feeds. -->
     <ProjectReference Include="..\Modulus.UI.Avalonia\Modulus.UI.Avalonia.csproj" />
     <ProjectReference Include="..\Modulus.UI.Blazor\Modulus.UI.Blazor.csproj" />
+    <!-- Required so `modulus new avaloniaapp/blazorapp` generated projects can build against Host SDK assemblies. -->
+    <ProjectReference Include="..\Modulus.HostSdk.Abstractions\Modulus.HostSdk.Abstractions.csproj" />
+    <ProjectReference Include="..\Modulus.HostSdk.Runtime\Modulus.HostSdk.Runtime.csproj" />
   </ItemGroup>
 
   <!-- Include template files as embedded resources -->

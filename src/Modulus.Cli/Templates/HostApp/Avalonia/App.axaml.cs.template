@@ -1,0 +1,80 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Modulus.Core;
+using Modulus.Core.Data;
+using Modulus.Core.Logging;
+using Modulus.Core.Runtime;
+using Modulus.HostSdk.Abstractions;
+using Modulus.HostSdk.Runtime;
+using Modulus.Sdk;
+
+namespace {{AppName}}.Host.Avalonia;
+
+public sealed class HostModule : ModulusPackage
+{
+}
+
+public partial class App : Application
+{
+    private IModulusApplication? _modulusApp;
+
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var services = new ServiceCollection();
+
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var loggerFactory = ModulusLogging.CreateLoggerFactory(configuration, ModulusHostIds.Avalonia);
+            ModulusLogging.AddLoggerFactory(services, loggerFactory);
+
+            var dbName = configuration["Modulus:DatabaseName"] ?? "{{AppName}}";
+            var dbPath = DatabaseServiceExtensions.GetDefaultDatabasePath(dbName);
+
+            var hostVersion = typeof(App).Assembly.GetName().Version ?? new Version(1, 0, 0);
+            var sdkOptions = new ModulusHostSdkOptions
+            {
+                HostId = ModulusHostIds.Avalonia,
+                HostVersion = hostVersion,
+                DatabasePath = dbPath
+            };
+
+            var sdkBuilder = new ModulusHostSdkBuilder(services, configuration, sdkOptions)
+                .AddDefaultModuleDirectories()
+                .AddDefaultRuntimeServices();
+
+            _modulusApp = Task.Run(async () =>
+                await sdkBuilder.BuildAsync<HostModule>(loggerFactory)
+            ).GetAwaiter().GetResult();
+
+            services.AddSingleton(_modulusApp);
+
+            var sp = services.BuildServiceProvider();
+            _modulusApp.SetServiceProvider(sp);
+
+            // Initialize database and modules
+            sp.GetRequiredService<IAppDatabase>().InitializeAsync().GetAwaiter().GetResult();
+            _modulusApp.InitializeAsync().GetAwaiter().GetResult();
+
+            desktop.MainWindow = new MainWindow();
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+}
+
+

@@ -13,6 +13,8 @@ public static class NewCommand
 
     private static readonly (string Name, string Description)[] Templates =
     [
+        ("avaloniaapp", "Modulus host app (Avalonia)"),
+        ("blazorapp", "Modulus host app (Blazor Hybrid / MAUI)"),
         ("module-avalonia", "Modulus module (Avalonia)"),
         ("module-blazor", "Modulus module (Blazor)"),
     ];
@@ -21,7 +23,7 @@ public static class NewCommand
     {
         var templateArg = new Argument<string?>("template")
         {
-            Description = "Template name (module-avalonia or module-blazor)",
+            Description = "Template name (avaloniaapp, blazorapp, module-avalonia, module-blazor)",
             Arity = ArgumentArity.ZeroOrOne
         };
 
@@ -30,7 +32,7 @@ public static class NewCommand
         var forceOption = new Option<bool>("--force", "-f") { Description = "Overwrite existing directory without prompting" };
         var listOption = new Option<bool>("--list") { Description = "List available templates and exit" };
 
-        var command = new Command("new", "Create a new Modulus module project");
+        var command = new Command("new", "Create a new Modulus project (module or host app)");
         command.Arguments.Add(templateArg);
         command.Options.Add(nameOption);
         command.Options.Add(outputOption);
@@ -112,8 +114,17 @@ public static class NewCommand
         // Determine template/target
         var effectiveTemplate = string.IsNullOrWhiteSpace(template) ? DefaultTemplate : template;
         TargetHostType targetHost;
+        var isHostApp = false;
         switch (effectiveTemplate)
         {
+            case "avaloniaapp":
+                targetHost = TargetHostType.Avalonia;
+                isHostApp = true;
+                break;
+            case "blazorapp":
+                targetHost = TargetHostType.Blazor;
+                isHostApp = true;
+                break;
             case "module-avalonia":
                 targetHost = TargetHostType.Avalonia;
                 break;
@@ -153,39 +164,69 @@ public static class NewCommand
             Directory.Delete(moduleDir, true);
         }
 
-        // Create context
-        var context = new ModuleTemplateContext
+        if (isHostApp)
         {
-            ModuleName = name,
-            DisplayName = name,
-            Description = "A Modulus module.",
-            Publisher = "Modulus Team",
-            ModuleId = Guid.NewGuid().ToString("D"),
-            Icon = "Folder",
-            Order = 100,
-            TargetHost = targetHost
-        };
+            var context = new HostAppTemplateContext
+            {
+                AppName = name,
+                TargetHost = targetHost
+            };
 
-        // Generate project
-        Console.WriteLine();
-        Console.WriteLine($"Creating Modulus module '{name}' ({effectiveTemplate})...");
-        Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine($"Creating Modulus host app '{name}' ({effectiveTemplate})...");
+            Console.WriteLine();
 
-        var engine = new TemplateEngine(context);
-        await engine.GenerateAsync(output);
+            var engine = new HostAppTemplateEngine(context);
+            await engine.GenerateAsync(output);
 
-        Console.WriteLine($"✓ Created {name}.sln");
-        Console.WriteLine($"✓ Created {name}.Core/");
-        Console.WriteLine($"✓ Created {name}.UI.{targetHost}/");
-        Console.WriteLine($"✓ Created extension.vsixmanifest");
-        Console.WriteLine($"✓ Created .gitignore");
-        Console.WriteLine();
-        Console.WriteLine($"Module created successfully at: {moduleDir}");
-        Console.WriteLine();
-        Console.WriteLine("Next steps:");
-        Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
-        Console.WriteLine($"  2. Or: cd {name} && dotnet build");
-        Console.WriteLine($"  3. Copy output to Modulus Modules directory");
+            Console.WriteLine($"✓ Created {name}.sln");
+            Console.WriteLine($"✓ Created {name}.Host.{targetHost}/");
+            Console.WriteLine($"✓ Created appsettings.json");
+            Console.WriteLine($"✓ Created .gitignore");
+            Console.WriteLine();
+            Console.WriteLine($"Host app created successfully at: {moduleDir}");
+            Console.WriteLine();
+            Console.WriteLine("Next steps:");
+            Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
+            Console.WriteLine($"  2. Or: cd {name} && dotnet build");
+            Console.WriteLine($"  3. Run the host app and install modules via 'modulus install'");
+        }
+        else
+        {
+            // Create context
+            var context = new ModuleTemplateContext
+            {
+                ModuleName = name,
+                DisplayName = name,
+                Description = "A Modulus module.",
+                Publisher = "Modulus Team",
+                ModuleId = Guid.NewGuid().ToString("D"),
+                Icon = "Folder",
+                Order = 100,
+                TargetHost = targetHost
+            };
+
+            // Generate project
+            Console.WriteLine();
+            Console.WriteLine($"Creating Modulus module '{name}' ({effectiveTemplate})...");
+            Console.WriteLine();
+
+            var engine = new TemplateEngine(context);
+            await engine.GenerateAsync(output);
+
+            Console.WriteLine($"✓ Created {name}.sln");
+            Console.WriteLine($"✓ Created {name}.Core/");
+            Console.WriteLine($"✓ Created {name}.UI.{targetHost}/");
+            Console.WriteLine($"✓ Created extension.vsixmanifest");
+            Console.WriteLine($"✓ Created .gitignore");
+            Console.WriteLine();
+            Console.WriteLine($"Module created successfully at: {moduleDir}");
+            Console.WriteLine();
+            Console.WriteLine("Next steps:");
+            Console.WriteLine($"  1. Open {name}.sln in Visual Studio / Rider");
+            Console.WriteLine($"  2. Or: cd {name} && dotnet build");
+            Console.WriteLine($"  3. Copy output to Modulus Modules directory");
+        }
     }
 
     private static bool IsValidModuleName(string name)
