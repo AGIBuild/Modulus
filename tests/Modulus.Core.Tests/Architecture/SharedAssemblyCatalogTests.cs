@@ -208,6 +208,7 @@ public class SharedAssemblyDiagnosticsServiceTests
         Assert.NotEmpty(diagnostics.DomainEntries);
         Assert.Equal(2, diagnostics.ConfigEntries.Count);
         Assert.Single(diagnostics.ManifestEntries);
+        Assert.NotNull(diagnostics.PrefixRules);
     }
     
     [Fact]

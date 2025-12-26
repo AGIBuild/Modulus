@@ -1,4 +1,5 @@
 using Modulus.Cli.IntegrationTests.Infrastructure;
+using System.Diagnostics;
 
 namespace Modulus.Cli.IntegrationTests.Commands;
 
@@ -54,6 +55,46 @@ public class NewCommandTests : IDisposable
         Assert.True(Directory.Exists(moduleDir), "Module directory not created");
         Assert.True(File.Exists(Path.Combine(moduleDir, "BlazorModule.sln")), "Solution file not created");
         Assert.True(Directory.Exists(Path.Combine(moduleDir, "BlazorModule.UI.Blazor")), "UI project not created");
+    }
+
+    [Fact]
+    public async Task New_AvaloniaApp_CreatesHostAppAndBuildsSuccessfully()
+    {
+        // Act
+        var result = await _runner.NewAsync("TestHostApp", template: "avaloniaapp");
+
+        // Assert (creation)
+        Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
+        Assert.Contains("Created TestHostApp.sln", result.StandardOutput);
+        Assert.Contains("Created TestHostApp.Host.Avalonia/", result.StandardOutput);
+
+        var appDir = Path.Combine(_context.WorkingDirectory, "TestHostApp");
+        var slnPath = Path.Combine(appDir, "TestHostApp.sln");
+        Assert.True(File.Exists(slnPath), "Solution file not created");
+
+        // Assert (build)
+        var build = await RunDotNetAsync($"build \"{slnPath}\" -c Release", appDir);
+        Assert.True(build.ExitCode == 0, $"dotnet build failed: {build.Output}");
+    }
+
+    [Fact]
+    public async Task New_BlazorApp_CreatesHostAppAndBuildsSuccessfully()
+    {
+        // Act
+        var result = await _runner.NewAsync("TestBlazorHost", template: "blazorapp");
+
+        // Assert (creation)
+        Assert.True(result.IsSuccess, $"Command failed: {result.CombinedOutput}");
+        Assert.Contains("Created TestBlazorHost.sln", result.StandardOutput);
+        Assert.Contains("Created TestBlazorHost.Host.Blazor/", result.StandardOutput);
+
+        var appDir = Path.Combine(_context.WorkingDirectory, "TestBlazorHost");
+        var slnPath = Path.Combine(appDir, "TestBlazorHost.sln");
+        Assert.True(File.Exists(slnPath), "Solution file not created");
+
+        // Assert (build)
+        var build = await RunDotNetAsync($"build \"{slnPath}\" -c Release", appDir);
+        Assert.True(build.ExitCode == 0, $"dotnet build failed: {build.Output}");
     }
     
     [Fact]
@@ -117,6 +158,30 @@ public class NewCommandTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
+    }
+
+    private static async Task<(int ExitCode, string Output)> RunDotNetAsync(string arguments, string workingDirectory)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = psi };
+        process.Start();
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        await Task.WhenAll(process.WaitForExitAsync(), stdoutTask, stderrTask);
+
+        var output = (await stdoutTask) + Environment.NewLine + (await stderrTask);
+        return (process.ExitCode, output);
     }
 }
 
