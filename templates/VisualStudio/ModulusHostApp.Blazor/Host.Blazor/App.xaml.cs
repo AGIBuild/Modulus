@@ -1,0 +1,47 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Modulus.Core.Data;
+using Modulus.Core.Runtime;
+
+namespace $ext_safeprojectname$.Host.Blazor;
+
+public partial class App : Application
+{
+    private readonly IModulusApplication _modulusApp;
+    private readonly ILogger<App> _logger;
+    private bool _initialized;
+
+    public App(IModulusApplication modulusApp, ILogger<App> logger)
+    {
+        _modulusApp = modulusApp;
+        _logger = logger;
+        InitializeComponent();
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        if (!_initialized)
+        {
+            _initialized = true;
+
+            if (activationState?.Context?.Services != null)
+            {
+                var services = activationState.Context.Services;
+                _modulusApp.SetServiceProvider(services);
+                services.GetRequiredService<IAppDatabase>().InitializeAsync().GetAwaiter().GetResult();
+                _modulusApp.InitializeAsync().GetAwaiter().GetResult();
+            }
+        }
+
+        var window = new Window(new MainPage()) { Title = "$safeprojectname$" };
+        window.Destroying += (_, _) =>
+        {
+            try { _modulusApp.ShutdownAsync().GetAwaiter().GetResult(); } catch { }
+            Environment.Exit(0);
+        };
+
+        return window;
+    }
+}
+
+

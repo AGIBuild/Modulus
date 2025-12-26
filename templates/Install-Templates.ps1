@@ -37,7 +37,12 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $vsTemplatesSourceDir = Join-Path $scriptDir "VisualStudio"
 
 # Package and install each template
-$templates = @("ModulusModule.Avalonia", "ModulusModule.Blazor")
+$templates = @(
+    "ModulusModule.Avalonia",
+    "ModulusModule.Blazor",
+    "ModulusHostApp.Avalonia",
+    "ModulusHostApp.Blazor"
+)
 
 foreach ($template in $templates) {
     $templateSourceDir = Join-Path $vsTemplatesSourceDir $template

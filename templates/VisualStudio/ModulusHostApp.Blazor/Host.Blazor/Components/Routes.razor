@@ -1,0 +1,10 @@
+@using Modulus.Core.Runtime
+@inject IModulusApplication ModulusApp
+
+<div style="padding: 24px; font-family: sans-serif;">
+  <h1>Modulus Host App</h1>
+  <p>App: $safeprojectname$ (Blazor Hybrid / MAUI)</p>
+  <p>Loaded module assemblies: @ModulusApp.LoadedModuleAssemblies.Count</p>
+</div>
+
+

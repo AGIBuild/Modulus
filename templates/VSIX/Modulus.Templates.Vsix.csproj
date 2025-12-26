@@ -25,6 +25,12 @@
     <VSTemplate Include="ProjectTemplates\ModulusModule.Blazor.zip">
       <OutputSubPath>CSharp\Modulus</OutputSubPath>
     </VSTemplate>
+    <VSTemplate Include="ProjectTemplates\ModulusHostApp.Avalonia.zip">
+      <OutputSubPath>CSharp\Modulus</OutputSubPath>
+    </VSTemplate>
+    <VSTemplate Include="ProjectTemplates\ModulusHostApp.Blazor.zip">
+      <OutputSubPath>CSharp\Modulus</OutputSubPath>
+    </VSTemplate>
   </ItemGroup>
 
   <ItemGroup>

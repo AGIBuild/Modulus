@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Modulus Host App (Blazor Hybrid)</Name>
+    <Description>A Modulus plugin host application (Blazor Hybrid / MAUI)</Description>
+    <ProjectType>CSharp</ProjectType>
+    <SortOrder>1110</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>Host.Blazor</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="Host.Blazor.csproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="MauiProgram.cs">MauiProgram.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.xaml">App.xaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.xaml.cs">App.xaml.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainPage.xaml">MainPage.xaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainPage.xaml.cs">MainPage.xaml.cs</ProjectItem>
+      <Folder Name="Components">
+        <ProjectItem ReplaceParameters="true" TargetFileName="Routes.razor">Routes.razor</ProjectItem>
+      </Folder>
+      <Folder Name="wwwroot">
+        <ProjectItem ReplaceParameters="true" TargetFileName="index.html">index.html</ProjectItem>
+      </Folder>
+      <Folder Name="Platforms">
+        <Folder Name="Windows">
+          <ProjectItem ReplaceParameters="true" TargetFileName="App.xaml">Platforms\Windows\App.xaml</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="App.xaml.cs">Platforms\Windows\App.xaml.cs</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="app.manifest">Platforms\Windows\app.manifest</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Package.appxmanifest">Platforms\Windows\Package.appxmanifest</ProjectItem>
+        </Folder>
+      </Folder>
+      <ProjectItem ReplaceParameters="true" TargetFileName="appsettings.json">appsettings.json</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>
+
+

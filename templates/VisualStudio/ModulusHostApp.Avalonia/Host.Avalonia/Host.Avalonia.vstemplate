@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Modulus Host App (Avalonia)</Name>
+    <Description>A Modulus plugin host application (Avalonia)</Description>
+    <ProjectType>CSharp</ProjectType>
+    <SortOrder>1100</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>Host.Avalonia</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="Host.Avalonia.csproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.axaml">App.axaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.axaml.cs">App.axaml.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainWindow.axaml">MainWindow.axaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="MainWindow.axaml.cs">MainWindow.axaml.cs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="appsettings.json">appsettings.json</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>
+
+
