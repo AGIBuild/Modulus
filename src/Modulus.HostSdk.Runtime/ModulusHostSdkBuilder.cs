@@ -49,16 +49,6 @@ public sealed class ModulusHostSdkBuilder
         var userModules = Path.Combine(LocalStorage.GetUserRoot(), "Modules");
         _moduleDirectories.Add(new HostModuleDirectory(userModules, IsSystem: false));
 
-        // Backward compatibility: some hosts may have used ApplicationData directly on non-Windows before LocalStorage aligned paths.
-        var legacyUserModules = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Modulus",
-            "Modules");
-        if (!IsSameDirectory(userModules, legacyUserModules))
-        {
-            _moduleDirectories.Add(new HostModuleDirectory(legacyUserModules, IsSystem: false));
-        }
-
         return this;
     }
 
@@ -121,12 +111,6 @@ public sealed class ModulusHostSdkBuilder
     {
         var full = Path.GetFullPath(path);
         return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-    }
-
-    private static bool IsSameDirectory(string a, string b)
-    {
-        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        return comparer.Equals(NormalizeDirectoryPath(a), NormalizeDirectoryPath(b));
     }
 }
 

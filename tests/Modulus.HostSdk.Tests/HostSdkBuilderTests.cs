@@ -40,19 +40,9 @@ public sealed class HostSdkBuilderTests
 
         var systemDir = Path.Combine(AppContext.BaseDirectory, "Modules");
         var userDir = Path.Combine(LocalStorage.GetUserRoot(), "Modules");
-        var legacyUserDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Modulus",
-            "Modules");
 
         Assert.Contains(list, d => d.IsSystem && PathEquals(d.Path, systemDir));
         Assert.Contains(list, d => !d.IsSystem && PathEquals(d.Path, userDir));
-
-        // Only included when distinct from the canonical user directory.
-        if (!PathEquals(userDir, legacyUserDir))
-        {
-            Assert.Contains(list, d => !d.IsSystem && PathEquals(d.Path, legacyUserDir));
-        }
     }
 
     [Fact]
