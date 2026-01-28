@@ -132,7 +132,7 @@ public static class ModulusApplicationFactory
             var db = scope.ServiceProvider.GetRequiredService<ModulusDbContext>();
             await db.Database.MigrateAsync();
 
-            // Fail fast on legacy database/menu formats. This change intentionally does NOT provide backward compatibility.
+            // Auto-cleanup legacy menu formats instead of failing.
             // New menu ids are projected as: {ModuleId}.{HostType}.{Key}.{Index} (>= 4 dot-separated parts).
             if (!string.IsNullOrWhiteSpace(hostType))
             {
@@ -141,13 +141,19 @@ public static class ModulusApplicationFactory
                     .AsNoTracking()
                     .Select(m => m.Id)
                     .ToListAsync();
-                var hasLegacyMenus = menuIds.Any(id => id.Split('.', StringSplitOptions.RemoveEmptyEntries).Length < 4);
+                var legacyMenuIds = menuIds.Where(id => id.Split('.', StringSplitOptions.RemoveEmptyEntries).Length < 4).ToList();
 
-                if (hasLegacyMenus)
+                if (legacyMenuIds.Count > 0)
                 {
-                    throw new InvalidOperationException(
-                        $"Legacy database detected (menu ids are not in the expected format). " +
-                        $"Delete the database file and restart. DatabasePath='{databasePath}', HostType='{hostType}'.");
+                    logger.LogWarning(
+                        "Detected {Count} legacy menu entries with incompatible ID format. Auto-cleaning menu table. DatabasePath='{DbPath}'",
+                        legacyMenuIds.Count, databasePath);
+                    
+                    // Remove all menus and let them be re-projected from module attributes
+                    db.Menus.RemoveRange(db.Menus);
+                    await db.SaveChangesAsync();
+                    
+                    logger.LogInformation("Legacy menus cleaned. Menus will be re-projected from module definitions.");
                 }
             }
 
